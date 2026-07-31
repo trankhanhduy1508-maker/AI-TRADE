@@ -90,6 +90,7 @@ Chạy backtest trên dữ liệu lịch sử để kiểm chứng từng giả 
 - Không được bịa số liệu — chạy code, lưu lại kết quả
 - Mỗi backtest phải ghi rõ: dữ liệu (pair, timeframe, khoảng), tham số (N-bar breakout, ATR multiplier), kết quả (số lệnh, tỷ lệ %, PnL)
 - Nếu phát hiện lỗi logic trong code → fix, backtest lại (không fix "số liệu")
+- **Framework Point-in-Time AI Backtesting** (`backtests/POINT_IN_TIME_AI_BACKTEST.md`) là hạ tầng chuẩn cho backtest Rule Engine ở giai đoạn này — đảm bảo không look-ahead bias, logging đầy đủ, so sánh KPI
 
 ---
 
@@ -101,9 +102,21 @@ Giao dịch trên **dữ liệu thực tế live** nhưng **không có tiền th
 **Thời gian ước tính:**
 4-12 tuần (phụ thuộc tần suất signal, thị trường volatility)
 
+**Kiến trúc thiết kế:**
+- ✅ `PAPER_TRADING_ENGINE.md` (root) — Tổng quan kiến trúc paper trading (7 thành phần)
+- ✅ `paper_trading/VIRTUAL_ACCOUNT.md` — Quản lý vốn ảo, equity, balance
+- ✅ `paper_trading/VIRTUAL_ORDER.md` — Mô phỏng execution, slippage, Risk Gateway
+- ✅ `paper_trading/POSITION.md` — Theo dõi lệnh mở, exit rule, unrealized PnL
+- ✅ `paper_trading/TRADE_JOURNAL.md` — Ghi lại chi tiết lệnh đóng
+- ✅ `paper_trading/PERIODIC_REVIEW.md` — Daily/Weekly/Monthly review
+- ✅ `paper_trading/PERFORMANCE_DASHBOARD.md` — KPI và hiệu suất
+- ✅ `execution/EXECUTION_ENGINE.md` (root) — Kiến trúc thực thi (dùng chung paper + live)
+- ✅ `execution/RISK_GATEWAY.md` — Cổng kiểm tra rủi ro
+- ✅ `execution/BROKER_ADAPTER_INTERFACE.md` — Interface đa broker (Paper Adapter cho giai đoạn này)
+
 **Deliverables:**
 - Kết nối dữ liệu live (ví dụ: API từ sàn giao dịch)
-- Paper trading engine (code mô phỏng giao dịch mà không có tiền thật)
+- Paper trading engine code (implement theo thiết kế kiến trúc ở trên)
 - Đầy đủ logging: mỗi signal, mỗi lệnh, mỗi exit được ghi lại
 - `research/EXPERIMENT_LOG.md` được cập nhật liên tục
 - Báo cáo paper trading hàng tuần: số lệnh, PnL, drawdown
@@ -158,6 +171,7 @@ Tích hợp LLM/AI để **phân tích, xác nhận, phản biện** các signal
 - AI scoring chạy 2-4 tuần, kiểm chứng AI không thêm false alarm quá
 - AI confirmation rate > 80% (setup AI confirm lại là setup thật)
 - Project Owner xác nhận AI analysis hữu ích
+- **Trước đó:** Backtest AI qua framework Point-in-Time (`backtests/POINT_IN_TIME_AI_BACKTEST.md`) để validate khách quan khả năng AI ra quyết định trên dữ liệu lịch sử, chống look-ahead bias, so sánh KPI với Rule Engine baseline
 
 ---
 
@@ -212,11 +226,21 @@ Giao dịch trên **tài khoản thật** với **tiền thật**. Điều này 
 **Thời gian ước tính:**
 Không xác định (phụ thuộc Project Owner)
 
+**Kiến trúc thiết kế:**
+- ✅ `EXECUTION_ENGINE.md` (root) — Kiến trúc thực thi (dùng chung paper + live, giai đoạn này chỉ swap broker adapter)
+- ✅ `execution/RISK_GATEWAY.md` — Cổng kiểm tra rủi ro (bắt buộc, không AI tự quyết định)
+- ✅ `execution/BROKER_ADAPTER_INTERFACE.md` — Interface đa broker (implement Real Broker Adapter cho sàn cụ thể: MT5, Binance, IB, v.v.)
+- ✅ `execution/ORDER_MANAGER.md` — Tạo và gửi lệnh (cùng logic, chỉ khác broker adapter)
+- ✅ `execution/POSITION_MANAGER.md` — Theo dõi position thật từ broker
+- ✅ `execution/AUDIT_LOG.md` — Ghi log append-only (bắt buộc cho regulatory/compliance)
+- ✅ `execution/RETRY_TIMEOUT_POLICY.md` — Quy tắc retry khi giao tiếp broker fail
+- ✅ `execution/ERROR_HANDLING.md` — Phân loại lỗi (kỹ thuật, nghiệp vụ, dữ liệu)
+
 **Deliverables:**
-- Kết nối API sàn giao dịch (real account)
-- Kill switch thủ công + tự động (bắt buộc)
+- Kết nối API sàn giao dịch thật (real account, implement Real Broker Adapter)
+- Kill switch thủ công + tự động (bắt buộc, từ Risk Gateway)
 - Real-time monitoring + alerts
-- Daily PnL report
+- Daily PnL report + audit log
 - Tham số trading bắt đầu nhỏ (tối thiểu position size)
 
 **Điều kiện bắt đầu:**

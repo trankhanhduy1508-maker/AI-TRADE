@@ -146,23 +146,89 @@
 
 ---
 
+## Point-in-Time AI Backtesting
+
+✅ `backtests/POINT_IN_TIME_AI_BACKTEST.md` — Framework kiểm chứng LLM/AI qua dữ liệu point-in-time, chống look-ahead bias, logging append-only, so sánh với Rule Engine baseline
+
+**Trạng thái:** ✅ Thiết kế xong, chưa triển khai/chạy thật
+
+**Tham số chưa chốt:**
+- LLM model cụ thể (Claude 3.5 Sonnet? GPT-4?)
+- Phiên bản prompt AI
+- Cơ chế ẩn danh symbol/ngày (placeholder ASSET_A/ASSET_B hay UUID?)
+- Chỉ báo gửi cho AI (OHLCV thô hay kèm RSI/EMA?)
+- Dữ liệu test (pair, timeframe, khoảng thời gian)
+- Chi phí LLM (estimate API calls)
+
+---
+
+## Paper Trading Engine
+
+✅ `paper_trading/PAPER_TRADING_ENGINE.md` — Kiến trúc tổng thể
+
+✅ `paper_trading/VIRTUAL_ACCOUNT.md` — Quản lý vốn ảo
+
+✅ `paper_trading/VIRTUAL_ORDER.md` — Mô phỏng execution
+
+✅ `paper_trading/POSITION.md` — Theo dõi lệnh mở
+
+✅ `paper_trading/TRADE_JOURNAL.md` — Ghi lại chi tiết lệnh đóng
+
+✅ `paper_trading/PERIODIC_REVIEW.md` — Daily/Weekly/Monthly review
+
+✅ `paper_trading/PERFORMANCE_DASHBOARD.md` — Tính KPI, hiển thị hiệu suất
+
+**Trạng thái:** ✅ Thiết kế xong, chưa code — Sẵn sàng cho Giai đoạn 4 (Paper Trade)
+
+---
+
+## Execution Engine
+
+✅ `execution/EXECUTION_ENGINE.md` — Kiến trúc tổng thể, 8 thành phần
+
+✅ `execution/SIGNAL_QUEUE.md` — Hàng đợi signal từ Rule Engine
+
+✅ `execution/RISK_GATEWAY.md` — Cổng kiểm tra rủi ro (5 checks)
+
+✅ `execution/ORDER_MANAGER.md` — Tạo và gửi lệnh
+
+✅ `execution/POSITION_MANAGER.md` — Theo dõi position mở
+
+✅ `execution/RETRY_TIMEOUT_POLICY.md` — Quy tắc retry & timeout
+
+✅ `execution/ERROR_HANDLING.md` — Phân loại lỗi, quyết định hành động
+
+✅ `execution/AUDIT_LOG.md` — Ghi log append-only
+
+✅ `execution/BROKER_ADAPTER_INTERFACE.md` — Interface đa broker
+
+**Trạng thái:** ✅ Thiết kế xong, chưa code — Hỗ trợ cả Giai đoạn 4 (Paper) + Giai đoạn 7 (Live)
+
+---
+
 ## Next Task (Priority)
 
 ### Urgent (1-2 tuần):
 
-1. **Project Owner confirm:**
-   - Rule Engine architecture OK?
-   - Decision Flow 10 bước OK?
-   - Scoring threshold 80 (hoặc điều chỉnh) OK?
+1. **Project Owner confirm kiến trúc Paper Trading + Execution Engine:**
+   - 7 thành phần Paper Trading Engine (Virtual Account, Order, Position, Trade Journal, Review, Dashboard)?
+   - 8 thành phần Execution Engine (Signal Queue, Risk Gateway, Order Manager, Position Manager, Retry/Timeout, Error Handling, Audit Log, Broker Adapter)?
+   - Broker Adapter Interface cho đa sàn tương lai?
 
-2. **Chốt tham số cụ thể:**
-   - `risk/RISK_POLICY.md`: % rủi ro/lệnh, % rủi ro danh mục, số lệnh thua, % drawdown
-   - `rule_engine/`: R/R minimum (1.5 hay khác?), Body ratio % (60%?), SMA period (20?), ATR period
-   - `strategies/TF_001.md`, `TF_002.md`: N-bar swing (N=2?), EMA period, Volume SMA period
+2. **Chốt tham số cụ thể (từ RISK_POLICY.md, EXECUTION_ENGINE.md):**
+   - % rủi ro/lệnh (1%? 2%?)
+   - % rủi ro danh mục (5%? 10%?)
+   - Số lệnh thua liên tiếp trigger kill switch (3? 5?)
+   - % drawdown max trigger kill switch (10%? 20%?)
+   - Cho phép duplicate position same symbol (True/False)?
 
-3. **Audit QA:**
-   - Kiểm tra từng rule_engine/RULE_*.md bằng RULE_ENGINE_CHECKLIST.md
-   - Verify xung đột giữa rule trong RULE_CONFLICTS.md
+3. **Chốt tham số Point-in-Time AI Backtesting:**
+   - LLM model cụ thể (Claude 3.5 Sonnet? GPT-4 Turbo?)
+   - Phiên bản prompt AI
+   - Cơ chế ẩn danh symbol/ngày
+   - Chỉ báo gửi cho AI (OHLCV thô? hay kèm chỉ báo?)
+   - Dữ liệu test (pair, timeframe, khoảng)
+   - Chi phí LLM estimate
 
 ### Medium (2-4 tuần):
 
@@ -173,4 +239,4 @@
 5. **Phase 3 (Code + Backtest):** 
    - Viết code Python lập trình Rule Engine (src/rule_engine.py)
    - Unit test từng rule
-   - Chạy backtest TF_001 + TF_002 với Rule Engine thực tế
+   - Chạy backtest TF_001 + TF_002 với Rule Engine + Point-in-Time AI Backtesting

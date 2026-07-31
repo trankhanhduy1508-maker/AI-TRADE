@@ -138,3 +138,63 @@ EMA period bias: Chưa chốt (50? 100? 200?), strategy phải define rõ.
 Swing high/low period (N): Chưa chốt, tuỳ timeframe (2-3 suggested).
 
 % rủi ro/lệnh, % drawdown max, số lệnh thua liên tiếp: Chưa chốt trong RISK_POLICY.md.
+
+---
+
+Paper Trading Engine (Giai đoạn 4)
+
+Phân tách Virtual Account, Virtual Order, Position, Trade Journal, Periodic Review, Performance Dashboard để tách biệt hoàn toàn với Execution Engine thật.
+
+Virtual Account là "ngân hàng" ảo: balance, equity, unrealized PnL, positions_open, total_portfolio_risk được quản lý riêng biệt.
+
+Virtual Order mô phỏng execution: thêm slippage/spread giả định, kiểm tra Risk Gateway (5 checks), FILLED hoặc REJECTED.
+
+Position trong paper trading: đơn giản hơn Execution Engine, chỉ theo dõi entry, SL, target, unrealized PnL, exit khi SL/TP hit hoặc exit rule.
+
+Trade Journal = ghi lại chi tiết lệnh đóng (entry/exit, PnL, R multiple, hold time) + rule breakdown — input cho POST_TRADE_REVIEWER prompt.
+
+Periodic Review (Daily/Weekly/Monthly): kiểm tra kill switch, PnL, KPI so backtest, signal quality — foundation cho quyết định tiếp tục/pause/debug.
+
+Performance Dashboard: tái sử dụng KPI từ backtests/KPI_STANDARD.md, display live + historical, so sánh vs backtest expectation.
+
+---
+
+Execution Engine (Giai đoạn 4 + 7)
+
+Một Execution Engine duy nhất hỗ trợ cả Paper Trading (giai đoạn 4) và Live Trading (giai đoạn 7) thông qua Broker Adapter Interface.
+
+Signal Queue → Risk Gateway → Order Manager → Broker Adapter → Position Manager + Audit Log (8 thành phần).
+
+Risk Gateway là CỔNG CHẶN RỦI RO DUY NHẤT: 5 checks (risk/trade, portfolio risk, kill switch, consecutive losses, no duplicate symbol) — không ngoại lệ, không linh hoạt.
+
+Order Manager: tạo order từ signal đã qua Risk Gateway, tính khối lượng (từ position sizing formula), gửi qua Broker Adapter, đảm bảo idempotency (order_id duy nhất).
+
+Broker Adapter Interface: định nghĩa hành vi bắt buộc (place_order, cancel_order, get_position, get_balance...) mà BẤT KỲ broker nào phải implement — hiện tại chỉ Paper Adapter, tương lai có MT5 Adapter, Binance Adapter, IB Adapter v.v.
+
+Position Manager: theo dõi position đang mở, monitor exit conditions (SL/TP hit, RULE_010 exit signal), cập nhật portfolio_risk_current cho Risk Gateway.
+
+Audit Log: append-only, ghi tất cả sự kiện (signal received, risk check, order created/sent/filled, position opened/closed) — bắt buộc cho live trading, bảo vệ audit trail.
+
+Error Handling + Retry Policy: phân loại lỗi (kỹ thuật/nghiệp vụ/dữ liệu), retry kỹ thuật theo backoff exponential, không retry nghiệp vụ.
+
+AI không tự quyết định rủi ro: mọi lệnh AI đề xuất vẫn phải qua Risk Gateway 5 checks, Risk Gateway có quyền reject nếu vi phạm RISK_POLICY.md.
+
+---
+
+Point-in-Time AI Backtesting (Framework Kiểm chứng)
+
+Mục đích: Kiểm chứng khách quan khả năng AI ra quyết định giao dịch hợp lý trên dữ liệu lịch sử, hoàn toàn chống look-ahead bias.
+
+Chống look-ahead bias triệt để: Ẩn danh symbol thật, ẩn danh thời gian thật, loại bỏ thông tin sự kiện lịch sử, chỉ cấp dữ liệu point-in-time (quá khứ tính đến timestamp mô phỏng hiện tại).
+
+Vòng lặp tuần tự: Observe (cấp data) → Decide (AI + Rule ra quyết định riêng) → Execute (mô phỏng) → Reveal next data (tiến sang timestamp tiếp theo, không được sửa quyết định).
+
+Locked Out-of-Sample: Dữ liệu test được khoá từ đầu, chỉ chạy 1 lần, không optimize prompt rồi chạy lại trên đúng bộ OOS đó.
+
+Walk-Forward: Áp dụng phương pháp WFA (từ WALK_FORWARD_GUIDE.md), chia dữ liệu thành các window in-sample/OOS cuộn tiến theo thời gian.
+
+Logging append-only: Ghi đầy đủ mỗi bước (observe, AI decision, rule decision, execute, position close) với timestamp, input/output LLM, fill price, PnL — không sửa/xóa để audit sau.
+
+So sánh Rule-based baseline: Chạy song song AI + Rule Engine trên cùng dữ liệu point-in-time, ghi lại cả 2 quyết định tại mỗi bước, tính KPI (win rate, expectancy, max DD, Sharpe, agreement rate, false alarm rate) để so sánh giá trị AI.
+
+AI vẫn qua Risk Gateway: Framework này chỉ KIỂM CHỨNG AI, không phải cho AI tự quyết định rủi ro. Mọi lệnh AI đề xuất vẫn phải qua 5 risk checks từ RISK_GATEWAY.md, Risk Gateway có quyền reject nếu vi phạm RISK_POLICY.md.
