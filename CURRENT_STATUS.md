@@ -206,6 +206,24 @@
 
 ---
 
+## Rule Engine — Code (Phase 2 Code, MVP)
+
+✅ `src/rule_engine/` — 10 module RULE_001-010 + `scoring.py` (orchestrator Decision Flow + Setup Score) bằng Python thuần (standard library only)
+
+✅ `tests/rule_engine/` — 103 unit test + integration test (không mock RULE_001-005), chạy `python -m pytest tests/rule_engine/ -v` — **103/103 PASS thật**
+
+✅ `src/ARCHITECTURE.md` — mô tả kiến trúc code, luồng dữ liệu `evaluate_setup()`
+
+**Môi trường:** Python 3.14.6 đã cài cục bộ trên máy (trước đó chưa có runtime nào — đã cài để có thể code+test thật).
+
+**Trạng thái:** ✅ Code xong, test pass thật — Rule Engine sẵn sàng dùng cho Data Loader/Backtest Engine tiếp theo. Chưa test với dữ liệu giá thật (chưa có Data Loader).
+
+**Giới hạn đã biết:**
+- RULE_009 (Liquidity) chưa có nguồn spread/order-book thật — `evaluate_setup()` nhận `spread_pips`/`depth_ok` làm tham số tùy chọn (mặc định giả định "tạm ổn"), caller cần truyền dữ liệu thật khi có.
+- Tham số rủi ro (`rr_min=1.5` và các ngưỡng khác) là giá trị đề xuất, chưa được Project Owner chốt chính thức.
+
+---
+
 ## Next Task (Priority)
 
 ### Urgent (1-2 tuần):

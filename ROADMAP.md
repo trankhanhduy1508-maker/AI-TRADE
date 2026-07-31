@@ -31,7 +31,7 @@ Xây dựng nền tảng kiến thức: các trường phái giao dịch, nguyê
 
 ---
 
-## GIAI ĐOẠN 2: RULE ENGINE (Bắt đầu)
+## GIAI ĐOẠN 2: RULE ENGINE (Code hoàn tất, chờ Project Owner review)
 
 **Mục tiêu:**
 Chuẩn hóa các quy tắc thành code/pseudo-code, chuẩn bị cho việc lập trình thực tế. Không phải code production, mà code để **kiểm chứng logic** và **chuẩn bị backtest**.
@@ -40,20 +40,15 @@ Chuẩn hóa các quy tắc thành code/pseudo-code, chuẩn bị cho việc l�
 4-6 tuần
 
 **Deliverables:**
-- `src/rules/` — thư mục chứa các quy tắc dưới dạng pseudo-code hoặc pseudocode + unit test
-  - `trend_detection.py` — xác định HH/HL/LH/LL từ OHLC
-  - `breakout_detection.py` — phát hiện breakout hợp lệ (price action + volume)
-  - `pullback_validation.py` — kiểm tra pullback hợp lệ
-  - `trendline_reaction.py` — xác định trendline và phản ứng
-  - `position_sizing.py` — tính khối lượng lệnh từ SL
-  - `risk_checker.py` — kiểm tra vi phạm rủi ro
-- Đơn vị test cho mỗi module (unit test)
-- `src/ARCHITECTURE.md` — mô tả kiến trúc code
+- ✅ `src/rule_engine/` — 10 module RULE_001-010 + `scoring.py` (Decision Flow + Setup Score orchestrator), Python thuần
+- ✅ `tests/rule_engine/` — 103 unit + integration test, `python -m pytest tests/rule_engine/ -v` PASS thật (không mock RULE_001-005 ở test tích hợp)
+- ✅ `src/ARCHITECTURE.md` — mô tả kiến trúc code
+- ⬜ `position_sizing.py`, `risk_checker.py` (portfolio-level), `trendline_reaction.py` (TF_002) — dời sang các MVP task sau (Data Loader / Paper Trading Engine) theo thứ tự ưu tiên MVP hiện tại, không nằm trong đợt code Rule Engine lõi này
 
 **Điều kiện chuyển sang Giai đoạn 3:**
-- Tất cả module đều có unit test pass
-- Code review được Project Owner xác nhận (logic đúng, không chứa bug rõ ràng)
-- Sẵn sàng connect dữ liệu giá thật
+- ✅ Tất cả module đều có unit test pass (103/103, verify thật bằng `pytest`)
+- ⬜ Code review được Project Owner xác nhận (logic đúng, không chứa bug rõ ràng)
+- ⬜ Sẵn sàng connect dữ liệu giá thật (chờ Data Loader — MVP task tiếp theo)
 
 ---
 

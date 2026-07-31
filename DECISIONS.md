@@ -198,3 +198,15 @@ Logging append-only: Ghi đầy đủ mỗi bước (observe, AI decision, rule 
 So sánh Rule-based baseline: Chạy song song AI + Rule Engine trên cùng dữ liệu point-in-time, ghi lại cả 2 quyết định tại mỗi bước, tính KPI (win rate, expectancy, max DD, Sharpe, agreement rate, false alarm rate) để so sánh giá trị AI.
 
 AI vẫn qua Risk Gateway: Framework này chỉ KIỂM CHỨNG AI, không phải cho AI tự quyết định rủi ro. Mọi lệnh AI đề xuất vẫn phải qua 5 risk checks từ RISK_GATEWAY.md, Risk Gateway có quyền reject nếu vi phạm RISK_POLICY.md.
+
+---
+
+Rule Engine Code (Phase 2 Code, MVP)
+
+Bắt đầu code thật (Python, `src/rule_engine/`) từ đặc tả `rule_engine/*.md` — 10 rule + orchestrator scoring, 103 unit/integration test PASS thật.
+
+Direction đề xuất phải khớp trend thật: RULE_001 tự phát hiện xu hướng từ dữ liệu (không nhận direction làm input). Nếu hướng giao dịch đề xuất (`direction` truyền vào `evaluate_setup()`) không khớp xu hướng RULE_001 phát hiện được (hoặc xu hướng NEUTRAL) → reject ngay, đúng nguyên tắc "không giao dịch ngược xu hướng chính".
+
+Liquidity (RULE_009) dùng tham số tạm: Chưa có nguồn spread/order-book thật, `evaluate_setup()` nhận `spread_pips`/`depth_ok` làm tham số có giá trị mặc định "tạm ổn" — caller (Data Loader/Backtest Engine sau này) phải truyền dữ liệu thật khi có, không dùng mặc định cho quyết định thật.
+
+Chỉ dùng Python standard library ở Phase 2 Code — chưa cần pandas/numpy, vì mục tiêu là kiểm chứng logic, không phải hiệu năng xử lý dữ liệu lớn (sẽ xét lại khi tới Data Loader/Backtest Engine với dữ liệu thật).
