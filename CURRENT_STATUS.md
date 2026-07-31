@@ -92,11 +92,45 @@
 
 ---
 
-## Next Task
+## Research Phase 01
 
-1. Thu thập dữ liệu giá lịch sử cho ít nhất 1 cặp/thị trường + 1 timeframe cụ thể
-   để bắt đầu backtest TF_001.
-2. Chạy backtest thật theo `backtests/BACKTEST_STANDARD.md`, điền kết quả vào
-   `backtests/RESULTS_TEMPLATE.md`, ghi nhận vào `research/EXPERIMENT_LOG.md`.
-3. Sau khi có kết quả backtest thật đầu tiên, đánh giá lại TF_001 trước khi làm
-   tiếp TF_002.
+✅ RESEARCH_SUMMARY.md — Tóm tắt 12 trường phái giao dịch
+
+✅ TRADING_SCHOOL_COMPARISON.md — Bảng so sánh chi tiết theo 10 tiêu chí
+
+✅ BEST_PRACTICES.md — 6 lĩnh vực best practices, 17 nguyên tắc vàng
+
+✅ COMMON_FAILURES.md — 9 nhóm lỗi phổ biến, phòng tránh & bảng tóm tắt
+
+✅ AI_DESIGN_PRINCIPLES.md — Nguyên tắc thiết kế AI, kiến trúc đề xuất (Trend Following + Market Structure + Volume)
+
+✅ ROADMAP.md (gốc repo) — Lộ trình 7 giai đoạn từ Knowledge Base tới Live Trading
+
+✅ reports/RESEARCH_PHASE_01.md — Báo cáo hoàn tất Phase 01
+
+**Trạng thái:** ✅ Phase 01 Complete — Sẵn sàng cho Phase 02 (Rule Engine)
+
+---
+
+## Next Task (Priority)
+
+### Urgent (1-2 tuần):
+
+1. **Project Owner confirm:**
+   - Kiến trúc Trend Following + Market Structure + Volume OK?
+   - Roadmap 7 giai đoạn, thời gian ước tính OK?
+   - 7 nguyên tắc thiết kế OK?
+
+2. **Chốt tham số:**
+   - `risk/RISK_POLICY.md`: % rủi ro/lệnh, % rủi ro danh mục, số lệnh thua, % drawdown
+   - `strategies/TF_001.md`, `TF_002.md`: N-bar breakout, ATR multiplier, EMA period, Volume SMA
+
+### Medium (2-4 tuần):
+
+3. Chuẩn bị dữ liệu: chọn 2-3 cặp tiền, 1-2 timeframe, lấy 1-2 năm dữ liệu lịch sử
+
+### Long-term (4-8 tuần):
+
+4. **Phase 2 (Rule Engine):** Viết code Python lập trình quy tắc, unit test
+
+5. **Phase 3 (Backtest):** Chạy backtest TF_001 + TF_002

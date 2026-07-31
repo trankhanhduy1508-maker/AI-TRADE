@@ -59,8 +59,46 @@ Không khẳng định chiến lược nào chắc chắn sinh lời.
 
 ---
 
+Kiến trúc AI Trading (Phase 01 Research)
+
+Lõi chính: Trend Following + Market Structure (HH/HL, BOS/CHoCH)
+
+Xác nhận: Volume (breakout volume > SMA), Price Action (breakout quality), EMA bias (filter)
+
+Nền tảng rủi ro: Market Wizards principles (cut loss fast, let profit run, discipline)
+
+Không dùng: SMC, Wyckoff, Al Brooks, Minervini (reversal) — quá phức tạp hoặc không phù hợp
+
+---
+
+Nguyên tắc thiết kế AI (Phase 01)
+
+1. Reaction, không prediction — chỉ vào khi dữ liệu đã xảy ra
+2. Trend Following, không reversal — theo xu hướng xác nhận, không bắt đảo
+3. Price Action/Market Structure quyết định → chỉ báo xác nhận
+4. Volume/EMA xác nhận, không chính — luôn sau cấu trúc giá
+5. Quản lý rủi ro > tỷ lệ thắng — cắt lỗ nhanh, để lợi chạy
+6. Không tổng quát chiến lược → backtest riêng mỗi pair/timeframe
+7. AI không tự quyết định rủi ro — mọi limit từ RISK_POLICY.md
+
+---
+
+Roadmap 7 giai đoạn (Phase 01)
+
+Phase 1: Knowledge Base ✅ (hoàn tất)
+Phase 2: Rule Engine (4-6w) — code quy tắc + unit test
+Phase 3: Backtest (4-8w) — chạy backtest 100+ lệnh
+Phase 4: Paper Trade (4-12w) — live trading không tiền thật 2-4w
+Phase 5: AI Scoring (4-8w) — LLM phân tích, confirm, cảnh báo
+Phase 6: Machine Learning (6-16w) — optimize tham số, train model
+Phase 7: Live Trading (∞) — account thật, phụ thuộc Project Owner confirm
+
+---
+
 Phát triển
 
 MVP tài liệu trước, tránh over-engineering.
 
 Không xóa file có sẵn khi thêm nội dung mới.
+
+Phase 01 complete, ready for Phase 02 (Rule Engine).
