@@ -224,6 +224,16 @@
 
 ---
 
+## Data Loader — Code (MVP Task 2)
+
+✅ `src/data_loader/` — `csv_loader.py` (đọc CSV → `list[Bar]`, dùng chung `Bar` với Rule Engine), `validator.py` (Bước 2 Data Validation theo BACKTEST_ENGINE.md), `cleaner.py` (Bước 3 Data Cleaning: sort/dedupe/outlier detection), `pipeline.py` (ghép luồng đầy đủ)
+
+✅ `tests/data_loader/` — 52 test + fixture CSV nhỏ (dữ liệu giả lập để test code, không phải dữ liệu thị trường thật) — **52/52 PASS thật**, tổng cộng **155/155 test toàn repo PASS**
+
+**Trạng thái:** ✅ Code xong, test pass thật. Vẫn CHƯA có nguồn dữ liệu giá lịch sử thật (API/CSV thật từ sàn) — đây là điều kiện cần cho MVP Task 3 (Backtest Engine) chạy backtest thật, KHÔNG phải blocker của Data Loader (Data Loader chỉ là code đọc/làm sạch dữ liệu, hoạt động với bất kỳ CSV đúng định dạng nào).
+
+---
+
 ## Next Task (Priority)
 
 ### Urgent (1-2 tuần):

@@ -210,3 +210,13 @@ Direction đề xuất phải khớp trend thật: RULE_001 tự phát hiện xu
 Liquidity (RULE_009) dùng tham số tạm: Chưa có nguồn spread/order-book thật, `evaluate_setup()` nhận `spread_pips`/`depth_ok` làm tham số có giá trị mặc định "tạm ổn" — caller (Data Loader/Backtest Engine sau này) phải truyền dữ liệu thật khi có, không dùng mặc định cho quyết định thật.
 
 Chỉ dùng Python standard library ở Phase 2 Code — chưa cần pandas/numpy, vì mục tiêu là kiểm chứng logic, không phải hiệu năng xử lý dữ liệu lớn (sẽ xét lại khi tới Data Loader/Backtest Engine với dữ liệu thật).
+
+---
+
+Data Loader (MVP Task 2)
+
+Data Loader dùng lại `Bar` từ `src/rule_engine/types.py` — không định nghĩa lại kiểu dữ liệu OHLCV, tránh 2 nguồn sự thật khác nhau giữa Rule Engine và Data Loader.
+
+Luồng xử lý cố định theo BACKTEST_ENGINE.md: load → sort/dedupe → validate (loại bỏ nến vi phạm H/L/volume) → detect outlier (chỉ phát hiện, KHÔNG tự động xoá — cần xác nhận theo DATA_REQUIREMENTS.md).
+
+Outlier detection mặc định ngưỡng 10% (tham số hoá qua `max_pct_jump`) — đây là giá trị mặc định kỹ thuật để test code, KHÔNG phải ngưỡng đã Project Owner chốt cho backtest thật.

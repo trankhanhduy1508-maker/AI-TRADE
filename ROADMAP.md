@@ -61,7 +61,8 @@ Chạy backtest trên dữ liệu lịch sử để kiểm chứng từng giả 
 4-8 tuần (phụ thuộc độ phức tạp + số lần tối ưu)
 
 **Deliverables:**
-- Dữ liệu giá cho ít nhất 3 cặp/asset (ví dụ: EUR/USD, GBP/USD, BTC/USDT)
+- ✅ `src/data_loader/` (csv_loader, validator, cleaner, pipeline) — code xong, 52 test pass (xem CURRENT_STATUS.md). Đây là hạ tầng đọc/làm sạch dữ liệu, KHÔNG phải dữ liệu thật.
+- ⬜ Dữ liệu giá cho ít nhất 3 cặp/asset (ví dụ: EUR/USD, GBP/USD, BTC/USDT) — **BLOCKER**: chưa có nguồn dữ liệu giá lịch sử thật (API/file), cần Project Owner quyết định nguồn trước khi chạy backtest thật
 - Ít nhất 2 timeframe (ví dụ: D1, H4)
 - Backtest khoảng thời gian tối thiểu 1-2 năm lịch sử
 - `backtests/RESULTS_TF_001_*.md` — kết quả chi tiết cho mỗi pair/timeframe
