@@ -102,3 +102,39 @@ MVP tài liệu trước, tránh over-engineering.
 Không xóa file có sẵn khi thêm nội dung mới.
 
 Phase 01 complete, ready for Phase 02 (Rule Engine).
+
+---
+
+Kiến trúc Rule Engine (Phase 02 Design)
+
+Decision Flow: 10 bước tuần tự (Trend → Structure → Breakout → Pullback → Volume → R/R → SL → Portfolio Risk → Score → Signal).
+
+Các điều kiện reject cứng (không thương lượng): Không trend, không structure, không breakout, false break, R/R < 1.0, không SL, vượt portfolio limit, kill switch.
+
+Scoring System: 0-100, 10 rule (001-009) với điểm max khác nhau. Ngưỡng vào lệnh >= 80 (đề xuất, cần backtest xác nhận).
+
+Priority rank: Price Action/Structure > Risk > Volume > Indicators (RSI, EMA, Liquidity).
+
+Rule Conflicts: Khi xung đột, priority cao thắng. Giải quyết bằng giảm điểm, không reject tùy tiện.
+
+10 Rule: RULE_001 Trend, RULE_002 Structure, RULE_003 Breakout, RULE_004 Pullback, RULE_005 Volume, RULE_006 RSI, RULE_007 EMA, RULE_008 Risk, RULE_009 Liquidity, RULE_010 Exit.
+
+Rule 010 (Exit) áp dụng SAU khi vào lệnh, khác 001-009 là xác định vào lệnh.
+
+---
+
+Tham số chưa chốt (cần Project Owner)
+
+R/R minimum: Đề xuất 1.5, cần backtest xác nhận.
+
+Scoring threshold: Đề xuất 80/100, cần backtest xác nhận.
+
+Body ratio breakout: Đề xuất 60%, cần backtest xác nhận.
+
+SMA period volume: Đề xuất 20, cần chốt cụ thể.
+
+EMA period bias: Chưa chốt (50? 100? 200?), strategy phải define rõ.
+
+Swing high/low period (N): Chưa chốt, tuỳ timeframe (2-3 suggested).
+
+% rủi ro/lệnh, % drawdown max, số lệnh thua liên tiếp: Chưa chốt trong RISK_POLICY.md.

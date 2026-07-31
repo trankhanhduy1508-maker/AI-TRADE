@@ -112,25 +112,65 @@
 
 ---
 
+## Rule Engine Phase (Phase 02)
+
+✅ RULE_ENGINE.md — Kiến trúc tổng thể, Decision Flow (10 bước), Scoring System (0-100)
+
+✅ rule_engine/RULE_001_TREND.md — Xác định xu hướng HH/HL hoặc LH/LL
+
+✅ rule_engine/RULE_002_MARKET_STRUCTURE.md — Cấu trúc thị trường hợp lệ
+
+✅ rule_engine/RULE_003_BREAKOUT.md — Phá vỡ hợp lệ (body ratio, close vượt hẳn)
+
+✅ rule_engine/RULE_004_PULLBACK.md — Hồi giá hợp lệ sau breakout
+
+✅ rule_engine/RULE_005_VOLUME.md — Volume xác nhận (SMA20 comparison)
+
+✅ rule_engine/RULE_006_RSI.md — RSI bias (phân kỳ, quá mua/bán)
+
+✅ rule_engine/RULE_007_EMA.md — EMA bias (filter xu hướng dài hạn)
+
+✅ rule_engine/RULE_008_RISK.md — Risk/Reward và Stop Loss validation
+
+✅ rule_engine/RULE_009_LIQUIDITY.md — Thanh khoản thị trường
+
+✅ rule_engine/RULE_010_EXIT.md — Quy tắc thoát lệnh (SL, trailing, exit signal)
+
+✅ rule_engine/RULE_CONFLICTS.md — Xung đột giữa rule, thứ bậc ưu tiên
+
+✅ rule_engine/RULE_ENGINE_CHECKLIST.md — QA Checklist cho từng rule
+
+✅ reports/RULE_ENGINE_PHASE_REPORT.md — Audit Rule Engine, đề xuất cải tiến
+
+**Trạng thái:** ✅ Phase 02 Complete (Thiết kế) — Sẵn sàng cho Phase 03 (Coding + Backtest)
+
+---
+
 ## Next Task (Priority)
 
 ### Urgent (1-2 tuần):
 
 1. **Project Owner confirm:**
-   - Kiến trúc Trend Following + Market Structure + Volume OK?
-   - Roadmap 7 giai đoạn, thời gian ước tính OK?
-   - 7 nguyên tắc thiết kế OK?
+   - Rule Engine architecture OK?
+   - Decision Flow 10 bước OK?
+   - Scoring threshold 80 (hoặc điều chỉnh) OK?
 
-2. **Chốt tham số:**
+2. **Chốt tham số cụ thể:**
    - `risk/RISK_POLICY.md`: % rủi ro/lệnh, % rủi ro danh mục, số lệnh thua, % drawdown
-   - `strategies/TF_001.md`, `TF_002.md`: N-bar breakout, ATR multiplier, EMA period, Volume SMA
+   - `rule_engine/`: R/R minimum (1.5 hay khác?), Body ratio % (60%?), SMA period (20?), ATR period
+   - `strategies/TF_001.md`, `TF_002.md`: N-bar swing (N=2?), EMA period, Volume SMA period
+
+3. **Audit QA:**
+   - Kiểm tra từng rule_engine/RULE_*.md bằng RULE_ENGINE_CHECKLIST.md
+   - Verify xung đột giữa rule trong RULE_CONFLICTS.md
 
 ### Medium (2-4 tuần):
 
-3. Chuẩn bị dữ liệu: chọn 2-3 cặp tiền, 1-2 timeframe, lấy 1-2 năm dữ liệu lịch sử
+4. **Chuẩn bị dữ liệu:** Chọn 2-3 cặp tiền, 1-2 timeframe, lấy 1-2 năm dữ liệu lịch sử
 
 ### Long-term (4-8 tuần):
 
-4. **Phase 2 (Rule Engine):** Viết code Python lập trình quy tắc, unit test
-
-5. **Phase 3 (Backtest):** Chạy backtest TF_001 + TF_002
+5. **Phase 3 (Code + Backtest):** 
+   - Viết code Python lập trình Rule Engine (src/rule_engine.py)
+   - Unit test từng rule
+   - Chạy backtest TF_001 + TF_002 với Rule Engine thực tế
