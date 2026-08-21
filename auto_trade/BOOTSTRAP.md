@@ -9,7 +9,8 @@ Dùng file này để bắt đầu mọi phiên Codex/AI làm Auto Trade.
 3. `DECISIONS.md`
 4. `CURRENT_STATUS.md`
 5. `auto_trade/MASTER_GOAL.md`
-6. Các file knowledge/risk/code liên quan trực tiếp task hiện tại.
+6. `auto_trade/CURRENT_STATUS.md`
+7. Các file knowledge/risk/code liên quan trực tiếp task hiện tại.
 
 Không ground toàn repo nếu task không cần.
 
@@ -27,6 +28,8 @@ Không ground toàn repo nếu task không cần.
 
 ## Current priority
 
-P0: audit + nâng cấp canonical Trend Following knowledge và provenance theo `auto_trade/MASTER_GOAL.md`.
+Đọc `auto_trade/CURRENT_STATUS.md` và thực hiện ưu tiên cao nhất chưa hoàn thành.
 
-Sau đó tiếp tục goal theo `CURRENT_STATUS.md`, không dừng chỉ để hỏi những gì repo đã trả lời được.
+P0 hiện tại: audit + nâng cấp canonical Trend Following knowledge và provenance theo `auto_trade/MASTER_GOAL.md`.
+
+Sau đó tiếp tục goal, không dừng chỉ để hỏi những gì repo đã trả lời được.
