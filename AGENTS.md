@@ -10,15 +10,16 @@
 
 1. `PROJECT_CONTEXT.md` — bối cảnh và giới hạn cứng
 2. `DECISIONS.md` — các quyết định đã chốt
-3. `CURRENT_STATUS.md` — tiến độ mới nhất
+3. `CURRENT_STATUS.md` — evidence/backlog chung của repo
 4. `auto_trade/MASTER_GOAL.md` — North Star Auto Trade/MT5
-5. `AGENTS.md` (file này)
-6. `risk/RISK_POLICY.md` + `risk/KILL_SWITCH_RULES.md` — bắt buộc đọc trước khi đụng vào bất kỳ nội dung liên quan rủi ro/khối lượng lệnh
-7. Các file code/knowledge/evidence liên quan trực tiếp task hiện tại
+5. `auto_trade/CURRENT_STATUS.md` — ưu tiên hiện tại của nhánh Auto Trade
+6. `AGENTS.md` (file này)
+7. `risk/RISK_POLICY.md` + `risk/KILL_SWITCH_RULES.md` — bắt buộc đọc trước khi đụng vào bất kỳ nội dung liên quan rủi ro/khối lượng lệnh
+8. Các file code/knowledge/evidence liên quan trực tiếp task hiện tại
 
 Không ground toàn repo nếu task chỉ liên quan một phần nhỏ.
 
-Nếu có xung đột: `PROJECT_CONTEXT.md` > `DECISIONS.md` > `CURRENT_STATUS.md` > `auto_trade/MASTER_GOAL.md` > phần còn lại.
+Nếu có xung đột về hard limits: `PROJECT_CONTEXT.md` > `DECISIONS.md` > phần còn lại. `auto_trade/CURRENT_STATUS.md` quyết định ưu tiên công việc Auto Trade hiện tại nếu không vi phạm hard limits.
 
 ---
 
@@ -96,7 +97,7 @@ Nhưng agent không được tự:
 
 Được phép:
 - Thêm file/nội dung mới đúng phạm vi được giao.
-- Cập nhật `CURRENT_STATUS.md` khi hoàn thành một hạng mục.
+- Cập nhật status khi hoàn thành một hạng mục.
 
 Không được:
 - Xóa file có sẵn nếu không có lý do/evidence bắt buộc.
@@ -108,12 +109,12 @@ Không được:
 ## KHI NGƯỜI DÙNG NHẮN "TIẾP"
 
 1. Đọc `auto_trade/BOOTSTRAP.md`.
-2. Đọc `CURRENT_STATUS.md`.
+2. Đọc `auto_trade/CURRENT_STATUS.md`.
 3. Chọn mục ưu tiên chưa hoàn thành đầu tiên phù hợp `auto_trade/MASTER_GOAL.md`.
 4. Dùng skill/workflow liên quan.
 5. Thực hiện đúng phạm vi.
 6. Test/verify.
-7. Cập nhật `CURRENT_STATUS.md`.
+7. Cập nhật status.
 8. Commit.
 9. Báo ngắn: đã làm gì, evidence, còn thiếu gì, commit hash.
 
@@ -128,4 +129,4 @@ Một hạng mục chỉ coi là xong khi:
 - Không có khẳng định chắc chắn sinh lời.
 - Không vi phạm giới hạn cứng.
 - Có test/verification evidence tương ứng với loại task.
-- `CURRENT_STATUS.md` đã cập nhật khi task làm thay đổi trạng thái dự án.
+- Status đã cập nhật khi task làm thay đổi trạng thái dự án.
