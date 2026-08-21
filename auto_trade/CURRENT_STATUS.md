@@ -10,6 +10,11 @@
 
 ## Current Priority
 
+**P1 - DETERMINISTIC SIGNAL-ONLY BACKTEST FOUNDATION - COMPLETE (ENGINE VERIFIED)**
+
+The P0 knowledge audit is complete. P1 now provides a machine-readable TF-001
+spec and a closed-bar deterministic engine with signal-only price-unit results.
+
 **P0 — TREND FOLLOWING KNOWLEDGE AUDIT — COMPLETE (CODE VERIFIED)**
 
 Trước khi mở rộng MT5/execution, audit `knowledge/TREND_FOLLOWING.md` và các knowledge hiện có theo Michael W. Covel `Trend Following`, ưu tiên Fifth Edition.
@@ -43,12 +48,44 @@ Yêu cầu:
 - Không claim AI-TRADE đã chứng minh profitability; strategy-specific backtest
   vẫn là bước sau.
 
-## Next Autonomous Action
+## P0 Historical Next Autonomous Action
 
 P0 đã được audit và chuẩn hóa; bước kế tiếp là viết machine-readable strategy
 spec rồi mới backtest theo validation ladder trong `MASTER_GOAL.md`.
 
 Các hạng mục cũ trong root `CURRENT_STATUS.md` vẫn là backlog/evidence hiện hữu, nhưng **không được ưu tiên hơn P0 này** cho đến khi knowledge audit được cập nhật rõ ràng.
+
+## P1 evidence
+
+- `strategies/TF_001_BREAKOUT_PULLBACK.json` defines the first machine-readable
+  contract. It remains `SIGNAL_ONLY`; market/timeframe and cost model are
+  explicitly `UNVERIFIED`.
+- `src/backtest/` implements closed-bar-only evaluation, no future-bar exposure,
+  one-open-position simulation, conservative `STOP_FIRST` ambiguity handling,
+  transparent end-of-data open-position state, and price-unit KPIs.
+- `tests/backtest/` covers the contract and invariants; the full suite is now
+  **163 passed** with `python -m pytest -q -p no:cacheprovider tests`.
+- `scripts/fetch_yahoo_chart.py` successfully fetched 3 FX pairs at 1D and 1H
+  for local research. Data is not committed because this public research feed
+  is not a broker execution feed.
+- The dated P1 report records data quality, smoke results, runtime limitation,
+  and the boundary between engine verification and strategy evidence.
+
+### P1 boundary
+
+- No capital PnL, leverage, lot sizing, hard risk limit, MT5 execution, or live
+  trading was added.
+- Full 1D TF-001 runs produced zero qualifying trades on the downloaded sample;
+  this is not a profitability claim.
+- Full 1H TF-001 runs exposed an O(n²) runtime bottleneck in the current rule
+  engine adapter and were stopped; bounded 1H smoke runs are recorded only as
+  diagnostic evidence, not out-of-sample validation.
+
+## Next Autonomous Action
+
+Optimize or replace the rule-engine adapter with point-in-time incremental
+features, then run a properly partitioned historical/OOS backtest with explicit
+cost realism before any paper or MT5-demo expansion.
 
 ## Live Trading Gate
 
