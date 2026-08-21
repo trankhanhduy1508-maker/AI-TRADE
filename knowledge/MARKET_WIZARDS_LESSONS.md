@@ -1,24 +1,29 @@
 # Bài học tổng hợp từ giới Trend Following / Market Wizards
 
 > Đây là **tổng hợp ý tưởng bằng ngôn ngữ riêng**, không chép nguyên văn bất kỳ
-> cuốn sách/phỏng vấn nào. Mục đích: rút ra nguyên tắc chung được nhiều trader
-> Trend Following thành công lặp lại độc lập, không phải trích dẫn nguồn cụ thể.
+> cuốn sách/phỏng vấn nào. Mục đích: rút ra nguyên tắc để nghiên cứu, không phải
+> trích dẫn nguồn cụ thể hay claim đã được Covel/Fifth Edition xác nhận toàn bộ.
+>
+> **Provenance P0:** phần nguyên tắc author material được đối chiếu tại
+> `knowledge/COVEL_TREND_FOLLOWING_PROVENANCE.md` (`TF-COV-003` đến
+> `TF-COV-005`). Các câu về tỷ lệ thắng, tương quan danh mục và chiến lược cụ
+> thể là `IMPLEMENTATION_DERIVATION`/`UNVERIFIED` cho tới khi có nguồn hoặc
+> backtest phù hợp.
 
 ## 1. Cắt lỗ nhanh, để lợi nhuận chạy
 
-Nguyên tắc được lặp lại nhiều nhất: giới hạn số tiền thua trên mỗi lệnh ở mức nhỏ
-và cố định, nhưng không giới hạn lợi nhuận tiềm năng khi xu hướng đang đúng hướng.
-Hệ quả: tỷ lệ thắng có thể thấp (nhiều lệnh thua nhỏ) nhưng kỳ vọng dương nhờ vài
-lệnh thắng lớn bù lại toàn bộ.
+Author material của Covel nhấn mạnh kiểm soát lỗ và để vị thế thắng có cơ hội tiếp
+diễn. Việc một hệ thống có tỷ lệ thắng thấp hay kỳ vọng dương là claim cần được
+đo bằng backtest/paper evidence, không được suy ra mặc định từ triết lý.
 
 → Áp dụng: xem `risk/RISK_POLICY.md` (giới hạn lỗ cố định mỗi lệnh) và
 `strategies/STRATEGY_TEMPLATE.md` (mục "thoát lệnh" tách biệt hoàn toàn khỏi "stop loss").
 
 ## 2. Không có gì đảm bảo — chỉ có xác suất
 
-Không trader Trend Following nào tự nhận là dự đoán đúng thị trường. Họ mô tả
-công việc của mình là **quản lý một tập hợp các cược có kỳ vọng dương**, chấp
-nhận từng lệnh riêng lẻ có thể sai.
+Không nên biến một tín hiệu thành lời hứa dự đoán đúng thị trường. AI-TRADE coi
+mỗi strategy là **giả thuyết chờ kiểm chứng**, chấp nhận từng lệnh riêng lẻ có
+thể sai.
 
 → Áp dụng: mọi chiến lược trong `strategies/` phải được coi là **giả thuyết chờ
 kiểm chứng**, không phải sự thật đã chứng minh (xem `research/HYPOTHESES.md`).
@@ -34,10 +39,9 @@ kỷ luật phải đến từ luật cứng, không phải phán đoán tại t
 
 ## 4. Rủi ro theo danh mục, không chỉ theo từng lệnh
 
-Nhiều bài học nhấn mạnh: rủi ro thật sự nguy hiểm không phải là 1 lệnh thua, mà là
-**nhiều lệnh có tương quan cùng thua cùng lúc** (ví dụ nhiều lệnh cùng hướng trên
-các thị trường liên quan). Quản lý rủi ro danh mục (tổng rủi ro mở tại 1 thời
-điểm) quan trọng không kém rủi ro từng lệnh.
+Trong portfolio research, rủi ro cần xem cả từng lệnh và khả năng nhiều vị thế
+cùng chịu một cú sốc. Đây là nguyên tắc thiết kế cần kiểm chứng bằng correlation,
+exposure và stress test; không phải một ngưỡng số đã được chốt trong tài liệu này.
 
 → Áp dụng: `risk/RISK_POLICY.md` cần định nghĩa cả giới hạn rủi ro/lệnh **và**
 giới hạn rủi ro tổng đang mở.
@@ -57,4 +61,4 @@ backtest duy nhất).
 
 Đây là các nguyên tắc **định tính**, chưa phải quy tắc vào lệnh cụ thể — không
 được dùng trực tiếp để vào lệnh. Quy tắc cụ thể, có thể kiểm chứng, nằm trong
-`strategies/`.
+`strategies/`; kết quả phải ghi rõ provenance và phạm vi market/timeframe.
