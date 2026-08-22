@@ -56,6 +56,11 @@ The follow-on safety contracts in `src/execution/recovery.py` and
 persistent kill switch. They still require an external broker/demo integration
 test and do not replace the independent risk engine.
 
+`src/execution/coordinator.py` is the only tested handoff path in this layer:
+it evaluates `SafetyGate` first and calls the adapter only when the independent
+policy snapshot is allowed. A blocked signal is returned as `GATE_BLOCKED` and
+never reaches `order_check()` or `order_send()`.
+
 ## Verification
 
 `tests/execution/` verifies disabled fail-closed behavior, live lock,

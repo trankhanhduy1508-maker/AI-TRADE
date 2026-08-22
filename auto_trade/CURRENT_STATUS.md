@@ -170,6 +170,17 @@ Các hạng mục cũ trong root `CURRENT_STATUS.md` vẫn là backlog/evidence 
 - A fresh full-suite verification is required before this milestone is
   committed; no demo/live execution was enabled.
 
+## P7 evidence - safety-gated execution handoff
+
+- `src/execution/coordinator.py` now evaluates the independent safety gate
+  before calling any broker adapter. Active kill switch and risk-policy blocks
+  are tested to prevent adapter calls; an explicitly cleared DEMO gate passes
+  the result through without modifying it.
+- This is a local contract test only. It does not create an account, connect a
+  terminal, choose hard risk limits, or enable live money.
+- The complete suite is now **184 passed** with
+  `python -m pytest -q -p no:cacheprovider tests`.
+
 ## Next Autonomous Action
 
 Keep H001, H006, and H007 unvalidated. Continue the MT5 reliability work with
