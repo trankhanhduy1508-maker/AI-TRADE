@@ -137,15 +137,30 @@ Các hạng mục cũ trong root `CURRENT_STATUS.md` vẫn là backlog/evidence 
   cost proxy; all six ended with an open position.
 - H007 remains unvalidated. Hourly trade counts increased materially; this is
   recorded as an observation, not a tuning instruction.
-- The full suite remains **172 passed** before the final documentation-only
-  update; a fresh verification is required before commit.
+- The full suite was **174 passed** immediately after the exit-model code;
+  execution tests require a fresh full-suite verification before commit.
+
+## P5 evidence - MT5 safety boundary (no live/demo activation)
+
+- `src/execution/mt5_adapter.py` adds a dependency-injected MT5 boundary with
+  `DISABLED` default, hard-locked `LIVE`, `order_check()` before
+  `order_send()`, return-code mapping, and persistent SQLite client-intent
+  deduplication.
+- `execution/MT5_ADAPTER_IMPLEMENTATION.md` records official MetaQuotes API
+  evidence and the exact boundary. No MetaTrader package, terminal, account,
+  credential, or broker-specific data was added.
+- Four execution tests pass with a fake terminal. Real MT5/demo, reconnect,
+  reconciliation, independent risk engine, kill switch, and Android control
+  remain unverified workstreams.
+- The full suite is now **178 passed** with
+  `python -m pytest -q -p no:cacheprovider tests`.
 
 ## Next Autonomous Action
 
-Keep H001, H006, and H007 unvalidated. Research a lawful broker/demo data path,
-verify broker-specific costs, and begin execution/recovery design only after
-the deterministic research boundaries remain explicit. Do not infer live
-readiness from these preliminary strategy results.
+Keep H001, H006, and H007 unvalidated. Continue the MT5 reliability work with
+mocked reconnect/reconciliation and risk/kill-switch contracts while seeking a
+lawful broker/demo data path. Do not infer demo or live readiness from these
+preliminary strategy results.
 
 ## Live Trading Gate
 
