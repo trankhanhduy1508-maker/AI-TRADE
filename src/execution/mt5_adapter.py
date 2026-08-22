@@ -26,6 +26,9 @@ class TradingDisabledError(RuntimeError):
     """Raised when an order path is not explicitly enabled and safe."""
 
 
+DEMO_ACCOUNT_TRADE_MODE = 0
+
+
 @dataclass(frozen=True)
 class MT5OrderRequest:
     client_order_id: str
@@ -217,8 +220,27 @@ class MT5BrokerAdapter:
         if self._mode == ExecutionMode.LIVE:
             raise TradingDisabledError("LIVE execution is locked")
         initialized = bool(self._terminal.initialize())
-        self._connected = initialized
-        return initialized
+        if not initialized:
+            return False
+        account_info = getattr(self._terminal, "account_info", None)
+        if not callable(account_info):
+            self._terminal.shutdown()
+            return False
+        info = account_info()
+        if info is None:
+            self._terminal.shutdown()
+            return False
+        trade_mode = getattr(info, "trade_mode", None)
+        if trade_mode != DEMO_ACCOUNT_TRADE_MODE:
+            self._terminal.shutdown()
+            raise TradingDisabledError("DEMO account is required")
+        if getattr(info, "trade_allowed", None) is not True or getattr(
+            info, "trade_expert", None
+        ) is not True:
+            self._terminal.shutdown()
+            raise TradingDisabledError("account trading disabled")
+        self._connected = True
+        return True
 
     def close(self) -> None:
         if self._connected:

@@ -456,6 +456,19 @@ Các hạng mục cũ trong root `CURRENT_STATUS.md` vẫn là backlog/evidence 
   before commit. This is not Android/device/network evidence and does not
   change demo/live execution gates.
 
+## P28 evidence - MT5 demo-account mode preflight
+
+- Hardened `ExecutionMode.DEMO` so connection requires `account_info()` with
+  official demo trade mode `0`, `trade_allowed=True`, and `trade_expert=True`.
+  Missing account context, real/contest accounts, and disabled trading now
+  fail closed before `order_check()` or `order_send()`.
+- Added fake-terminal tests for real-account rejection, disabled trading, and
+  unavailable account context. The targeted MT5 adapter suite passes **10
+  passed**.
+- This is a code contract backed by MetaQuotes documentation, not live broker
+  evidence. The Founder demo IPC boundary remains unverified; live-money
+  trading remains locked.
+
 ## Next Autonomous Action
 
 Keep H001, H006, and H007 unvalidated. Continue transport/device

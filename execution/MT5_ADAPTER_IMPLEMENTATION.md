@@ -31,6 +31,10 @@ for the test path and no credentials are stored in the repository.
 - `DEMO` submission requires an explicit injected terminal and
   `allow_order_send=True`; this code path is not enabled by configuration in
   the repository.
+- `DEMO` connection also requires `account_info()` to report the official
+  demo trade mode (`0`), `trade_allowed=True`, and `trade_expert=True`.
+  Missing account context, real/contest account modes, or disabled trading
+  fail closed before symbol checks or order calls.
 - `order_check()` must return retcode `0` before `order_send()` is called.
 - Before `order_check()`, the adapter requires broker `symbol_info()` metadata
   and rejects disabled trade mode, invalid volume range/step, and stops or
@@ -43,6 +47,11 @@ for the test path and no credentials are stored in the repository.
   preventing an ambiguous timeout from becoming a duplicate order.
 - The adapter uses dependency injection and never imports a secret, account
   password, or private key.
+
+The account-mode contract follows MetaQuotes' account information reference:
+<https://www.mql5.com/en/docs/constants/environment_state/accountinformation>
+and Python `account_info()` reference:
+<https://www.mql5.com/en/docs/python_metatrader5/mt5accountinfo_py>.
 
 ## Current boundary and blockers
 
