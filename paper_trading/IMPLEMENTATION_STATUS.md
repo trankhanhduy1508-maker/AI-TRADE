@@ -10,13 +10,15 @@
 - uses the persistent client-order ledger to suppress duplicate intents;
 - can run through `ExecutionCoordinator`, `SafetyGate`, and the append-only
   audit log.
+- accepts deterministic bid/ask ticks and closes positions at SL/TP using a
+  conservative `STOP_FIRST` policy; long/short quote semantics are tested.
 
 The tests use fakes/local SQLite only. This is not broker or MT5 demo evidence,
 does not model realistic fills by itself, and does not authorize live money.
 
 ## Remaining paper gates
 
-- feed-driven mark-to-market and exit simulation;
+- persistent mark-to-market history and realistic feed-driven scenarios;
 - spread/slippage/swap scenarios tied to verified broker evidence;
 - restart/recovery and reconciliation of paper positions;
 - forward-running process with heartbeat and audit retention;

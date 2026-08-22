@@ -71,3 +71,35 @@ def test_paper_adapter_runs_through_safety_gate_and_audit_log():
         audit.close()
         adapter.close()
         kill_switch.close()
+
+
+def test_paper_adapter_marks_to_market_and_uses_stop_first():
+    with _db_path() as path:
+        adapter = PaperBrokerAdapter(path)
+        adapter.submit(
+            MT5OrderRequest("paper-4", "EURUSD", "UP", 0.01, 1.1, 1.09, 1.12)
+        )
+
+        closed = adapter.process_tick("EURUSD", bid=1.08, ask=1.13, timestamp="t1")
+
+        assert closed is not None
+        assert closed.exit_reason == "STOP"
+        assert closed.exit_price == 1.09
+        assert adapter.open_orders() == ()
+        assert adapter.closed_orders()[0].client_order_id == "paper-4"
+        adapter.close()
+
+
+def test_paper_adapter_closes_short_at_target_using_ask_bid_semantics():
+    with _db_path() as path:
+        adapter = PaperBrokerAdapter(path)
+        adapter.submit(
+            MT5OrderRequest("paper-5", "USDJPY", "DOWN", 0.01, 150.0, 151.0, 148.0)
+        )
+
+        closed = adapter.process_tick("USDJPY", bid=147.0, ask=147.5, timestamp="t2")
+
+        assert closed is not None
+        assert closed.exit_reason == "TARGET"
+        assert closed.exit_price == 148.0
+        adapter.close()

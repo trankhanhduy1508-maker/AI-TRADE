@@ -230,6 +230,17 @@ Các hạng mục cũ trong root `CURRENT_STATUS.md` vẫn là backlog/evidence 
 - The complete suite is now **194 passed** with
   `python -m pytest -q -p no:cacheprovider tests`.
 
+## P12 evidence - paper mark-to-market and exits
+
+- `PaperBrokerAdapter.process_tick()` now handles deterministic bid/ask
+  mark-to-market for long and short positions, closes at declared SL/TP, and
+  applies `STOP_FIRST` when both are touched.
+- Paper tests cover long stop-first, short target, duplicate protection, and
+  the safety-gated audit path. This remains offline simulation, not broker
+  evidence.
+- The complete suite is now **196 passed** with
+  `python -m pytest -q -p no:cacheprovider tests`.
+
 ## Next Autonomous Action
 
 Keep H001, H006, and H007 unvalidated. Continue the MT5 reliability work with
