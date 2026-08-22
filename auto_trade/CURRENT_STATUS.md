@@ -301,6 +301,21 @@ Các hạng mục cũ trong root `CURRENT_STATUS.md` vẫn là backlog/evidence 
 - This remains compile/static evidence only; no account or broker order was
   used.
 
+## P17 evidence - isolated fail-closed tester attempt
+
+- Added `mql5/tester/AITradeTrendFollowingEA_FAIL_CLOSED.ini` with
+  `AllowLiveTrading=0`, remote/cloud agents disabled, and the EA's default
+  `EnableDemoTrading=false`. The config contains only a synthetic offline
+  tester profile marker, not a broker credential.
+- Two isolated official terminal copies read the config and started build 6140,
+  but Strategy Tester refused to start with
+  `tester not started because the account is not specified`.
+- No `/login` argument, password, account credential, chart attachment, EA
+  tick, order check, or order send was attempted. This is a verified external
+  account-context blocker, not demo evidence.
+- Continue independent workstreams; do not claim MT5 demo execution until a
+  lawful demo account context is supplied outside the repository.
+
 ## Next Autonomous Action
 
 Keep H001, H006, and H007 unvalidated. Continue MT5 reliability work through a

@@ -65,4 +65,8 @@ Official compiler reference:
 
 No EA was attached to a chart, no account was selected, no `order_check` or
 `order_send` equivalent was invoked, and no broker/demo order was submitted.
-The current status is **compiled / not runtime-validated / not demo-active**.
+An isolated official Strategy Tester launch read the fail-closed config but
+refused to start with `tester not started because the account is not specified`.
+The current status is **compiled / terminal-start verified / tester-account
+blocked / not demo-active**. The synthetic `Login=1` in the config is explicitly
+offline-only and is not a broker credential.

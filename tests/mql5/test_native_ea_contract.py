@@ -3,6 +3,12 @@ import re
 
 
 EA_PATH = Path(__file__).parents[2] / "mql5" / "Experts" / "AITradeTrendFollowingEA.mq5"
+TESTER_CONFIG_PATH = (
+    Path(__file__).parents[2]
+    / "mql5"
+    / "tester"
+    / "AITradeTrendFollowingEA_FAIL_CLOSED.ini"
+)
 
 
 def _source() -> str:
@@ -68,3 +74,15 @@ def test_native_ea_reserves_signal_bar_persistently_before_submit() -> None:
     assert "GlobalVariableSet" in source
     assert "ReserveSignal" in source
     assert "if(!ReserveSignal(rates[1].time))" in source
+
+
+def test_tester_smoke_config_is_fail_closed() -> None:
+    config = TESTER_CONFIG_PATH.read_text(encoding="utf-8")
+
+    assert "Expert=AITradeTrendFollowingEA" in config
+    assert "Login=1" in config
+    assert "Synthetic tester profile" in config
+    assert "AllowLiveTrading=0" in config
+    assert "UseRemote=0" in config
+    assert "UseCloud=0" in config
+    assert "ShutdownTerminal" not in config
