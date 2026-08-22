@@ -53,7 +53,9 @@ def _metrics(trades: list[Trade]) -> dict[str, float | int | None]:
     }
 
 
-def _validate_signal(signal: Signal, entry: float, spec: StrategySpec) -> tuple[str, float, float] | None:
+def _validate_signal(
+    signal: Signal, entry: float, spec: StrategySpec
+) -> tuple[str, float, float | None] | None:
     direction = signal.direction.upper()
     if direction not in {"UP", "DOWN"}:
         return None
@@ -66,13 +68,15 @@ def _validate_signal(signal: Signal, entry: float, spec: StrategySpec) -> tuple[
         return None
     risk = abs(entry - stop)
     target = signal.target_price
-    if target is None:
+    if spec.exit_model == "CHANNEL_TRAILING":
+        target = None
+    elif target is None:
         target = entry + risk * spec.reward_risk if direction == "UP" else entry - risk * spec.reward_risk
-    if direction == "UP" and target <= entry:
+    if target is not None and direction == "UP" and target <= entry:
         return None
-    if direction == "DOWN" and target >= entry:
+    if target is not None and direction == "DOWN" and target >= entry:
         return None
-    return direction, stop, float(target)
+    return direction, stop, float(target) if target is not None else None
 
 
 def run_backtest(
@@ -111,14 +115,31 @@ def run_backtest(
         if position is not None and index > int(position["entry_index"]):
             direction = str(position["direction"])
             stop = float(position["stop"])
-            target = float(position["target"])
+            target = position["target"]
+            if spec.exit_model == "CHANNEL_TRAILING" and index >= spec.exit_lookback_bars:
+                prior = bars[index - spec.exit_lookback_bars : index]
+                if direction == "UP":
+                    candidate = min(bar.low for bar in prior)
+                    stop = max(stop, candidate)
+                else:
+                    candidate = max(bar.high for bar in prior)
+                    stop = min(stop, candidate)
+                position["stop"] = stop
             stop_hit = bar.low <= stop if direction == "UP" else bar.high >= stop
-            target_hit = bar.high >= target if direction == "UP" else bar.low <= target
+            target_hit = (
+                target is not None
+                and (bar.high >= float(target) if direction == "UP" else bar.low <= float(target))
+            )
 
             exit_reason = None
             exit_level = None
             if stop_hit:
-                exit_reason, exit_level = "STOP", stop
+                exit_reason = (
+                    "TRAILING_STOP"
+                    if spec.exit_model == "CHANNEL_TRAILING"
+                    else "STOP"
+                )
+                exit_level = stop
             elif target_hit:
                 exit_reason, exit_level = "TARGET", target
 
@@ -154,7 +175,7 @@ def run_backtest(
                         entry_price=entry_price,
                         exit_price=exit_price,
                         stop_price=stop,
-                        target_price=target,
+                        target_price=float(target) if target is not None else None,
                         pnl_price=pnl,
                         exit_reason=exit_reason,
                         gross_pnl_price=gross_pnl,
@@ -184,8 +205,8 @@ def run_backtest(
                         "entry_timestamp": bar.timestamp,
                         "entry_price": entry_price,
                         "reference_entry_price": bar.close,
-                        "stop": stop,
-                        "target": target,
+            "stop": stop,
+            "target": target,
                     }
 
     open_position = None
@@ -195,7 +216,11 @@ def run_backtest(
             entry_timestamp=str(position["entry_timestamp"]),
             entry_price=float(position["entry_price"]),
             stop_price=float(position["stop"]),
-            target_price=float(position["target"]),
+            target_price=(
+                float(position["target"])
+                if position["target"] is not None
+                else None
+            ),
         )
 
     return BacktestResult(

@@ -11,6 +11,18 @@ so với lần trước (nếu có), link kết quả trong `backtests/`, nhận
 
 ---
 
+## 2026-08-22 - TF-004 fixed channel-trailing IS/OOS with research costs
+
+- Data: Yahoo chart downloads, EURUSD/GBPUSD/USDJPY at 1D and 1H; exact rows
+  and split timestamps are recorded in `backtests/TF004_FX_IS_OOS_2026-08-22.md`.
+- Change from prior run: added the explicit `CHANNEL_TRAILING` exit model;
+  fixed TF-003 signal and declared 20-bar exit window were used. No retuning
+  followed the run.
+- Result: two of six OOS partitions were positive and four negative after the
+  fixed `UNVERIFIED` research cost proxy; all runs ended with an open position.
+- Interpretation: preliminary comparison evidence only; hourly trade count
+  increased materially and no MT5/demo/live evidence exists.
+
 ## 2026-08-22 - TF-003 fixed 70/30 IS/OOS with research costs
 
 - Data: Yahoo chart downloads, EURUSD/GBPUSD/USDJPY at 1D and 1H; exact rows

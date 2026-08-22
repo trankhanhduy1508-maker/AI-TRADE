@@ -30,7 +30,7 @@ class Trade:
     entry_price: float
     exit_price: float
     stop_price: float
-    target_price: float
+    target_price: Optional[float]
     pnl_price: float
     exit_reason: str
     gross_pnl_price: float = 0.0
@@ -46,7 +46,7 @@ class OpenPosition:
     entry_timestamp: str
     entry_price: float
     stop_price: float
-    target_price: float
+    target_price: Optional[float]
 
 
 @dataclass(frozen=True)

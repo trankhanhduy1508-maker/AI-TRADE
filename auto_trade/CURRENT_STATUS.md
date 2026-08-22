@@ -10,7 +10,7 @@
 
 ## Current Priority
 
-**P3 - INDEPENDENT STRATEGY VALIDATION - IN PROGRESS (TF-003 PRELIMINARY)**
+**P4 - EXIT-MODEL AND DATA-QUALITY VALIDATION - IN PROGRESS (TF-004 PRELIMINARY)**
 
 P0 knowledge audit, P1 deterministic engine work, and P2 chronological IS/OOS
 cost-accounting work are complete at their current evidence boundaries. TF-003
@@ -124,12 +124,28 @@ Các hạng mục cũ trong root `CURRENT_STATUS.md` vẫn là backlog/evidence 
 - H006 remains unvalidated. No retuning was performed after observing the
   result, and no MT5/demo execution was added.
 
+## P4 evidence - channel-trailing exit comparison
+
+- `src/backtest/spec.py` and `src/backtest/engine.py` now support explicit
+  `FIXED_RR` (backward-compatible default) and `CHANNEL_TRAILING` exits.
+  Channel stops ratchet only from preceding bars and produce no fixed target.
+- Regression tests preserve the existing fixed-target behavior; new tests
+  verify optional targets, prior-bar-only channel calculation, and monotonic
+  ratcheting.
+- `backtests/TF004_FX_IS_OOS_2026-08-22.md` records six fixed runs. Two OOS
+  partitions were positive and four negative after the `UNVERIFIED` research
+  cost proxy; all six ended with an open position.
+- H007 remains unvalidated. Hourly trade counts increased materially; this is
+  recorded as an observation, not a tuning instruction.
+- The full suite remains **172 passed** before the final documentation-only
+  update; a fresh verification is required before commit.
+
 ## Next Autonomous Action
 
-Keep H001 and H006 unvalidated. Research a broker/demo data path and specify a
-separate channel/trailing-exit engine capability so the next comparison can
-test “let profits run” without silently changing either existing result.
-Repeat validation with broker-specific costs before any MT5-demo expansion.
+Keep H001, H006, and H007 unvalidated. Research a lawful broker/demo data path,
+verify broker-specific costs, and begin execution/recovery design only after
+the deterministic research boundaries remain explicit. Do not infer live
+readiness from these preliminary strategy results.
 
 ## Live Trading Gate
 

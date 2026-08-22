@@ -13,6 +13,8 @@ class StrategySpec:
     provenance: dict[str, str] = field(default_factory=dict)
     signal_model: str = "RULE_ENGINE"
     lookback_bars: int = 20
+    exit_model: str = "FIXED_RR"
+    exit_lookback_bars: int = 20
     entry_timing: str = "CLOSE"
     stop_lookback_bars: int = 5
     stop_buffer_price: float = 0.0
@@ -46,6 +48,13 @@ def strategy_spec_from_dict(raw: dict[str, Any]) -> StrategySpec:
     lookback_bars = int(raw.get("lookback_bars", 20))
     if lookback_bars < 1:
         raise ValueError("lookback_bars must be positive")
+
+    exit_model = str(raw.get("exit_model", "FIXED_RR")).upper()
+    if exit_model not in {"FIXED_RR", "CHANNEL_TRAILING"}:
+        raise ValueError("exit_model is not implemented")
+    exit_lookback_bars = int(raw.get("exit_lookback_bars", 20))
+    if exit_lookback_bars < 1:
+        raise ValueError("exit_lookback_bars must be positive")
 
     entry_timing = str(raw.get("entry_timing", "CLOSE")).upper()
     if entry_timing != "CLOSE":
@@ -83,6 +92,8 @@ def strategy_spec_from_dict(raw: dict[str, Any]) -> StrategySpec:
         provenance={str(key): str(value) for key, value in provenance.items()},
         signal_model=signal_model,
         lookback_bars=lookback_bars,
+        exit_model=exit_model,
+        exit_lookback_bars=exit_lookback_bars,
         entry_timing=entry_timing,
         stop_lookback_bars=stop_lookback,
         stop_buffer_price=stop_buffer_price,

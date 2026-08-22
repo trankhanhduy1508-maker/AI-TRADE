@@ -115,3 +115,27 @@ def test_engine_does_not_reenter_on_the_bar_that_exits_a_position():
 
     assert len(result.trades) == 1
     assert result.open_position is None
+
+
+def test_channel_trailing_exit_ratchets_from_prior_bars_only():
+    bars = [
+        _bar(0, 100, 101, 95, 100),
+        _bar(1, 100, 105, 100, 104),
+        _bar(2, 104, 106, 99, 103),
+    ]
+
+    def evaluator(history, spec):
+        if len(history) == 1:
+            return Signal(direction="UP", stop_price=90.0, score=100.0)
+        return None
+
+    result = run_backtest(
+        bars,
+        _spec(exit_model="CHANNEL_TRAILING", exit_lookback_bars=1),
+        evaluator,
+    )
+
+    assert len(result.trades) == 1
+    assert result.trades[0].exit_reason == "TRAILING_STOP"
+    assert result.trades[0].stop_price == pytest.approx(100.0)
+    assert result.trades[0].target_price is None

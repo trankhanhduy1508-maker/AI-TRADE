@@ -12,6 +12,18 @@ thuyết/chiến lược liên quan, hành động khắc phục đã áp dụng
 
 ---
 
+## 2026-08-22 - TF-004 channel-trailing exit did not pass OOS gate
+
+- Strategy/hypothesis: H007 / `strategies/TF_004_TIME_SERIES_CHANNEL.json`.
+- Description: four of six fixed FX symbol/interval OOS partitions were
+  negative after the declared research cost proxy. Hourly trade frequency rose
+  materially relative to TF-003.
+- Root cause status: not proven. The result may reflect exit translation,
+  channel window, data source, period, or proxy costs; the experiment cannot
+  isolate the cause.
+- Corrective action: do not retune this sample; preserve the evidence and move
+  next to broker/demo data and execution reliability work.
+
 ## 2026-08-22 - TF-003 mixed OOS result did not pass the validation gate
 
 - Strategy/hypothesis: H006 / `strategies/TF_003_TIME_SERIES_MOMENTUM.json`.

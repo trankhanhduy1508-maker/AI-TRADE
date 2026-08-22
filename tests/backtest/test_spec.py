@@ -73,3 +73,18 @@ def test_strategy_spec_supports_explicit_signal_model_and_lookback():
 
     assert spec.signal_model == "TIME_SERIES_MOMENTUM"
     assert spec.lookback_bars == 20
+
+
+def test_strategy_spec_supports_explicit_channel_trailing_exit():
+    spec = strategy_spec_from_dict(
+        {
+            "strategy_id": "TF-004",
+            "risk_mode": "SIGNAL_ONLY",
+            "exit_model": "CHANNEL_TRAILING",
+            "exit_lookback_bars": 20,
+            "provenance": {"exit": "IMPLEMENTATION_DERIVATION"},
+        }
+    )
+
+    assert spec.exit_model == "CHANNEL_TRAILING"
+    assert spec.exit_lookback_bars == 20
