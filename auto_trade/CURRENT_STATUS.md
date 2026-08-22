@@ -316,6 +316,18 @@ Các hạng mục cũ trong root `CURRENT_STATUS.md` vẫn là backlog/evidence 
 - Continue independent workstreams; do not claim MT5 demo execution until a
   lawful demo account context is supplied outside the repository.
 
+## P18 evidence - independent Python risk engine
+
+- Added `src/execution/risk.py` with explicit hard limits for volume, open
+  positions, spread, daily loss, finite market context, and directional SL/TP.
+- `ExecutionCoordinator` now invokes the engine before `adapter.submit()` when
+  configured; missing risk context and rejected risk decisions are fail-closed
+  and auditable.
+- Targeted risk/coordinator tests pass **12 passed**. Full-suite verification is
+  required before commit, and this work does not change any hard risk limit or
+  enable live execution.
+- Details are in `execution/RISK_ENGINE_IMPLEMENTATION.md`.
+
 ## Next Autonomous Action
 
 Keep H001, H006, and H007 unvalidated. Continue MT5 reliability work through a
