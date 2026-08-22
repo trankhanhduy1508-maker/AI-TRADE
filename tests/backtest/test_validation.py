@@ -84,3 +84,34 @@ def test_is_oos_runner_warms_up_but_gates_oos_entries_at_split():
     )
     assert oos_result.trades
     assert oos_result.trades[0].entry_timestamp == bars[split_index].timestamp
+
+
+def test_walk_forward_uses_expanding_history_and_non_overlapping_oos_windows():
+    from src.backtest.validation import run_walk_forward
+
+    bars = _bars(9)
+
+    def evaluator_factory():
+        return lambda history, spec: Signal(
+            "UP", stop_price=history[-1].close - 2, score=100
+        )
+
+    folds = run_walk_forward(
+        bars,
+        _spec(),
+        evaluator_factory,
+        train_bars=3,
+        test_bars=2,
+        cost_model=CostModel.zero(),
+    )
+
+    assert [(fold.train_end, fold.test_end) for fold in folds] == [
+        (3, 5),
+        (5, 7),
+        (7, 9),
+    ]
+    assert all(
+        trade.entry_timestamp >= bars[fold.train_end].timestamp
+        for fold in folds
+        for trade in fold.result.trades
+    )

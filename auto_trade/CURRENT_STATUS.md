@@ -193,6 +193,18 @@ Các hạng mục cũ trong root `CURRENT_STATUS.md` vẫn là backlog/evidence 
 - The complete suite is now **187 passed** with
   `python -m pytest -q -p no:cacheprovider tests`.
 
+## P9 evidence - fixed walk-forward robustness
+
+- `src/backtest/validation.py` and `scripts/run_walk_forward.py` provide fixed
+  expanding-history, non-overlapping OOS folds without parameter selection.
+- `backtests/TF003_TF004_WALK_FORWARD_2026-08-22.md` records twelve strategy /
+  symbol / timeframe cases. Only two had positive sums of closed-trade fold
+  nets; EURUSD 1H had zero positive folds for both strategies.
+- This strengthens the evidence that TF-003/TF-004 have not passed robust
+  cross-market/timeframe validation. Costs and data remain unverified.
+- The complete suite is now **188 passed** with
+  `python -m pytest -q -p no:cacheprovider tests`.
+
 ## Next Autonomous Action
 
 Keep H001, H006, and H007 unvalidated. Continue the MT5 reliability work with

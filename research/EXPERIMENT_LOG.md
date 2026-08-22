@@ -11,6 +11,19 @@ so với lần trước (nếu có), link kết quả trong `backtests/`, nhận
 
 ---
 
+## 2026-08-22 - TF-003/TF-004 fixed expanding walk-forward comparison
+
+- Data: the same six Yahoo FX symbol/interval samples used by the IS/OOS
+  reports; exact method and summary are in
+  `backtests/TF003_TF004_WALK_FORWARD_2026-08-22.md`.
+- Change from prior run: added a fixed 50% expanding-history / 10% test-window
+  runner with no fold-level parameter selection.
+- Result: only two of twelve strategy/symbol/interval cases had positive sums
+  of closed-trade fold nets; EURUSD 1H had zero positive folds for TF-003 and
+  TF-004.
+- Interpretation: robustness gate remains unpassed; cost/feed evidence is
+  still preliminary and no execution activation followed.
+
 ## 2026-08-22 - TF-004 fixed channel-trailing IS/OOS with research costs
 
 - Data: Yahoo chart downloads, EURUSD/GBPUSD/USDJPY at 1D and 1H; exact rows
