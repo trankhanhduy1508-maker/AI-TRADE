@@ -9,6 +9,7 @@ from collections.abc import Callable, Sequence
 
 from src.backtest.spec import StrategySpec
 from src.backtest.types import BacktestResult, OpenPosition, Signal, Trade
+from src.rule_engine.incremental import CachedRuleFeatures, PointInTimeRuleCache
 from src.rule_engine.types import Bar
 
 SignalEvaluator = Callable[[Sequence[Bar], StrategySpec], Signal | None]
@@ -169,7 +170,11 @@ def run_backtest(
     )
 
 
-def rule_engine_signal(history: Sequence[Bar], spec: StrategySpec) -> Signal | None:
+def _rule_engine_signal(
+    history: Sequence[Bar],
+    spec: StrategySpec,
+    features: CachedRuleFeatures | None = None,
+) -> Signal | None:
     """Adapt the existing rule engine to the deterministic backtest contract.
 
     Stop candidates use only bars before the current signal bar. The adapter
@@ -199,6 +204,8 @@ def rule_engine_signal(history: Sequence[Bar], spec: StrategySpec) -> Signal | N
             target=target,
             direction=direction,
             spread_pips=spec.spread_pips,
+            trend_result=features.trend_result if features is not None else None,
+            swing_levels=features.swing_levels if features is not None else None,
         )
         if score.decision == "TRADE" and score.total >= spec.score_threshold:
             candidates.append(
@@ -210,3 +217,20 @@ def rule_engine_signal(history: Sequence[Bar], spec: StrategySpec) -> Signal | N
                 )
             )
     return max(candidates, key=lambda signal: signal.score, default=None)
+
+
+class RuleEngineSignalEvaluator:
+    """Stateful point-in-time adapter for repeated backtest prefixes."""
+
+    def __init__(self, n: int = 2):
+        self._cache = PointInTimeRuleCache(n=n)
+
+    def __call__(self, history: Sequence[Bar], spec: StrategySpec) -> Signal | None:
+        features = self._cache.update(history)
+        return _rule_engine_signal(history, spec, features)
+
+
+def rule_engine_signal(history: Sequence[Bar], spec: StrategySpec) -> Signal | None:
+    """Stateless compatibility adapter using the original full-scan rules."""
+
+    return _rule_engine_signal(history, spec)

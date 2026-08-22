@@ -64,14 +64,25 @@ Các hạng mục cũ trong root `CURRENT_STATUS.md` vẫn là backlog/evidence 
   one-open-position simulation, conservative `STOP_FIRST` ambiguity handling,
   transparent end-of-data open-position state, and price-unit KPIs.
 - `tests/backtest/` covers the contract and invariants; the full suite is now
-  **163 passed** with `python -m pytest -q -p no:cacheprovider tests`.
+  **166 passed** with `python -m pytest -q -p no:cacheprovider tests`.
+- `src/rule_engine/incremental.py` and the stateful backtest adapter now cache
+  confirmed point-in-time swings. Prefix parity passed and full 1H runs over
+  12k+ bars complete in about 1.35-2.35 seconds per symbol.
 - `scripts/fetch_yahoo_chart.py` successfully fetched 3 FX pairs at 1D and 1H
   for local research. Data is not committed because this public research feed
   is not a broker execution feed.
 - The dated P1 report records data quality, smoke results, runtime limitation,
   and the boundary between engine verification and strategy evidence.
 
-### P1 boundary
+### Current P1 boundary
+
+- No capital PnL, leverage, lot sizing, hard risk limit, MT5 execution, or live
+  trading was added.
+- Full 1H runs now complete after incremental caching, but remain full-sample
+  diagnostics only; IS/OOS, realistic costs, and capital-risk PnL are still
+  unverified.
+
+### Historical pre-cache P1 boundary
 
 - No capital PnL, leverage, lot sizing, hard risk limit, MT5 execution, or live
   trading was added.
@@ -83,9 +94,9 @@ Các hạng mục cũ trong root `CURRENT_STATUS.md` vẫn là backlog/evidence 
 
 ## Next Autonomous Action
 
-Optimize or replace the rule-engine adapter with point-in-time incremental
-features, then run a properly partitioned historical/OOS backtest with explicit
-cost realism before any paper or MT5-demo expansion.
+Run chronological IS/OOS or walk-forward partitions with explicit spread,
+commission, swap, and slippage cost assumptions before any paper or MT5-demo
+expansion.
 
 ## Live Trading Gate
 

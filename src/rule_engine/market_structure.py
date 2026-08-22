@@ -52,7 +52,12 @@ def _find_last_swing_levels(bars: list[Bar], n: int = 2) -> tuple[float, float]:
     return swing_high, swing_low
 
 
-def evaluate(bars: list[Bar], trend_status: str, n: int = 2) -> RuleResult:
+def evaluate(
+    bars: list[Bar],
+    trend_status: str,
+    n: int = 2,
+    swing_levels: tuple[float | None, float | None] | None = None,
+) -> RuleResult:
     """
     Đánh giá cấu trúc thị trường hợp lệ dựa trên xu hướng từ RULE_001.
 
@@ -90,7 +95,10 @@ def evaluate(bars: list[Bar], trend_status: str, n: int = 2) -> RuleResult:
             detail={"reason": "Insufficient bars"}
         )
 
-    swing_high, swing_low = _find_last_swing_levels(bars, n)
+    if swing_levels is None:
+        swing_high, swing_low = _find_last_swing_levels(bars, n)
+    else:
+        swing_high, swing_low = swing_levels
 
     if swing_high is None or swing_low is None:
         return RuleResult(

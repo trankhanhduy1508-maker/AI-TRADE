@@ -8,7 +8,7 @@ from pathlib import Path
 # Allow this script to be invoked directly from the repository root.
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from src.backtest.engine import rule_engine_signal, run_backtest
+from src.backtest.engine import RuleEngineSignalEvaluator, run_backtest
 from src.backtest.spec import load_strategy_spec
 from src.data_loader.pipeline import load_and_clean
 
@@ -27,7 +27,7 @@ def main() -> None:
             raise SystemExit("--max-bars must be positive")
         bars = bars[: args.max_bars]
     result = run_backtest(
-        bars, load_strategy_spec(args.spec), rule_engine_signal
+        bars, load_strategy_spec(args.spec), RuleEngineSignalEvaluator()
     )
     print(
         json.dumps(

@@ -66,14 +66,41 @@ These are bounded diagnostic runs, not in-sample/out-of-sample evidence. They
 use price-unit results, zero slippage in the current spec, and no capital
 normalization; they must not be used to claim an edge.
 
+## Incremental-adapter milestone
+
+The point-in-time cache now confirms each swing once, only after its right-hand
+window is available. Prefix parity against the original full-scan trend and
+structure rules passed, and the stateful adapter matched the full-scan adapter
+at every tested prefix.
+
+- Focused incremental tests: **3 passed**.
+- Full repository suite after integration: **166 passed**.
+- cProfile before the change: trend detection consumed about 1.74 seconds of
+  a 2.13-second 1,000-bar run. After the change, the full 12k-bar EURUSD 1H
+  run completed in 1.352 seconds.
+
+Fresh full-sample runs over the same locally downloaded files:
+
+| Symbol | Interval | Bars | Trades | Win rate | Net price PnL | Max DD price | Runtime s | Open |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|
+| EURUSD=X | 1D | 1173 | 0 | 0.00% | 0.000000 | 0.000000 | 0.588 | no |
+| GBPUSD=X | 1D | 1180 | 0 | 0.00% | 0.000000 | 0.000000 | 0.397 | no |
+| USDJPY=X | 1D | 1139 | 0 | 0.00% | 0.000000 | 0.000000 | 0.599 | no |
+| EURUSD=X | 1H | 12343 | 183 | 38.80% | 0.055380 | 0.041893 | 2.127 | yes |
+| GBPUSD=X | 1H | 12344 | 250 | 43.60% | 0.142325 | 0.068091 | 2.350 | yes |
+| USDJPY=X | 1H | 12259 | 237 | 40.51% | 5.211449 | 11.354988 | 2.197 | yes |
+
+These runs are full-sample diagnostics, not IS/OOS evidence. They use the
+current signal-only price-unit contract, zero slippage, and no commission or
+swap model; price-unit results are not comparable across symbols.
+
 ## Blocker and next action
 
-Full 1H TF-001 runs were started but stopped after roughly two minutes without
-producing a result. The current adapter calls the existing rule-engine scorer
-for both directions at every bar, while several rules rescan the complete
-history. This creates an O(n²)-style runtime bottleneck at 12k+ bars.
+The previous full 1H attempt exposed an O(n²)-style runtime bottleneck; the
+incremental cache removed that blocker without changing parity-tested trend or
+structure semantics.
 
-Next autonomous action: optimize or replace the adapter with point-in-time
-incremental features, then add explicit IS/OOS and cost-realism reporting.
-Only after those gates pass should paper trading or MT5-demo reliability work
-expand. Live money remains locked by governance.
+Next autonomous action: add explicit chronological IS/OOS or walk-forward
+partitions and a transparent, configurable cost model for spread, commission,
+swap, and slippage. Only after those gates pass should paper trading or MT5
+demo reliability work expand. Live money remains locked by governance.

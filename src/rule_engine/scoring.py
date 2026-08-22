@@ -69,6 +69,8 @@ def evaluate_setup(
     direction: str,
     spread_pips: float = 2.0,
     depth_ok: bool = True,
+    trend_result: RuleResult | None = None,
+    swing_levels: tuple[float | None, float | None] | None = None,
 ) -> SetupScore:
     """Evaluate setup tuần tự từ RULE_001 → RULE_009.
 
@@ -104,7 +106,7 @@ def evaluate_setup(
     # === RULE_001: Trend (tự phát hiện từ bars, không nhận direction) ===
     if eval_rule_001 is None:
         return SetupScore(total=0.0, decision="REJECT", results=results)
-    result = eval_rule_001(bars)
+    result = trend_result if trend_result is not None else eval_rule_001(bars)
     results.append(result)
     if result.reject:
         return SetupScore(total=total_score, decision="REJECT", results=results)
@@ -117,7 +119,7 @@ def evaluate_setup(
     # === RULE_002: Market Structure (dùng trend_status thật từ RULE_001) ===
     if eval_rule_002 is None:
         return SetupScore(total=total_score, decision="REJECT", results=results)
-    result = eval_rule_002(bars, result.status)
+    result = eval_rule_002(bars, result.status, swing_levels=swing_levels)
     results.append(result)
     if result.reject:
         return SetupScore(total=total_score, decision="REJECT", results=results)
