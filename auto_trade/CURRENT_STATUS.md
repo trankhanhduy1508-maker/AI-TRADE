@@ -429,11 +429,25 @@ Các hạng mục cũ trong root `CURRENT_STATUS.md` vẫn là backlog/evidence 
   metadata, account state, ticks, order check, and demo fills remain blocked by
   the unresolved MT5 IPC boundary. Live-money trading remains locked.
 
+## P26 evidence - independent temporal holdout
+
+- Ran all six fixed sensitivity variants over a separate earlier five-year
+  window (2016-08-21 through the closed bars before 2021-08-22) across the
+  same seven research proxies: 42/42 cases completed after correcting and
+  verifying the closed-bar cutoff and CSV encoding.
+- TF-003 RR variants were negative in aggregate, with at most one positive
+  market. TF-004 remained positive in aggregate for channels 10 (+196.889R),
+  20 (+27.845R), and 40 (+59.449R), but each result was heavily concentrated
+  in a small set of markets, especially EURUSD/GBPUSD or BTC.
+- The concentration leaders differed from the recent-period walk-forward
+  leaders, confirming regime/market instability. No canonical strategy,
+  market set, parameter, risk limit, or execution permission was promoted.
+- Detailed evidence: `backtests/TF003_TF004_INDEPENDENT_HOLDOUT_2016_2021_2026-08-22.md`.
+
 ## Next Autonomous Action
 
-Keep H001, H006, and H007 unvalidated. Run an independent time holdout and
-broker-aligned contract/cost review without cherry-picking, while continuing
-MT5 reliability work through the safety-gated demo boundary and
+Keep H001, H006, and H007 unvalidated. Continue broker-aligned contract/cost
+review without cherry-picking, while continuing MT5 reliability work through the safety-gated demo boundary and
 reconnect/reconciliation, risk, kill-switch, and monitoring contracts. Do not
 infer demo or live readiness from research-feed data, sensitivity results, or
 terminal installation alone.
