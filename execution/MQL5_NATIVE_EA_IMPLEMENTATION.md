@@ -27,6 +27,15 @@ Every order path requires all of the following:
 4. The fixed demo lot and strategy inputs pass local validation.
 5. The current spread is within the configured bound.
 
+The native boundary also has independent operational controls:
+
+- missing `AITrade\\kill_switch.flag` is an active kill switch; only the exact
+  common-file value `DISARMED` clears it;
+- missing `AITrade\\entries_paused.flag` pauses new entries; only the exact
+  value `RESUMED` clears it;
+- the common `AITrade\\native_audit.csv` sink must be writable before an entry;
+- order intent and result records are appended around each `CTrade` call.
+
 There is no real-account branch in this EA. It must not be used as a reason to
 unlock live money. Persistent kill-switch, reconciliation, duplicate-order
 ledger, audit sink, and Android control remain separate required workstreams.
@@ -40,7 +49,7 @@ directory:
 - `Result: 0 errors, 0 warnings`
 - `cpu='X64 Regular'`
 - generated EX5 SHA-256 begins with:
-  `1CFF9B6DD90613BAD2601802B9339644576C6AA3669FCD794E6865C6473...`
+  `763F95CB0E0F5D98A593EB1FCD7B79157FED61FB3637180F90FA97B971F...`
 
 The EX5 and compiler log are local build artifacts and are ignored by Git; the
 MQ5 source is the reviewable artifact.

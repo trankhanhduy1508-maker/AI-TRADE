@@ -16,6 +16,62 @@ input ulong  MagicNumber       = 15082026;
 CTrade   trade;
 int      atr_handle            = INVALID_HANDLE;
 datetime last_processed_bar    = 0;
+const string KILL_SWITCH_FILE  = "AITrade\\kill_switch.flag";
+const string PAUSE_FILE        = "AITrade\\entries_paused.flag";
+const string AUDIT_FILE        = "AITrade\\native_audit.csv";
+
+bool FlagHasValue(const string file_name, const string expected)
+  {
+   if(!FileIsExist(file_name, FILE_COMMON))
+      return false;
+   int handle = FileOpen(file_name, FILE_READ | FILE_TXT | FILE_ANSI |
+                         FILE_COMMON | FILE_SHARE_READ);
+   if(handle == INVALID_HANDLE)
+      return false;
+   string value = FileReadString(handle);
+   FileClose(handle);
+   return value == expected;
+  }
+
+bool KillSwitchActive()
+  {
+   return !FlagHasValue(KILL_SWITCH_FILE, "DISARMED");
+  }
+
+bool EntriesPaused()
+  {
+   return !FlagHasValue(PAUSE_FILE, "RESUMED");
+  }
+
+bool AuditWritable()
+  {
+   int handle = FileOpen(AUDIT_FILE, FILE_READ | FILE_WRITE | FILE_CSV |
+                         FILE_COMMON | FILE_SHARE_READ | FILE_SHARE_WRITE);
+   if(handle == INVALID_HANDLE)
+      handle = FileOpen(AUDIT_FILE, FILE_WRITE | FILE_CSV | FILE_COMMON |
+                        FILE_SHARE_READ | FILE_SHARE_WRITE);
+   if(handle == INVALID_HANDLE)
+      return false;
+   FileClose(handle);
+   return true;
+  }
+
+bool AppendAudit(const string event_name, const string details)
+  {
+   int handle = FileOpen(AUDIT_FILE, FILE_READ | FILE_WRITE | FILE_CSV |
+                         FILE_COMMON | FILE_SHARE_READ | FILE_SHARE_WRITE);
+   if(handle == INVALID_HANDLE)
+      handle = FileOpen(AUDIT_FILE, FILE_WRITE | FILE_CSV | FILE_COMMON |
+                        FILE_SHARE_READ | FILE_SHARE_WRITE);
+   if(handle == INVALID_HANDLE)
+      return false;
+   FileSeek(handle, 0, SEEK_END);
+   FileWrite(handle, TimeToString(TimeLocal(), TIME_DATE | TIME_SECONDS),
+             _Symbol, event_name, details);
+   FileFlush(handle);
+   FileClose(handle);
+   return true;
+  }
 
 bool SafetyGateAllowsTrading()
   {
@@ -26,6 +82,12 @@ bool SafetyGateAllowsTrading()
    if(!TerminalInfoInteger(TERMINAL_CONNECTED))
       return false;
    if(!TerminalInfoInteger(TERMINAL_TRADE_ALLOWED))
+      return false;
+   if(KillSwitchActive())
+      return false;
+   if(EntriesPaused())
+      return false;
+   if(!AuditWritable())
       return false;
    if(DemoLots <= 0.0 || DemoLots > 0.01)
       return false;
@@ -103,7 +165,12 @@ void EvaluateClosedBar()
       double target = NormalizeDouble(tick.ask + stop_distance * RewardMultiple, digits);
       if(!SafetyGateAllowsTrading())
          return;
-      trade.Buy(DemoLots, _Symbol, 0.0, stop, target, "AI-TRADE TF003 DEMO");
+      if(!AppendAudit("ORDER_INTENT", "BUY"))
+         return;
+      bool submitted = trade.Buy(DemoLots, _Symbol, 0.0, stop, target,
+                                 "AI-TRADE TF003 DEMO");
+      AppendAudit("ORDER_RESULT", IntegerToString((int)trade.ResultRetcode()) +
+                  ":" + (submitted ? "submitted" : "rejected"));
      }
    else if(rates[1].close < lowest)
      {
@@ -111,7 +178,12 @@ void EvaluateClosedBar()
       double target = NormalizeDouble(tick.bid - stop_distance * RewardMultiple, digits);
       if(!SafetyGateAllowsTrading())
          return;
-      trade.Sell(DemoLots, _Symbol, 0.0, stop, target, "AI-TRADE TF003 DEMO");
+      if(!AppendAudit("ORDER_INTENT", "SELL"))
+         return;
+      bool submitted = trade.Sell(DemoLots, _Symbol, 0.0, stop, target,
+                                  "AI-TRADE TF003 DEMO");
+      AppendAudit("ORDER_RESULT", IntegerToString((int)trade.ResultRetcode()) +
+                  ":" + (submitted ? "submitted" : "rejected"));
      }
   }
 

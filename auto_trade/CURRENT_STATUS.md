@@ -277,6 +277,19 @@ Các hạng mục cũ trong root `CURRENT_STATUS.md` vẫn là backlog/evidence 
   order.
 - Details are in `execution/MQL5_NATIVE_EA_IMPLEMENTATION.md`.
 
+## P15 evidence - native fail-closed operations hooks
+
+- Added independent common-file kill switch and entry-pause checks to the
+  native EA. Missing flags remain active/paused by default; only explicit
+  `DISARMED` and `RESUMED` values clear those controls.
+- Added a common append-only native audit CSV. New entries are blocked if the
+  audit sink cannot be opened; order intent and result are recorded around the
+  `CTrade` call.
+- Native contract tests now pass **5 passed** and fresh MetaEditor build 6140
+  compilation remains **0 errors, 0 warnings** under X64 Regular.
+- This is still compile/static evidence only. No demo account, chart attach,
+  broker connection, or order submission occurred.
+
 ## Next Autonomous Action
 
 Keep H001, H006, and H007 unvalidated. Continue MT5 reliability work through a

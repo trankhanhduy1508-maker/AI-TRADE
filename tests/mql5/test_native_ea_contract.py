@@ -36,3 +36,25 @@ def test_native_ea_uses_closed_bar_breakout_and_fixed_demo_lot() -> None:
     assert "DemoLots" in source
     assert re.search(r"input\s+double\s+DemoLots\s*=\s*0\.01\s*;", source)
     assert "OrderSend" not in source
+
+
+def test_native_ea_has_independent_fail_closed_kill_switch_pause_and_audit() -> None:
+    source = _source()
+
+    assert "KillSwitchActive" in source
+    assert "EntriesPaused" in source
+    assert "FileIsExist" in source
+    assert "AITrade\\\\kill_switch.flag" in source
+    assert "AITrade\\\\entries_paused.flag" in source
+    assert "DISARMED" in source
+    assert "RESUMED" in source
+    assert "AppendAudit" in source
+    assert "AITrade\\\\native_audit.csv" in source
+    assert "FILE_COMMON" in source
+
+
+def test_native_ea_blocks_new_orders_when_audit_sink_is_unavailable() -> None:
+    source = _source()
+
+    assert "AuditWritable" in source
+    assert "if(!AuditWritable())" in source
