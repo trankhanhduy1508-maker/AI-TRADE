@@ -3,6 +3,7 @@ from pathlib import Path
 import tempfile
 
 from src.execution.coordinator import ExecutionCoordinator
+from src.execution.audit import AppendOnlyAuditLog
 from src.execution.mt5_adapter import MT5OrderRequest, MT5OrderResult
 from src.execution.safety import KillSwitchStore, SafetyGate, SafetySnapshot
 
@@ -88,4 +89,20 @@ def test_coordinator_does_not_override_independent_risk_policy():
         assert outcome.status == "GATE_BLOCKED"
         assert "RISK_POLICY_BLOCK" in outcome.reasons
         assert adapter.calls == 0
+        store.close()
+
+
+def test_coordinator_persists_blocked_event_without_secrets():
+    with _db_path() as path:
+        store = KillSwitchStore(path)
+        audit = AppendOnlyAuditLog(path)
+        outcome = ExecutionCoordinator(
+            FakeAdapter(), SafetyGate(store), audit
+        ).submit(_order(), _snapshot())
+
+        assert outcome.status == "GATE_BLOCKED"
+        event = audit.read_all()[0]
+        assert event.event_type == "execution_blocked"
+        assert event.client_order_id == "intent-1"
+        audit.close()
         store.close()

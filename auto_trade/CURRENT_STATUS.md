@@ -181,6 +181,18 @@ Các hạng mục cũ trong root `CURRENT_STATUS.md` vẫn là backlog/evidence 
 - The complete suite is now **184 passed** with
   `python -m pytest -q -p no:cacheprovider tests`.
 
+## P8 evidence - append-only audit state
+
+- `src/execution/audit.py` persists ordered SQLite audit events and rejects
+  sensitive field names before writing. The coordinator records blocked and
+  submitted outcomes when an audit log is supplied.
+- Execution tests now cover persistence across reopen, sensitive-field
+  rejection, and coordinator block-event capture.
+- A fresh full-suite verification is required before commit; this remains
+  local contract evidence, not broker/demo execution evidence.
+- The complete suite is now **187 passed** with
+  `python -m pytest -q -p no:cacheprovider tests`.
+
 ## Next Autonomous Action
 
 Keep H001, H006, and H007 unvalidated. Continue the MT5 reliability work with

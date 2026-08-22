@@ -61,6 +61,10 @@ it evaluates `SafetyGate` first and calls the adapter only when the independent
 policy snapshot is allowed. A blocked signal is returned as `GATE_BLOCKED` and
 never reaches `order_check()` or `order_send()`.
 
+When configured, `src/execution/audit.py` records the coordinator decision and
+broker result in an append-only SQLite event stream. Sensitive field names are
+rejected before persistence; the audit stream is not a credential store.
+
 ## Verification
 
 `tests/execution/` verifies disabled fail-closed behavior, live lock,
