@@ -58,3 +58,13 @@ def test_native_ea_blocks_new_orders_when_audit_sink_is_unavailable() -> None:
 
     assert "AuditWritable" in source
     assert "if(!AuditWritable())" in source
+
+
+def test_native_ea_reserves_signal_bar_persistently_before_submit() -> None:
+    source = _source()
+
+    assert "SignalReservationKey" in source
+    assert "GlobalVariableCheck" in source
+    assert "GlobalVariableSet" in source
+    assert "ReserveSignal" in source
+    assert "if(!ReserveSignal(rates[1].time))" in source

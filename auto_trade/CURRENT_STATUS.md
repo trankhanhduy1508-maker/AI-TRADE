@@ -290,6 +290,17 @@ Các hạng mục cũ trong root `CURRENT_STATUS.md` vẫn là backlog/evidence 
 - This is still compile/static evidence only. No demo account, chart attach,
   broker connection, or order submission occurred.
 
+## P16 evidence - native persistent signal reservation
+
+- Added a per-symbol/timeframe Global Variable reservation keyed by the closed
+  signal bar. The reservation occurs before `CTrade::Buy/Sell` and is retained
+  through ambiguous failures, preventing blind duplicate submission after a
+  terminal/process restart.
+- Native contract tests now pass **6 passed** and fresh MetaEditor build 6140
+  compilation remains **0 errors, 0 warnings** under X64 Regular.
+- This remains compile/static evidence only; no account or broker order was
+  used.
+
 ## Next Autonomous Action
 
 Keep H001, H006, and H007 unvalidated. Continue MT5 reliability work through a

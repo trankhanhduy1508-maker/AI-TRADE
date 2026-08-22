@@ -35,6 +35,9 @@ The native boundary also has independent operational controls:
   value `RESUMED` clears it;
 - the common `AITrade\\native_audit.csv` sink must be writable before an entry;
 - order intent and result records are appended around each `CTrade` call.
+- a per-symbol/timeframe signal key is reserved in terminal Global Variables
+  before submit; an already-reserved bar is skipped after restart or an
+  ambiguous process failure.
 
 There is no real-account branch in this EA. It must not be used as a reason to
 unlock live money. Persistent kill-switch, reconciliation, duplicate-order
@@ -49,7 +52,7 @@ directory:
 - `Result: 0 errors, 0 warnings`
 - `cpu='X64 Regular'`
 - generated EX5 SHA-256 begins with:
-  `763F95CB0E0F5D98A593EB1FCD7B79157FED61FB3637180F90FA97B971F...`
+  `9C35AA1ED59BBEF33DA22774524274D6B7E81EEDEE63C6B97235AF48607...`
 
 The EX5 and compiler log are local build artifacts and are ignored by Git; the
 MQ5 source is the reviewable artifact.

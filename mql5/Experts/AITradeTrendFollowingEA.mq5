@@ -73,6 +73,23 @@ bool AppendAudit(const string event_name, const string details)
    return true;
   }
 
+string SignalReservationKey()
+  {
+   return "AITrade.TF003." + _Symbol + "." + IntegerToString((int)_Period);
+  }
+
+bool ReserveSignal(const datetime signal_time)
+  {
+   string key = SignalReservationKey();
+   if(GlobalVariableCheck(key))
+     {
+      double previous_time = GlobalVariableGet(key);
+      if(previous_time >= (double)signal_time)
+         return false;
+     }
+   return GlobalVariableSet(key, (double)signal_time) != 0;
+  }
+
 bool SafetyGateAllowsTrading()
   {
    if(!EnableDemoTrading)
@@ -165,6 +182,8 @@ void EvaluateClosedBar()
       double target = NormalizeDouble(tick.ask + stop_distance * RewardMultiple, digits);
       if(!SafetyGateAllowsTrading())
          return;
+      if(!ReserveSignal(rates[1].time))
+         return;
       if(!AppendAudit("ORDER_INTENT", "BUY"))
          return;
       bool submitted = trade.Buy(DemoLots, _Symbol, 0.0, stop, target,
@@ -177,6 +196,8 @@ void EvaluateClosedBar()
       double stop  = NormalizeDouble(tick.bid + stop_distance, digits);
       double target = NormalizeDouble(tick.bid - stop_distance * RewardMultiple, digits);
       if(!SafetyGateAllowsTrading())
+         return;
+      if(!ReserveSignal(rates[1].time))
          return;
       if(!AppendAudit("ORDER_INTENT", "SELL"))
          return;
