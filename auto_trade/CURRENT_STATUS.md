@@ -417,6 +417,18 @@ Các hạng mục cũ trong root `CURRENT_STATUS.md` vẫn là backlog/evidence 
   or MT5 execution rule was changed.
 - Detailed evidence: `backtests/TF003_TF004_MULTI_ASSET_SENSITIVITY_2026-08-22.md`.
 
+## P25 evidence - broker contract preflight boundary
+
+- Added a fail-closed `symbol_info()` contract preflight to the MT5 adapter.
+  It rejects missing/incomplete metadata, disabled trade mode, volume range or
+  step violations, and broker minimum stop/target distances before
+  `order_check()` or `order_send()`.
+- Added local fake-terminal tests for volume-step, missing metadata, and stop
+  distance rejection. The targeted adapter suite passes **7 passed**.
+- This improves the safety boundary but is not broker evidence: real symbol
+  metadata, account state, ticks, order check, and demo fills remain blocked by
+  the unresolved MT5 IPC boundary. Live-money trading remains locked.
+
 ## Next Autonomous Action
 
 Keep H001, H006, and H007 unvalidated. Run an independent time holdout and

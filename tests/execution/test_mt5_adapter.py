@@ -24,6 +24,15 @@ class FakeTerminal:
         self.initialize_calls = 0
         self.check_calls = 0
         self.send_calls = 0
+        self.contract = SimpleNamespace(
+            point=0.00001,
+            digits=5,
+            volume_min=0.01,
+            volume_max=1.0,
+            volume_step=0.01,
+            trade_stops_level=10,
+            trade_mode=1,
+        )
 
     def initialize(self, **kwargs):
         self.initialize_calls += 1
@@ -35,6 +44,9 @@ class FakeTerminal:
     def order_check(self, request):
         self.check_calls += 1
         return SimpleNamespace(retcode=self.check_retcode, comment="check")
+
+    def symbol_info(self, symbol):
+        return self.contract
 
     def order_send(self, request):
         self.send_calls += 1
@@ -146,3 +158,79 @@ def test_success_is_persistently_duplicate_safe():
     assert second_result.status == "DUPLICATE_SUPPRESSED"
     assert first_terminal.send_calls == 1
     assert second_terminal.send_calls == 0
+
+
+def test_contract_preflight_rejects_volume_step_before_order_check():
+    terminal = FakeTerminal()
+    with _ledger_path() as db_path:
+        adapter = MT5BrokerAdapter(
+            terminal,
+            mode=ExecutionMode.DEMO,
+            allow_order_send=True,
+            ledger_path=db_path,
+        )
+
+        order = MT5OrderRequest(
+            client_order_id="bad-volume-step",
+            symbol="EURUSD",
+            direction="UP",
+            volume=0.015,
+            price=1.1,
+            stop_loss=1.09,
+            take_profit=1.12,
+        )
+        result = adapter.submit(order)
+        adapter.close()
+
+    assert result.status == "CONTRACT_REJECTED"
+    assert "VOLUME_STEP" in result.message
+    assert terminal.check_calls == 0
+    assert terminal.send_calls == 0
+
+
+def test_contract_preflight_rejects_missing_symbol_metadata_fail_closed():
+    terminal = FakeTerminal()
+    terminal.contract = None
+    with _ledger_path() as db_path:
+        adapter = MT5BrokerAdapter(
+            terminal,
+            mode=ExecutionMode.DEMO,
+            allow_order_send=True,
+            ledger_path=db_path,
+        )
+
+        result = adapter.submit(_request("missing-contract"))
+        adapter.close()
+
+    assert result.status == "CONTRACT_REJECTED"
+    assert "SYMBOL_INFO_MISSING" in result.message
+    assert terminal.check_calls == 0
+    assert terminal.send_calls == 0
+
+
+def test_contract_preflight_rejects_broker_minimum_stop_distance():
+    terminal = FakeTerminal()
+    with _ledger_path() as db_path:
+        adapter = MT5BrokerAdapter(
+            terminal,
+            mode=ExecutionMode.DEMO,
+            allow_order_send=True,
+            ledger_path=db_path,
+        )
+
+        order = MT5OrderRequest(
+            client_order_id="bad-stop-distance",
+            symbol="EURUSD",
+            direction="UP",
+            volume=0.01,
+            price=1.1,
+            stop_loss=1.09995,
+            take_profit=1.12,
+        )
+        result = adapter.submit(order)
+        adapter.close()
+
+    assert result.status == "CONTRACT_REJECTED"
+    assert "STOP_DISTANCE" in result.message
+    assert terminal.check_calls == 0
+    assert terminal.send_calls == 0

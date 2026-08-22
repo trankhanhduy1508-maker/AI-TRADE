@@ -32,6 +32,10 @@ for the test path and no credentials are stored in the repository.
   `allow_order_send=True`; this code path is not enabled by configuration in
   the repository.
 - `order_check()` must return retcode `0` before `order_send()` is called.
+- Before `order_check()`, the adapter requires broker `symbol_info()` metadata
+  and rejects disabled trade mode, invalid volume range/step, and stops or
+  targets inside the broker minimum stop distance. Missing or malformed
+  metadata fails closed without an order-check or send call.
 - `10009` maps to `FILLED`, `10010` to `PARTIAL`, and all other send retcodes
   are recorded as `REJECTED` pending a fuller broker mapping.
 - A SQLite `OrderIntentLedger` records `SUBMITTING` before any terminal call.
@@ -68,7 +72,7 @@ rejected before persistence; the audit stream is not a credential store.
 ## Verification
 
 `tests/execution/` verifies disabled fail-closed behavior, live lock,
-check-before-send, persistent duplicate suppression, reconnect gating, exact
-reconciliation, and kill-switch persistence with local fakes. Real MT5/demo
-verification remains an external-account blocker and must not be simulated as
-passed.
+contract preflight, check-before-send, persistent duplicate suppression,
+reconnect gating, exact reconciliation, and kill-switch persistence with local
+fakes. Real MT5/demo verification remains an external-account blocker and must
+not be simulated as passed.

@@ -10,6 +10,7 @@ intent IDs so a restart cannot silently resend an ambiguous request.
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from enum import StrEnum
+import math
 from pathlib import Path
 import sqlite3
 from typing import Any
@@ -55,6 +56,84 @@ class MT5OrderResult:
     broker_order_id: str | None = None
     retcode: int | None = None
     message: str = ""
+
+
+@dataclass(frozen=True)
+class MT5SymbolContract:
+    """Broker symbol constraints needed before an order-check call."""
+
+    point: float
+    digits: int
+    volume_min: float
+    volume_max: float
+    volume_step: float
+    trade_stops_level: int = 0
+    trade_mode: int | None = None
+
+    @classmethod
+    def from_info(cls, info: Any) -> "MT5SymbolContract":
+        if info is None:
+            raise ValueError("SYMBOL_INFO_MISSING")
+        required = (
+            "point",
+            "digits",
+            "volume_min",
+            "volume_max",
+            "volume_step",
+            "trade_stops_level",
+        )
+        if any(not hasattr(info, name) for name in required):
+            raise ValueError("SYMBOL_INFO_INCOMPLETE")
+        point = float(info.point)
+        volume_min = float(info.volume_min)
+        volume_max = float(info.volume_max)
+        volume_step = float(info.volume_step)
+        stops_level = int(info.trade_stops_level)
+        digits = int(info.digits)
+        if (
+            not math.isfinite(point)
+            or point <= 0
+            or not math.isfinite(volume_min)
+            or not math.isfinite(volume_max)
+            or not math.isfinite(volume_step)
+            or volume_min <= 0
+            or volume_max < volume_min
+            or volume_step <= 0
+            or digits < 0
+            or stops_level < 0
+        ):
+            raise ValueError("SYMBOL_INFO_INVALID")
+        return cls(
+            point=point,
+            digits=digits,
+            volume_min=volume_min,
+            volume_max=volume_max,
+            volume_step=volume_step,
+            trade_stops_level=stops_level,
+            trade_mode=getattr(info, "trade_mode", None),
+        )
+
+    def rejection_reason(self, order: MT5OrderRequest) -> str | None:
+        if self.trade_mode == 0:
+            return "TRADE_MODE_DISABLED"
+        if order.volume < self.volume_min or order.volume > self.volume_max:
+            return "VOLUME_OUT_OF_RANGE"
+        steps = (order.volume - self.volume_min) / self.volume_step
+        if not math.isclose(steps, round(steps), rel_tol=0.0, abs_tol=1e-9):
+            return "VOLUME_STEP_INVALID"
+        minimum_distance = self.trade_stops_level * self.point
+        direction = order.direction.upper()
+        if direction == "UP":
+            if order.stop_loss is not None and order.stop_loss > order.price - minimum_distance:
+                return "STOP_DISTANCE_INVALID"
+            if order.take_profit is not None and order.take_profit < order.price + minimum_distance:
+                return "TARGET_DISTANCE_INVALID"
+        else:
+            if order.stop_loss is not None and order.stop_loss < order.price + minimum_distance:
+                return "STOP_DISTANCE_INVALID"
+            if order.take_profit is not None and order.take_profit > order.price - minimum_distance:
+                return "TARGET_DISTANCE_INVALID"
+        return None
 
 
 class OrderIntentLedger:
@@ -165,6 +244,29 @@ class MT5BrokerAdapter:
             raise TradingDisabledError("LIVE execution is locked")
         if not self._connected and not self.connect():
             raise ConnectionError("MT5 terminal initialization failed")
+
+        symbol_info = getattr(self._terminal, "symbol_info", None)
+        if not callable(symbol_info):
+            return MT5OrderResult(
+                client_order_id=order.client_order_id,
+                status="CONTRACT_REJECTED",
+                message="SYMBOL_INFO_MISSING",
+            )
+        try:
+            contract = MT5SymbolContract.from_info(symbol_info(order.symbol))
+        except (AttributeError, TypeError, ValueError, OverflowError) as exc:
+            return MT5OrderResult(
+                client_order_id=order.client_order_id,
+                status="CONTRACT_REJECTED",
+                message=str(exc),
+            )
+        rejection_reason = contract.rejection_reason(order)
+        if rejection_reason is not None:
+            return MT5OrderResult(
+                client_order_id=order.client_order_id,
+                status="CONTRACT_REJECTED",
+                message=rejection_reason,
+            )
 
         # Record before any terminal call. If the process dies after this point,
         # a restart suppresses the same client ID until reconciliation occurs.
