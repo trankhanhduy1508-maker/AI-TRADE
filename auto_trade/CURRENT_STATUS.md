@@ -218,6 +218,18 @@ Các hạng mục cũ trong root `CURRENT_STATUS.md` vẫn là backlog/evidence 
 - The complete suite is now **191 passed** with
   `python -m pytest -q -p no:cacheprovider tests`.
 
+## P11 evidence - deterministic paper execution path
+
+- `src/execution/paper_adapter.py` now provides a network-free deterministic
+  fill adapter using the same persistent duplicate ledger as the MT5 boundary.
+- `paper_trading/IMPLEMENTATION_STATUS.md` records the exact local evidence
+  and remaining paper gates. An end-to-end test confirms paper order -> safety
+  gate -> audit log flow.
+- No broker, terminal, credentials, realistic-fill claim, or live-money path
+  was added.
+- The complete suite is now **194 passed** with
+  `python -m pytest -q -p no:cacheprovider tests`.
+
 ## Next Autonomous Action
 
 Keep H001, H006, and H007 unvalidated. Continue the MT5 reliability work with
