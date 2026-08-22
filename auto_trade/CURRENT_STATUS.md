@@ -359,6 +359,17 @@ Các hạng mục cũ trong root `CURRENT_STATUS.md` vẫn là backlog/evidence 
   trading, crash/restart behavior in a real terminal, and 24/7 reliability
   remain unverified.
 
+## P21 evidence - fail-closed public runtime health shape
+
+- `RuntimeHealth.to_public_dict()` now exposes reconciliation, data freshness,
+  independent risk approval, and heartbeat freshness alongside MT5 connection
+  and local pause/kill controls.
+- `ready_for_new_entries` remains false unless every operational gate is true;
+  MT5 connectivity alone is not treated as trading readiness.
+- Control-plane tests pass **5 passed** and the full suite passes **216
+  passed**. No network endpoint, Android credential, or remote command path was
+  enabled.
+
 ## Next Autonomous Action
 
 Keep H001, H006, and H007 unvalidated. Continue MT5 reliability work through a

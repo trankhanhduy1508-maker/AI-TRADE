@@ -102,6 +102,10 @@ class RuntimeHealth:
     mode: str
     mt5_connected: bool
     state_known: bool
+    reconciled: bool
+    data_fresh: bool
+    risk_allowed: bool
+    heartbeat_fresh: bool
     new_entries_paused: bool
     kill_switch_active: bool
     last_error: str | None = None
@@ -112,6 +116,10 @@ class RuntimeHealth:
             self.mode == "DEMO"
             and self.mt5_connected
             and self.state_known
+            and self.reconciled
+            and self.data_fresh
+            and self.risk_allowed
+            and self.heartbeat_fresh
             and not self.new_entries_paused
             and not self.kill_switch_active
         )

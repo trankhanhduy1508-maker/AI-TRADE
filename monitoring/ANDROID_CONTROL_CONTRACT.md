@@ -12,13 +12,20 @@ credential, or remote-control channel is enabled yet.
 - `mode`: currently `DEMO` is the only mode that can be ready for new entries;
 - `mt5_connected`;
 - `state_known`;
+- `reconciled`;
+- `data_fresh`;
+- `risk_allowed`;
+- `heartbeat_fresh`;
 - `new_entries_paused`;
 - `kill_switch_active`;
 - `last_error` without credentials;
 - derived `ready_for_new_entries`.
 
-The system is not ready when any fail-closed condition is true. Android is a
-control plane and must not be a dependency for the engine heartbeat.
+The system is not ready when any fail-closed condition is true. In particular,
+MT5 connectivity alone is not readiness: position reconciliation, fresh data,
+independent risk approval, and a fresh engine heartbeat are also required.
+Android is a control plane and must not be a dependency for the engine
+heartbeat.
 
 ## Control rules
 
