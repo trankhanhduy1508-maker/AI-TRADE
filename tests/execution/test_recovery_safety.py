@@ -65,6 +65,16 @@ def test_recovery_state_reports_stale_heartbeat():
         state.close()
 
 
+def test_recovery_heartbeat_refreshes_persisted_timestamp():
+    with _db_path() as path:
+        state = PersistentRecoveryState(path)
+        previous = state.updated_at
+        state.heartbeat()
+        assert state.updated_at >= previous
+        assert not state.is_stale(max_age_seconds=0, now=state.updated_at)
+        state.close()
+
+
 def test_safety_gate_is_fail_closed_for_unknown_operational_state():
     with _db_path() as path:
         store = KillSwitchStore(path)

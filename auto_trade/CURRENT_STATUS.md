@@ -349,8 +349,11 @@ Các hạng mục cũ trong root `CURRENT_STATUS.md` vẫn là backlog/evidence 
   connection only records the reconciliation result supplied by the caller.
 - `is_stale()` exposes a deterministic UTC freshness check for heartbeat
   monitoring and rejects invalid age/time inputs.
-- Recovery tests pass **5 passed**, including persistence across reopen,
-  fail-closed reset after disconnect, and stale-heartbeat detection.
+- `heartbeat()` refreshes liveness without changing connection or
+  reconciliation gates.
+- Recovery tests pass **6 passed**, including persistence across reopen,
+  fail-closed reset after disconnect, stale-heartbeat detection, and heartbeat
+  timestamp refresh.
   Full-suite verification is required before this milestone is committed.
 - This remains local state evidence. Broker reconciliation, MT5 demo forward
   trading, crash/restart behavior in a real terminal, and 24/7 reliability

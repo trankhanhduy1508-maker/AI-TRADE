@@ -113,6 +113,10 @@ class PersistentRecoveryState:
     def can_open_new_risk(self) -> bool:
         return self.connected and self.reconciled
 
+    def heartbeat(self) -> None:
+        """Persist liveness without changing connection or reconciliation gates."""
+        self._persist()
+
     def is_stale(
         self,
         *,
