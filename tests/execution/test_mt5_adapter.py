@@ -299,3 +299,32 @@ def test_demo_mode_fails_closed_when_account_context_is_unavailable():
 
     assert terminal.check_calls == 0
     assert terminal.send_calls == 0
+
+
+def test_contract_preflight_rejects_stop_at_entry_even_without_broker_minimum():
+    terminal = FakeTerminal()
+    terminal.contract.trade_stops_level = 0
+    with _ledger_path() as db_path:
+        adapter = MT5BrokerAdapter(
+            terminal,
+            mode=ExecutionMode.DEMO,
+            allow_order_send=True,
+            ledger_path=db_path,
+        )
+
+        order = MT5OrderRequest(
+            client_order_id="stop-at-entry",
+            symbol="EURUSD",
+            direction="UP",
+            volume=0.01,
+            price=1.1,
+            stop_loss=1.1,
+            take_profit=1.12,
+        )
+        result = adapter.submit(order)
+        adapter.close()
+
+    assert result.status == "CONTRACT_REJECTED"
+    assert result.message == "STOP_DISTANCE_INVALID"
+    assert terminal.check_calls == 0
+    assert terminal.send_calls == 0

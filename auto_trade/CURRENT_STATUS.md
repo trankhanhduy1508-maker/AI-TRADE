@@ -469,6 +469,15 @@ Các hạng mục cũ trong root `CURRENT_STATUS.md` vẫn là backlog/evidence 
   evidence. The Founder demo IPC boundary remains unverified; live-money
   trading remains locked.
 
+## P29 evidence - strict directional stop/target preflight
+
+- Closed a contract edge case where an entry-equal stop or target could pass
+  when broker `trade_stops_level` was zero. Long and short stop/target sides
+  are now strict even with no broker minimum distance.
+- Added a regression test; the targeted MT5 adapter suite passes **11 passed**.
+  This remains local safety evidence only and does not create demo or live
+  execution evidence.
+
 ## Next Autonomous Action
 
 Keep H001, H006, and H007 unvalidated. Continue transport/device

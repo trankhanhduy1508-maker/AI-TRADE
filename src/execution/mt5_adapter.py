@@ -127,14 +127,26 @@ class MT5SymbolContract:
         minimum_distance = self.trade_stops_level * self.point
         direction = order.direction.upper()
         if direction == "UP":
-            if order.stop_loss is not None and order.stop_loss > order.price - minimum_distance:
+            if order.stop_loss is not None and (
+                order.stop_loss >= order.price
+                or order.stop_loss > order.price - minimum_distance
+            ):
                 return "STOP_DISTANCE_INVALID"
-            if order.take_profit is not None and order.take_profit < order.price + minimum_distance:
+            if order.take_profit is not None and (
+                order.take_profit <= order.price
+                or order.take_profit < order.price + minimum_distance
+            ):
                 return "TARGET_DISTANCE_INVALID"
         else:
-            if order.stop_loss is not None and order.stop_loss < order.price + minimum_distance:
+            if order.stop_loss is not None and (
+                order.stop_loss <= order.price
+                or order.stop_loss < order.price + minimum_distance
+            ):
                 return "STOP_DISTANCE_INVALID"
-            if order.take_profit is not None and order.take_profit > order.price - minimum_distance:
+            if order.take_profit is not None and (
+                order.take_profit >= order.price
+                or order.take_profit > order.price - minimum_distance
+            ):
                 return "TARGET_DISTANCE_INVALID"
         return None
 
