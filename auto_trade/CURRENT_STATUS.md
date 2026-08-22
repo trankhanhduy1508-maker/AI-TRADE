@@ -205,6 +205,19 @@ Các hạng mục cũ trong root `CURRENT_STATUS.md` vẫn là backlog/evidence 
 - The complete suite is now **188 passed** with
   `python -m pytest -q -p no:cacheprovider tests`.
 
+## P10 evidence - Android/control-plane state contract
+
+- `src/control_plane/state.py` provides persistent fail-closed pause/kill state
+  and a provider-neutral public `RuntimeHealth` snapshot for a future Android
+  client. New installations are paused and kill-switched by default.
+- `monitoring/ANDROID_CONTROL_CONTRACT.md` records the public shape and the
+  remaining authentication/MT5/runtime gates. No network endpoint or remote
+  command path is active.
+- This is local contract evidence only; the absent MT5 runtime and broker/demo
+  account remain external blockers for live telemetry validation.
+- The complete suite is now **191 passed** with
+  `python -m pytest -q -p no:cacheprovider tests`.
+
 ## Next Autonomous Action
 
 Keep H001, H006, and H007 unvalidated. Continue the MT5 reliability work with
