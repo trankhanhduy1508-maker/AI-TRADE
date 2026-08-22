@@ -51,9 +51,15 @@ for the test path and no credentials are stored in the repository.
   readiness decision.
 - No live-money execution can be enabled by this adapter implementation.
 
+The follow-on safety contracts in `src/execution/recovery.py` and
+`src/execution/safety.py` now cover disconnect/reconciliation gating and a
+persistent kill switch. They still require an external broker/demo integration
+test and do not replace the independent risk engine.
+
 ## Verification
 
-`tests/execution/test_mt5_adapter.py` verifies disabled fail-closed behavior,
-live lock, check-before-send, and persistent duplicate suppression with a fake
-terminal. Real MT5/demo verification remains an external-account blocker and
-must not be simulated as passed.
+`tests/execution/` verifies disabled fail-closed behavior, live lock,
+check-before-send, persistent duplicate suppression, reconnect gating, exact
+reconciliation, and kill-switch persistence with local fakes. Real MT5/demo
+verification remains an external-account blocker and must not be simulated as
+passed.

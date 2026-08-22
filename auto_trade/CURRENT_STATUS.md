@@ -155,6 +155,21 @@ Các hạng mục cũ trong root `CURRENT_STATUS.md` vẫn là backlog/evidence 
 - The full suite is now **178 passed** with
   `python -m pytest -q -p no:cacheprovider tests`.
 
+## P6 evidence - recovery, reconciliation, and kill switch contracts
+
+- `src/execution/recovery.py` blocks new risk after disconnect and only clears
+  the block after exact local/broker position reconciliation.
+- `src/execution/safety.py` persists a kill switch in SQLite; missing state is
+  active by default. The safety gate blocks unknown state, stale data,
+  disconnects, unreconciled positions, manual pause, and an independent risk
+  policy rejection.
+- Seven execution tests pass for reconnect gating, mismatch blocking,
+  fail-closed unknown state, and persistent kill-switch activation/reset.
+- The complete suite is now **181 passed** with
+  `python -m pytest -q -p no:cacheprovider tests`.
+- A fresh full-suite verification is required before this milestone is
+  committed; no demo/live execution was enabled.
+
 ## Next Autonomous Action
 
 Keep H001, H006, and H007 unvalidated. Continue the MT5 reliability work with
