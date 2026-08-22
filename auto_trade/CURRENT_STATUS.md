@@ -342,8 +342,9 @@ Các hạng mục cũ trong root `CURRENT_STATUS.md` vẫn là backlog/evidence 
 ## P20 evidence - persistent recovery state
 
 - `PersistentRecoveryState` now stores connection/reconciliation gates in a
-  SQLite row with UTC update time. A new process starts fail-closed and does
-  not inherit permission to open risk unless exact reconciliation is recorded.
+  SQLite row with UTC update time. A new process reads prior state for
+  evidence but resets its runtime gate fail-closed; it does not inherit
+  permission to open risk unless it reconnects and records exact reconciliation.
 - Disconnect persists `connected=false` and `reconciled=false`; a restored
   connection only records the reconciliation result supplied by the caller.
 - Recovery tests pass **4 passed**, including persistence across reopen and

@@ -67,6 +67,10 @@ class PersistentRecoveryState:
         )
         self._connection.commit()
         self._load()
+        # A new process must not inherit permission to open broker risk.
+        self.connected = False
+        self.reconciled = False
+        self._persist()
 
     @staticmethod
     def _now() -> str:

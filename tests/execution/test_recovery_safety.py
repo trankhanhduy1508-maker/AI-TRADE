@@ -44,6 +44,8 @@ def test_recovery_state_persists_across_reopen_and_fails_closed_on_loss():
         first.close()
 
         second = PersistentRecoveryState(path)
+        assert not second.can_open_new_risk()
+        second.connection_restored(reconcile_positions({"p1"}, {"p1"}))
         assert second.can_open_new_risk()
         second.connection_lost()
         assert not second.can_open_new_risk()

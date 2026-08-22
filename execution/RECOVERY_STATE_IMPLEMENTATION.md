@@ -11,8 +11,9 @@ nối và reconciliation không bị mặc định là an toàn sau khi process 
 - Mất kết nối ghi đồng thời cả hai cờ về `false`.
 - Chỉ reconciliation chính xác mới ghi `connected=true` và
   `reconciled=true`.
-- Process mở lại đọc lại SQLite state; không tự mở risk nếu state chưa được
-  xác nhận.
+- Process mở lại đọc SQLite state để giữ evidence, nhưng luôn reset runtime
+  gate về `false/false`; process mới phải reconnect và reconcile lại trước khi
+  được mở risk.
 - State có `updated_at` UTC để làm nền cho heartbeat/staleness monitoring.
 
 ## Evidence
