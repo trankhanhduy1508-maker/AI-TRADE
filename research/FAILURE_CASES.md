@@ -12,6 +12,19 @@ thuyết/chiến lược liên quan, hành động khắc phục đã áp dụng
 
 ---
 
+## 2026-08-22 - TF-003 mixed OOS result did not pass the validation gate
+
+- Strategy/hypothesis: H006 / `strategies/TF_003_TIME_SERIES_MOMENTUM.json`.
+- Description: three of six fixed FX symbol/interval OOS partitions were
+  negative after the declared research cost proxy; the remaining positives do
+  not establish robustness. The feed and cost assumptions are not broker
+  verified.
+- Root cause status: not proven. The result may reflect the translation, fixed
+  target limitation, data source, period, or proxy costs; this run cannot
+  isolate the cause.
+- Corrective action: preserve the fixed baseline, do not retune against this
+  sample, and improve data/cost/exit-model evidence before MT5 expansion.
+
 ## 2026-08-22 - TF-001 hourly OOS negative after declared costs
 
 - Strategy/hypothesis: H001 / `strategies/TF_001_BREAKOUT_PULLBACK.json`.
@@ -26,12 +39,10 @@ thuyết/chiến lược liên quan, hành động khắc phục đã áp dụng
   preserve the raw evidence, and obtain broker/demo data plus an independently
   specified strategy comparison before execution work.
 
-## Chưa có ca thất bại thật nào được ghi nhận
+## Historical note
 
-Hệ thống chưa chạy backtest hay giao dịch thật nào (xem
-`research/EXPERIMENT_LOG.md`), nên chưa có dữ liệu thất bại thực tế để ghi vào
-đây. Mục này sẽ được cập nhật ngay khi phát sinh ca đầu tiên — dù là từ backtest,
-paper trade, hay quan sát thủ công.
+Các ca backtest thực tế đầu tiên đã được ghi ở phía trên; chưa có paper trade
+hoặc giao dịch live nào.
 
 ## Các loại lỗi chủ quan đã biết trước (từ `knowledge/`, chưa phải "ca thất bại"
 thật, chỉ là điều cần cảnh giác)

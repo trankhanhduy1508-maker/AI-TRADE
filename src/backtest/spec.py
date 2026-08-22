@@ -11,6 +11,8 @@ class StrategySpec:
     strategy_id: str
     risk_mode: str
     provenance: dict[str, str] = field(default_factory=dict)
+    signal_model: str = "RULE_ENGINE"
+    lookback_bars: int = 20
     entry_timing: str = "CLOSE"
     stop_lookback_bars: int = 5
     stop_buffer_price: float = 0.0
@@ -36,6 +38,14 @@ def strategy_spec_from_dict(raw: dict[str, Any]) -> StrategySpec:
     provenance = raw.get("provenance")
     if not isinstance(provenance, dict) or not provenance:
         raise ValueError("provenance must be a non-empty object")
+
+    signal_model = str(raw.get("signal_model", "RULE_ENGINE")).upper()
+    if signal_model not in {"RULE_ENGINE", "TIME_SERIES_MOMENTUM"}:
+        raise ValueError("signal_model is not implemented")
+
+    lookback_bars = int(raw.get("lookback_bars", 20))
+    if lookback_bars < 1:
+        raise ValueError("lookback_bars must be positive")
 
     entry_timing = str(raw.get("entry_timing", "CLOSE")).upper()
     if entry_timing != "CLOSE":
@@ -71,6 +81,8 @@ def strategy_spec_from_dict(raw: dict[str, Any]) -> StrategySpec:
         strategy_id=strategy_id,
         risk_mode=risk_mode,
         provenance={str(key): str(value) for key, value in provenance.items()},
+        signal_model=signal_model,
+        lookback_bars=lookback_bars,
         entry_timing=entry_timing,
         stop_lookback_bars=stop_lookback,
         stop_buffer_price=stop_buffer_price,

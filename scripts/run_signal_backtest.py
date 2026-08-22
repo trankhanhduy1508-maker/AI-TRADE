@@ -13,6 +13,17 @@ from src.backtest.engine import RuleEngineSignalEvaluator, run_backtest
 from src.backtest.spec import load_strategy_spec
 from src.backtest.validation import run_is_oos
 from src.data_loader.pipeline import load_and_clean
+from src.strategies.time_series_momentum import TimeSeriesMomentumEvaluator
+
+
+def _evaluator_factory(spec):
+    if spec.signal_model == "TIME_SERIES_MOMENTUM":
+        return TimeSeriesMomentumEvaluator
+    return RuleEngineSignalEvaluator
+
+
+def _evaluator(spec):
+    return _evaluator_factory(spec)()
 
 
 def main() -> None:
@@ -52,7 +63,7 @@ def main() -> None:
         result = run_backtest(
             bars,
             spec,
-            RuleEngineSignalEvaluator(),
+            _evaluator(spec),
             cost_model=cost_model,
         )
         payload = {
@@ -66,7 +77,7 @@ def main() -> None:
         is_result, oos_result = run_is_oos(
             bars,
             spec,
-            RuleEngineSignalEvaluator,
+            _evaluator_factory(spec),
             split_index=split_index,
             cost_model=cost_model,
         )

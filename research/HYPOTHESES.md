@@ -13,6 +13,28 @@ tới `backtests/`).
 
 ---
 
+## H006 result update - 2026-08-22
+
+- Evidence: `backtests/TF003_FX_IS_OOS_2026-08-22.md`.
+- Test: fixed TF-003 time-series momentum baseline, chronological 70/30
+  IS/OOS, three FX symbols, daily and hourly samples, with no retuning after
+  the run.
+- Result: three of six OOS partitions were positive and three were negative
+  after the fixed research cost proxy. All six ended with an open position at
+  the data boundary.
+- Conclusion: H006 remains **unvalidated**. The mixed result is a comparison
+  signal, not evidence of live profitability or evidence against Trend
+  Following generally.
+
+## H006 - A simple time-series momentum translation can provide a robust trend signal
+
+- **Nguồn gốc:** `strategies/TF_003_TIME_SERIES_MOMENTUM.md`, supported as an
+  independent empirical prior by `knowledge/COVEL_TREND_FOLLOWING_PROVENANCE.md`
+  (`TF-PR-001`).
+- **Trạng thái:** Chưa kiểm chứng.
+- **Kết luận:** Xem `backtests/TF003_FX_IS_OOS_2026-08-22.md`; mixed preliminary
+  OOS result, no uniform validation pass.
+
 ## H001 result update - 2026-08-22
 
 - Evidence: `backtests/TF001_FX_IS_OOS_2026-08-22.md`.

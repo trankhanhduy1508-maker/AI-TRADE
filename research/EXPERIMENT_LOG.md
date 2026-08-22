@@ -11,6 +11,19 @@ so với lần trước (nếu có), link kết quả trong `backtests/`, nhận
 
 ---
 
+## 2026-08-22 - TF-003 fixed 70/30 IS/OOS with research costs
+
+- Data: Yahoo chart downloads, EURUSD/GBPUSD/USDJPY at 1D and 1H; exact rows
+  and split timestamps are recorded in `backtests/TF003_FX_IS_OOS_2026-08-22.md`.
+- Change from prior run: added an independent price-only time-series momentum
+  evaluator with fixed lookback/stop settings and explicit strategy-model
+  dispatch. No retuning followed the run.
+- Result: three of six OOS partitions were positive and three negative after
+  the fixed `UNVERIFIED` research cost proxy; every run ended with an open
+  position at the data boundary.
+- Interpretation: preliminary comparison evidence only; not broker, MT5, or
+  live evidence.
+
 ## 2026-08-22 - TF-001 fixed 70/30 IS/OOS with research costs
 
 - Data: Yahoo chart downloads, EURUSD/GBPUSD/USDJPY at 1D and 1H; exact rows
@@ -22,12 +35,10 @@ so với lần trước (nếu có), link kết quả trong `backtests/`, nhận
 - Interpretation: preliminary and not live/broker evidence; no parameter was
   tuned after observing the result.
 
-## Chưa có thử nghiệm nào được chạy thật
+## Historical note
 
-Tính đến thời điểm tạo tài liệu này, hệ thống mới ở giai đoạn xây dựng nền tảng
-tài liệu và giả thuyết — **chưa kết nối dữ liệu giá thật, chưa chạy backtest
-nào**. Mục này sẽ được cập nhật ngay khi thử nghiệm đầu tiên hoàn tất (xem
-`CURRENT_STATUS.md` mục Next Task).
+Trước các mục thử nghiệm ngày 2026-08-22, hệ thống chưa có backtest thực tế;
+các mục bên trên là evidence log hiện hành.
 
 ### Template cho mỗi lần thử nghiệm (copy khi có thử nghiệm thật)
 

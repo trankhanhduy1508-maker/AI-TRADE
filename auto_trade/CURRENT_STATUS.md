@@ -10,10 +10,11 @@
 
 ## Current Priority
 
-**P1 - DETERMINISTIC SIGNAL-ONLY BACKTEST FOUNDATION - COMPLETE (ENGINE VERIFIED)**
+**P3 - INDEPENDENT STRATEGY VALIDATION - IN PROGRESS (TF-003 PRELIMINARY)**
 
-The P0 knowledge audit is complete. P1 now provides a machine-readable TF-001
-spec and a closed-bar deterministic engine with signal-only price-unit results.
+P0 knowledge audit, P1 deterministic engine work, and P2 chronological IS/OOS
+cost-accounting work are complete at their current evidence boundaries. TF-003
+is now the independent comparison baseline; it has not passed validation.
 
 **P0 — TREND FOLLOWING KNOWLEDGE AUDIT — COMPLETE (CODE VERIFIED)**
 
@@ -106,11 +107,29 @@ Các hạng mục cũ trong root `CURRENT_STATUS.md` vẫn là backlog/evidence 
 - H001 remains unvalidated. No parameter tuning was performed after observing
   the result.
 
+## P3 evidence - independent time-series momentum baseline
+
+- `strategies/TF_003_TIME_SERIES_MOMENTUM.json` defines a separate price-only
+  time-series momentum evaluator. Its 20-bar lookback, five-bar stop window,
+  and fixed target are implementation derivations, not Covel book parameters.
+- `src/strategies/time_series_momentum.py` uses only closed-bar history and
+  excludes the signal bar from the stop window. Unit tests cover lookback,
+  direction, stop geometry, and unclosed-bar rejection.
+- `backtests/TF003_FX_IS_OOS_2026-08-22.md` records all six fixed runs. Three
+  OOS partitions were positive and three negative after the declared fixed
+  `UNVERIFIED` research cost proxy; all six ended with an open position at the
+  data boundary.
+- The full suite is now **172 passed** with
+  `python -m pytest -q -p no:cacheprovider tests`.
+- H006 remains unvalidated. No retuning was performed after observing the
+  result, and no MT5/demo execution was added.
+
 ## Next Autonomous Action
 
-Keep H001 unvalidated. Research an independently specified Trend Following
-translation or broker/demo data source, then repeat OOS/cost validation before
-any paper or MT5-demo expansion.
+Keep H001 and H006 unvalidated. Research a broker/demo data path and specify a
+separate channel/trailing-exit engine capability so the next comparison can
+test “let profits run” without silently changing either existing result.
+Repeat validation with broker-specific costs before any MT5-demo expansion.
 
 ## Live Trading Gate
 

@@ -58,3 +58,18 @@ def test_strategy_spec_loads_json_file():
     finally:
         if path is not None:
             path.unlink(missing_ok=True)
+
+
+def test_strategy_spec_supports_explicit_signal_model_and_lookback():
+    spec = strategy_spec_from_dict(
+        {
+            "strategy_id": "TF-003",
+            "risk_mode": "SIGNAL_ONLY",
+            "signal_model": "TIME_SERIES_MOMENTUM",
+            "lookback_bars": 20,
+            "provenance": {"signal": "VERIFIED_FROM_PRIMARY_RESEARCH"},
+        }
+    )
+
+    assert spec.signal_model == "TIME_SERIES_MOMENTUM"
+    assert spec.lookback_bars == 20
