@@ -241,12 +241,34 @@ Các hạng mục cũ trong root `CURRENT_STATUS.md` vẫn là backlog/evidence 
 - The complete suite is now **196 passed** with
   `python -m pytest -q -p no:cacheprovider tests`.
 
+## P13 evidence - official MT5 runtime installation and boundary probe
+
+- Official `mt5setup.exe` was downloaded from the MetaTrader-linked CDN and
+  verified with a valid `MetaQuotes Ltd.` Authenticode signature before the
+  unattended install to an isolated temporary portable directory.
+- The installed terminal is build `6140`; the official Python package is
+  `MetaTrader5==5.0.6090`. The terminal starts and completes MQL5 compilation.
+- Read-only Python initialization with explicit and auto-discovered terminal
+  paths returned `(-10005, 'IPC timeout')`; no order API was called. The
+  package/terminal boundary is therefore **unvalidated**, not demo evidence.
+- Detailed evidence and official references are in
+  `execution/MT5_RUNTIME_VALIDATION_2026-08-22.md`. No account, credential,
+  broker server, or live-money capability was added.
+
+## P13 verification
+
+- Runtime evidence is based on fresh installer signature, terminal version,
+  terminal log, and Python probe output.
+- The full project suite remains **196 passed** from the previous milestone;
+  no production strategy or execution code changed in P13.
+
 ## Next Autonomous Action
 
-Keep H001, H006, and H007 unvalidated. Continue the MT5 reliability work with
-mocked reconnect/reconciliation and risk/kill-switch contracts while seeking a
-lawful broker/demo data path. Do not infer demo or live readiness from these
-preliminary strategy results.
+Keep H001, H006, and H007 unvalidated. Continue MT5 reliability work through a
+native MQL5, safety-gated demo boundary and mocked reconnect/reconciliation,
+risk, kill-switch, and monitoring contracts while seeking a lawful broker/demo
+data path. Do not infer demo or live readiness from these preliminary strategy
+results or from terminal installation alone.
 
 ## Live Trading Gate
 
