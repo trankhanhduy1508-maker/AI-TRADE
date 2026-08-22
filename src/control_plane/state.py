@@ -33,6 +33,14 @@ class ControlPlaneState:
             )
             """
         )
+        self._connection.execute(
+            """
+            CREATE TABLE IF NOT EXISTS remote_requests (
+                request_id TEXT PRIMARY KEY,
+                accepted_at TEXT NOT NULL
+            )
+            """
+        )
         self._connection.commit()
 
     def new_entries_paused(self) -> bool:
@@ -73,6 +81,29 @@ class ControlPlaneState:
             for command, source, note, created_at in rows
         )
 
+    def claim_remote_request(self, request_id: str) -> bool:
+        """Atomically accept a remote request ID once across restarts."""
+        if not request_id.strip():
+            raise ValueError("request_id is required")
+        cursor = self._connection.execute(
+            "INSERT OR IGNORE INTO remote_requests(request_id, accepted_at) VALUES (?, ?)",
+            (request_id, datetime.now(timezone.utc).isoformat()),
+        )
+        self._connection.commit()
+        return cursor.rowcount == 1
+
+    def apply_authenticated_command(self, command: str, note: str, source: str) -> None:
+        if source != "ANDROID_HMAC":
+            raise ValueError("unsupported remote source")
+        if command == "PAUSE_NEW_ENTRIES":
+            self._write("new_entries_paused", True, note, command, source=source)
+        elif command == "RESUME_NEW_ENTRIES":
+            self._write("new_entries_paused", False, note, command, source=source)
+        elif command == "ACTIVATE_KILL_SWITCH":
+            self._write("kill_switch_active", True, note, command, source=source)
+        else:
+            raise ValueError("unsupported control command")
+
     def close(self) -> None:
         self._connection.close()
 
@@ -82,7 +113,19 @@ class ControlPlaneState:
         ).fetchone()
         return default if row is None else bool(row[0])
 
-    def _write(self, key: str, value: bool, note: str, command: str) -> None:
+    def _write(
+        self,
+        key: str,
+        value: bool,
+        note: str,
+        command: str,
+        *,
+        source: str = "LOCAL",
+    ) -> None:
+        if not source.strip():
+            raise ValueError("source is required")
+        if not note.strip():
+            raise ValueError("note is required")
         now = datetime.now(timezone.utc).isoformat()
         self._connection.execute(
             "INSERT INTO control_state(key, value, note, updated_at) VALUES (?, ?, ?, ?) "
@@ -92,7 +135,7 @@ class ControlPlaneState:
         self._connection.execute(
             "INSERT INTO control_events(command, source, note, created_at) "
             "VALUES (?, ?, ?, ?)",
-            (command, "LOCAL", note, now),
+            (command, source, note, now),
         )
         self._connection.commit()
 

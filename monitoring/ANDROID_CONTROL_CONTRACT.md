@@ -2,8 +2,8 @@
 
 ## Status
 
-Code-verified local state contract only. No Android app, network endpoint,
-credential, or remote-control channel is enabled yet.
+Code-verified local state and signed-command core contract. No Android app,
+network endpoint, credential, or remote-control listener is enabled yet.
 
 ## Public health shape
 
@@ -37,12 +37,17 @@ operation and is not exposed as an automatic action.
 
 Every local state transition is now appended to the same SQLite store's
 `control_events` table with command, `LOCAL` source, note, and UTC timestamp.
-`read_events()` is the provider-neutral audit read path. No network caller is
+`read_events()` is the provider-neutral audit read path. The authenticated
+control core accepts only HMAC-signed commands, persists request IDs to reject
+replays across restarts, tags accepted commands as `ANDROID_HMAC`, and returns
+the public health shape. It supports pause, resume, and kill activation;
+remote kill reset is intentionally not supported. No network caller is
 trusted or enabled by this contract.
 
 ## Remaining implementation gates
 
-- authenticated API and Android client;
+- transport/API endpoint and Android client;
+- external secret provisioning/rotation and device authorization;
 - authorization/audit of every remote command;
 - TLS/secret management without repository credentials;
 - real MT5 heartbeat and account-mode reporting;

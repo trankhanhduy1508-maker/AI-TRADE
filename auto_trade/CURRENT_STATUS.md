@@ -444,10 +444,23 @@ Các hạng mục cũ trong root `CURRENT_STATUS.md` vẫn là backlog/evidence 
   market set, parameter, risk limit, or execution permission was promoted.
 - Detailed evidence: `backtests/TF003_TF004_INDEPENDENT_HOLDOUT_2016_2021_2026-08-22.md`.
 
+## P27 evidence - authenticated Android control core
+
+- Added an HMAC-signed control protocol core with canonical request signing,
+  constant-time signature verification, persistent request-ID replay rejection,
+  and `ANDROID_HMAC` audit attribution.
+- Supported remote commands are pause, resume, and kill activation. Remote kill
+  reset is not supported. The response contains only the public runtime-health
+  shape; the secret remains in memory and no network listener was enabled.
+- Control-plane tests pass **8 passed**; full-suite verification is required
+  before commit. This is not Android/device/network evidence and does not
+  change demo/live execution gates.
+
 ## Next Autonomous Action
 
-Keep H001, H006, and H007 unvalidated. Continue broker-aligned contract/cost
-review without cherry-picking, while continuing MT5 reliability work through the safety-gated demo boundary and
+Keep H001, H006, and H007 unvalidated. Continue transport/device
+authorization and broker-aligned contract/cost review without cherry-picking,
+while continuing MT5 reliability work through the safety-gated demo boundary and
 reconnect/reconciliation, risk, kill-switch, and monitoring contracts. Do not
 infer demo or live readiness from research-feed data, sensitivity results, or
 terminal installation alone.
