@@ -339,13 +339,28 @@ Các hạng mục cũ trong root `CURRENT_STATUS.md` vẫn là backlog/evidence 
 - Control-plane tests now pass **5 passed** for this module. Full-suite
   verification is required before commit.
 
+## P20 evidence - persistent recovery state
+
+- `PersistentRecoveryState` now stores connection/reconciliation gates in a
+  SQLite row with UTC update time. A new process starts fail-closed and does
+  not inherit permission to open risk unless exact reconciliation is recorded.
+- Disconnect persists `connected=false` and `reconciled=false`; a restored
+  connection only records the reconciliation result supplied by the caller.
+- Recovery tests pass **4 passed**, including persistence across reopen and
+  fail-closed reset after disconnect. Full-suite verification is required
+  before this milestone is committed.
+- This remains local state evidence. Broker reconciliation, MT5 demo forward
+  trading, crash/restart behavior in a real terminal, and 24/7 reliability
+  remain unverified.
+
 ## Next Autonomous Action
 
 Keep H001, H006, and H007 unvalidated. Continue MT5 reliability work through a
-native MQL5, safety-gated demo boundary and mocked reconnect/reconciliation,
-risk, kill-switch, and monitoring contracts while seeking a lawful broker/demo
-data path. Do not infer demo or live readiness from these preliminary strategy
-results or from terminal installation alone.
+native MQL5, safety-gated demo boundary and real-runtime discovery plus
+reconnect/reconciliation, risk, kill-switch, and monitoring contracts while
+seeking a lawful broker/demo data path. Do not infer demo or live readiness
+from the Founder login statement, preliminary strategy results, or terminal
+installation alone.
 
 ## Live Trading Gate
 

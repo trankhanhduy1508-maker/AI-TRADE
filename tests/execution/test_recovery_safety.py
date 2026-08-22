@@ -2,7 +2,11 @@ from contextlib import contextmanager
 from pathlib import Path
 import tempfile
 
-from src.execution.recovery import RecoveryState, reconcile_positions
+from src.execution.recovery import (
+    PersistentRecoveryState,
+    RecoveryState,
+    reconcile_positions,
+)
 from src.execution.safety import KillSwitchStore, SafetyGate, SafetySnapshot
 
 
@@ -30,6 +34,24 @@ def test_reconnect_requires_exact_position_reconciliation():
     state.connection_lost()
     state.connection_restored(reconcile_positions({"p1"}, {"p2"}))
     assert not state.can_open_new_risk()
+
+
+def test_recovery_state_persists_across_reopen_and_fails_closed_on_loss():
+    with _db_path() as path:
+        first = PersistentRecoveryState(path)
+        first.connection_restored(reconcile_positions({"p1"}, {"p1"}))
+        assert first.can_open_new_risk()
+        first.close()
+
+        second = PersistentRecoveryState(path)
+        assert second.can_open_new_risk()
+        second.connection_lost()
+        assert not second.can_open_new_risk()
+        second.close()
+
+        third = PersistentRecoveryState(path)
+        assert not third.can_open_new_risk()
+        third.close()
 
 
 def test_safety_gate_is_fail_closed_for_unknown_operational_state():

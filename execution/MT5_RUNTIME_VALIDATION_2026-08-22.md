@@ -38,6 +38,26 @@ continues the independent native-MQL5 and offline paper workstreams. A future
 demo milestone must separately prove account authorization, read-only data
 access, `order_check()`, and a controlled demo fill.
 
+## Post-Founder-login read-only discovery
+
+After the Founder granted permission to test the demo account, a fresh
+read-only discovery checked all four currently running terminal processes and
+the standard MetaQuotes profile locations. The four processes were isolated
+temporary terminals created for this project; no separate Founder terminal
+process or executable was discoverable in the checked installation roots.
+
+The fresh Python probes returned:
+
+- original isolated terminal: `(-6, 'Terminal: Authorization failed')`;
+- isolated user terminal: `(-10005, 'IPC timeout')`;
+- two isolated tester terminals: `(-10005, 'IPC timeout')`.
+
+No account info, server, symbol tick, `order_check()`, or `order_send()` data
+was obtained. Terminal logs also contained an authorization failure for the
+placeholder MetaQuotes-Demo context. The Founder demo login therefore remains
+not observable from this agent's terminal boundary; this is a technical
+discovery blocker, not evidence that the Founder account itself is invalid.
+
 ## Official references
 
 - [MetaTrader 5 download](https://www.metatrader5.com/en/download)
