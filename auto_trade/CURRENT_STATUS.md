@@ -399,14 +399,32 @@ Các hạng mục cũ trong root `CURRENT_STATUS.md` vẫn là backlog/evidence 
   paper, demo forward execution, or live trading.
 - Detailed evidence: `backtests/TF003_TF004_MULTI_ASSET_5Y_2026-08-22.md`.
 
+## P24 evidence - preregistered multi-asset sensitivity round
+
+- Ran the complete six-variant grid across seven closed-bar daily research
+  proxies: 42 chronological 70/30 OOS cases and 42 six-fold expanding
+  walk-forward cases. The first temporary-spec BOM failure produced no
+  evidence; all cases were rerun successfully after normalization.
+- The grid was fixed before result aggregation: TF-003 RR 1.0/1.5/2.0 and
+  TF-004 channel 10/20/40. No variant was removed after observing results.
+- OOS aggregate net R was positive for TF-003 RR 2.0 (+2.832), TF-004
+  channel 10 (+4.500), channel 20 (+26.126), and channel 40 (+20.819), but
+  walk-forward aggregate net R was positive only for TF-004 channel 10
+  (+95.508) and channel 20 (+65.192). Channel 10's walk-forward result is
+  heavily concentrated in USDJPY; channel 20 remains mixed across markets.
+- Therefore there is no robust general multi-asset promotion. The strategy
+  family remains `RESEARCH / UNVERIFIED`; no risk limit, canonical variant,
+  or MT5 execution rule was changed.
+- Detailed evidence: `backtests/TF003_TF004_MULTI_ASSET_SENSITIVITY_2026-08-22.md`.
+
 ## Next Autonomous Action
 
-Keep H001, H006, and H007 unvalidated. Run the pre-registered multi-asset
-sensitivity/holdout round without cherry-picking, then continue MT5 reliability
-work through the safety-gated demo boundary and reconnect/reconciliation,
-risk, kill-switch, and monitoring contracts. Do not infer demo or live
-readiness from preliminary strategy results, research-feed data, or terminal
-installation alone.
+Keep H001, H006, and H007 unvalidated. Run an independent time holdout and
+broker-aligned contract/cost review without cherry-picking, while continuing
+MT5 reliability work through the safety-gated demo boundary and
+reconnect/reconciliation, risk, kill-switch, and monitoring contracts. Do not
+infer demo or live readiness from research-feed data, sensitivity results, or
+terminal installation alone.
 
 ## Live Trading Gate
 
