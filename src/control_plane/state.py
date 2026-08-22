@@ -22,6 +22,17 @@ class ControlPlaneState:
             )
             """
         )
+        self._connection.execute(
+            """
+            CREATE TABLE IF NOT EXISTS control_events (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                command TEXT NOT NULL,
+                source TEXT NOT NULL,
+                note TEXT NOT NULL,
+                created_at TEXT NOT NULL
+            )
+            """
+        )
         self._connection.commit()
 
     def new_entries_paused(self) -> bool:
@@ -31,15 +42,36 @@ class ControlPlaneState:
         return self._read("kill_switch_active", default=True)
 
     def pause_new_entries(self, reason: str) -> None:
-        self._write("new_entries_paused", True, reason)
+        if not reason.strip():
+            raise ValueError("reason is required")
+        self._write("new_entries_paused", True, reason, "PAUSE_NEW_ENTRIES")
 
     def resume_new_entries(self, operator_note: str) -> None:
         if not operator_note.strip():
             raise ValueError("operator_note is required")
-        self._write("new_entries_paused", False, operator_note)
+        self._write(
+            "new_entries_paused", False, operator_note, "RESUME_NEW_ENTRIES"
+        )
 
     def activate_kill_switch(self, reason: str) -> None:
-        self._write("kill_switch_active", True, reason)
+        if not reason.strip():
+            raise ValueError("reason is required")
+        self._write("kill_switch_active", True, reason, "ACTIVATE_KILL_SWITCH")
+
+    def read_events(self) -> tuple[dict[str, str], ...]:
+        rows = self._connection.execute(
+            "SELECT command, source, note, created_at FROM control_events "
+            "ORDER BY id ASC"
+        ).fetchall()
+        return tuple(
+            {
+                "command": command,
+                "source": source,
+                "note": note,
+                "created_at": created_at,
+            }
+            for command, source, note, created_at in rows
+        )
 
     def close(self) -> None:
         self._connection.close()
@@ -50,11 +82,17 @@ class ControlPlaneState:
         ).fetchone()
         return default if row is None else bool(row[0])
 
-    def _write(self, key: str, value: bool, note: str) -> None:
+    def _write(self, key: str, value: bool, note: str, command: str) -> None:
+        now = datetime.now(timezone.utc).isoformat()
         self._connection.execute(
             "INSERT INTO control_state(key, value, note, updated_at) VALUES (?, ?, ?, ?) "
             "ON CONFLICT(key) DO UPDATE SET value=excluded.value, note=excluded.note, updated_at=excluded.updated_at",
-            (key, int(value), note, datetime.now(timezone.utc).isoformat()),
+            (key, int(value), note, now),
+        )
+        self._connection.execute(
+            "INSERT INTO control_events(command, source, note, created_at) "
+            "VALUES (?, ?, ?, ?)",
+            (command, "LOCAL", note, now),
         )
         self._connection.commit()
 

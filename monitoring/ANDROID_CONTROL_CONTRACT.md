@@ -28,6 +28,11 @@ kill activation require a reason; resuming new entries requires an explicit
 operator note. Resetting the kill switch remains a separate authorized
 operation and is not exposed as an automatic action.
 
+Every local state transition is now appended to the same SQLite store's
+`control_events` table with command, `LOCAL` source, note, and UTC timestamp.
+`read_events()` is the provider-neutral audit read path. No network caller is
+trusted or enabled by this contract.
+
 ## Remaining implementation gates
 
 - authenticated API and Android client;

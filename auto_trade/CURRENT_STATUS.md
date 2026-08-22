@@ -328,6 +328,17 @@ Các hạng mục cũ trong root `CURRENT_STATUS.md` vẫn là backlog/evidence 
   enable live execution.
 - Details are in `execution/RISK_ENGINE_IMPLEMENTATION.md`.
 
+## P19 evidence - local control-plane command audit
+
+- `ControlPlaneState` now persists every local pause, resume, and kill
+  activation in `control_events` with command, `LOCAL` source, note, and UTC
+  timestamp. Empty pause/kill reasons are rejected.
+- `read_events()` exposes a provider-neutral audit shape for a future
+  authenticated Android API; no network endpoint or remote control path was
+  enabled.
+- Control-plane tests now pass **5 passed** for this module. Full-suite
+  verification is required before commit.
+
 ## Next Autonomous Action
 
 Keep H001, H006, and H007 unvalidated. Continue MT5 reliability work through a

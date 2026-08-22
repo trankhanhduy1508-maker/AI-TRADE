@@ -55,3 +55,32 @@ def test_runtime_health_is_explicit_about_unknown_state():
 
     assert not health.ready_for_new_entries
     assert health.to_public_dict()["state_known"] is False
+
+
+def test_control_commands_are_persistently_audited():
+    with _db_path() as path:
+        state = ControlPlaneState(path)
+        state.resume_new_entries("operator demo resume")
+        state.pause_new_entries("stale heartbeat")
+        state.activate_kill_switch("reconnect mismatch")
+
+        events = state.read_events()
+
+        assert [event["command"] for event in events] == [
+            "RESUME_NEW_ENTRIES",
+            "PAUSE_NEW_ENTRIES",
+            "ACTIVATE_KILL_SWITCH",
+        ]
+        assert events[-1]["note"] == "reconnect mismatch"
+        assert all(event["source"] == "LOCAL" for event in events)
+        state.close()
+
+
+def test_pause_and_kill_commands_require_reasons():
+    with _db_path() as path:
+        state = ControlPlaneState(path)
+        with pytest.raises(ValueError, match="reason"):
+            state.pause_new_entries("")
+        with pytest.raises(ValueError, match="reason"):
+            state.activate_kill_switch(" ")
+        state.close()
