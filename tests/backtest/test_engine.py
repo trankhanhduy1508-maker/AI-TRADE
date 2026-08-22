@@ -97,6 +97,9 @@ def test_engine_does_not_open_overlapping_positions_and_calculates_kpis():
     assert result.metrics["win_rate"] == 1.0
     assert result.metrics["net_pnl_price"] == pytest.approx(1.5)
     assert result.metrics["max_drawdown_price"] == pytest.approx(0.0)
+    assert result.trades[0].initial_stop_price == pytest.approx(99.0)
+    assert result.metrics["net_pnl_r"] == pytest.approx(1.5)
+    assert result.metrics["expectancy_r"] == pytest.approx(1.5)
 
 
 def test_engine_does_not_reenter_on_the_bar_that_exits_a_position():

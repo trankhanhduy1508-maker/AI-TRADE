@@ -30,6 +30,7 @@ class Trade:
     entry_price: float
     exit_price: float
     stop_price: float
+    initial_stop_price: float
     target_price: Optional[float]
     pnl_price: float
     exit_reason: str

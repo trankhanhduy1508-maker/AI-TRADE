@@ -1,0 +1,49 @@
+{
+  "profile_id": "research_multi_asset_assumption_v1",
+  "provenance": "UNVERIFIED",
+  "description": "Fixed price-unit research proxies for cross-asset comparison; not broker-specific, not a futures-roll model, and not live-ready.",
+  "profiles": {
+    "EURUSD=X": {
+      "spread_price": 0.0002,
+      "commission_price": 0.00002,
+      "slippage_price": 0.00005,
+      "swap_price_per_bar": 0.00001
+    },
+    "GBPUSD=X": {
+      "spread_price": 0.0002,
+      "commission_price": 0.00002,
+      "slippage_price": 0.00005,
+      "swap_price_per_bar": 0.00001
+    },
+    "USDJPY=X": {
+      "spread_price": 0.02,
+      "commission_price": 0.002,
+      "slippage_price": 0.005,
+      "swap_price_per_bar": 0.001
+    },
+    "AUDUSD=X": {
+      "spread_price": 0.00025,
+      "commission_price": 0.000025,
+      "slippage_price": 0.00006,
+      "swap_price_per_bar": 0.000012
+    },
+    "GC=F": {
+      "spread_price": 0.50,
+      "commission_price": 0.10,
+      "slippage_price": 0.25,
+      "swap_price_per_bar": 0.05
+    },
+    "BTC-USD": {
+      "spread_price": 50.0,
+      "commission_price": 20.0,
+      "slippage_price": 25.0,
+      "swap_price_per_bar": 0.0
+    },
+    "CL=F": {
+      "spread_price": 0.05,
+      "commission_price": 0.02,
+      "slippage_price": 0.03,
+      "swap_price_per_bar": 0.02
+    }
+  }
+}

@@ -26,8 +26,15 @@ def _execution_price(level: float, direction: str, *, entry: bool, slippage: flo
 
 def _metrics(trades: list[Trade]) -> dict[str, float | int | None]:
     pnls = [trade.pnl_price for trade in trades]
+    r_values = [
+        trade.pnl_price / abs(trade.entry_price - trade.initial_stop_price)
+        for trade in trades
+        if trade.entry_price != trade.initial_stop_price
+    ]
     winners = [pnl for pnl in pnls if pnl > 0]
     losers = [pnl for pnl in pnls if pnl < 0]
+    r_winners = [value for value in r_values if value > 0]
+    r_losers = [value for value in r_values if value < 0]
     equity = 0.0
     peak = 0.0
     max_drawdown = 0.0
@@ -35,6 +42,13 @@ def _metrics(trades: list[Trade]) -> dict[str, float | int | None]:
         equity += pnl
         peak = max(peak, equity)
         max_drawdown = max(max_drawdown, peak - equity)
+    r_equity = 0.0
+    r_peak = 0.0
+    r_max_drawdown = 0.0
+    for value in r_values:
+        r_equity += value
+        r_peak = max(r_peak, r_equity)
+        r_max_drawdown = max(r_max_drawdown, r_peak - r_equity)
     gross_profit = sum(winners)
     gross_loss = abs(sum(losers))
     return {
@@ -48,6 +62,12 @@ def _metrics(trades: list[Trade]) -> dict[str, float | int | None]:
         "expectancy_price": sum(pnls) / len(trades) if trades else 0.0,
         "profit_factor": gross_profit / gross_loss if gross_loss else None,
         "max_drawdown_price": max_drawdown,
+        "net_pnl_r": sum(r_values),
+        "expectancy_r": sum(r_values) / len(r_values) if r_values else 0.0,
+        "profit_factor_r": (
+            sum(r_winners) / abs(sum(r_losers)) if r_losers else None
+        ),
+        "max_drawdown_r": r_max_drawdown,
         "gross_pnl_price": sum(trade.gross_pnl_price for trade in trades),
         "total_cost_price": sum(trade.cost_price for trade in trades),
     }
@@ -175,6 +195,7 @@ def run_backtest(
                         entry_price=entry_price,
                         exit_price=exit_price,
                         stop_price=stop,
+                        initial_stop_price=float(position["initial_stop"]),
                         target_price=float(target) if target is not None else None,
                         pnl_price=pnl,
                         exit_reason=exit_reason,
@@ -205,7 +226,8 @@ def run_backtest(
                         "entry_timestamp": bar.timestamp,
                         "entry_price": entry_price,
                         "reference_entry_price": bar.close,
-            "stop": stop,
+                        "stop": stop,
+                        "initial_stop": stop,
             "target": target,
                     }
 

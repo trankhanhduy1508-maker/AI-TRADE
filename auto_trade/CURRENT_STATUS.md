@@ -383,13 +383,29 @@ Các hạng mục cũ trong root `CURRENT_STATUS.md` vẫn là backlog/evidence 
 - The supplied passwords were exposed in the chat and should be rotated after
   testing. Live-money trading remains locked.
 
+## P23 evidence - closed-bar multi-asset 5-year research round
+
+- Downloaded seven daily research proxies over approximately five years:
+  four Forex majors, Gold, BTC and Oil. CSVs remain outside the repository;
+  the report records row counts and SHA-256 hashes.
+- Ran fixed TF-003 and TF-004 across 14 chronological 70/30 OOS cases and 14
+  six-fold expanding walk-forward cases with declared `UNVERIFIED` cross-asset
+  cost proxies.
+- Added R-multiple metrics based on each trade's initial stop. Full suite stays
+  at **216 passed**; no strategy rule or RR parameter was changed after seeing
+  the results.
+- Evidence is mixed and market-dependent: no single strategy passed robustly
+  across all markets. The round remains research-only and does not authorize
+  paper, demo forward execution, or live trading.
+- Detailed evidence: `backtests/TF003_TF004_MULTI_ASSET_5Y_2026-08-22.md`.
+
 ## Next Autonomous Action
 
-Keep H001, H006, and H007 unvalidated. Continue MT5 reliability work through a
-native MQL5, safety-gated demo boundary and real-runtime discovery plus
-reconnect/reconciliation, risk, kill-switch, and monitoring contracts while
-seeking a lawful broker/demo data path. Do not infer demo or live readiness
-from the Founder login statement, preliminary strategy results, or terminal
+Keep H001, H006, and H007 unvalidated. Run the pre-registered multi-asset
+sensitivity/holdout round without cherry-picking, then continue MT5 reliability
+work through the safety-gated demo boundary and reconnect/reconciliation,
+risk, kill-switch, and monitoring contracts. Do not infer demo or live
+readiness from preliminary strategy results, research-feed data, or terminal
 installation alone.
 
 ## Live Trading Gate
