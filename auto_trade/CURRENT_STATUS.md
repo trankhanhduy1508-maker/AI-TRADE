@@ -353,8 +353,7 @@ Các hạng mục cũ trong root `CURRENT_STATUS.md` vẫn là backlog/evidence 
   reconciliation gates.
 - Recovery tests pass **6 passed**, including persistence across reopen,
   fail-closed reset after disconnect, stale-heartbeat detection, and heartbeat
-  timestamp refresh.
-  Full-suite verification is required before this milestone is committed.
+  timestamp refresh. The latest full-suite verification passes **216 passed**.
 - This remains local state evidence. Broker reconciliation, MT5 demo forward
   trading, crash/restart behavior in a real terminal, and 24/7 reliability
   remain unverified.
