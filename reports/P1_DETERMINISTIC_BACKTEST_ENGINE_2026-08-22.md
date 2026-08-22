@@ -100,7 +100,11 @@ The previous full 1H attempt exposed an O(n²)-style runtime bottleneck; the
 incremental cache removed that blocker without changing parity-tested trend or
 structure semantics.
 
-Next autonomous action: add explicit chronological IS/OOS or walk-forward
-partitions and a transparent, configurable cost model for spread, commission,
-swap, and slippage. Only after those gates pass should paper trading or MT5
-demo reliability work expand. Live money remains locked by governance.
+The chronological IS/OOS and explicit proxy-cost milestone is now recorded in
+`backtests/TF001_FX_IS_OOS_2026-08-22.md`. H001 remains unvalidated because all
+hourly OOS samples were net negative after costs. Next: independently specify
+an alternative Trend Following translation or obtain broker/demo data, then
+repeat OOS validation. Live money remains locked by governance.
+
+The cost/partition focused tests pass (**10 passed**) and the complete
+repository suite passes (**168 passed**).

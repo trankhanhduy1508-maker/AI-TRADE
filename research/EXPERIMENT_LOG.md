@@ -11,6 +11,17 @@ so với lần trước (nếu có), link kết quả trong `backtests/`, nhận
 
 ---
 
+## 2026-08-22 - TF-001 fixed 70/30 IS/OOS with research costs
+
+- Data: Yahoo chart downloads, EURUSD/GBPUSD/USDJPY at 1D and 1H; exact rows
+  and split timestamps are recorded in `backtests/TF001_FX_IS_OOS_2026-08-22.md`.
+- Change from prior run: added point-in-time swing cache, chronological IS/OOS
+  gating, and explicit fixed price-unit cost profile.
+- Result: 1D produced no trades; all three 1H OOS samples had negative net
+  price-unit PnL after costs.
+- Interpretation: preliminary and not live/broker evidence; no parameter was
+  tuned after observing the result.
+
 ## Chưa có thử nghiệm nào được chạy thật
 
 Tính đến thời điểm tạo tài liệu này, hệ thống mới ở giai đoạn xây dựng nền tảng

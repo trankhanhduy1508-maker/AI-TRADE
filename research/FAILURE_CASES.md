@@ -12,6 +12,20 @@ thuyết/chiến lược liên quan, hành động khắc phục đã áp dụng
 
 ---
 
+## 2026-08-22 - TF-001 hourly OOS negative after declared costs
+
+- Strategy/hypothesis: H001 / `strategies/TF_001_BREAKOUT_PULLBACK.json`.
+- Description: EURUSD, GBPUSD, and USDJPY 1H OOS partitions all had negative
+  net price-unit PnL after the fixed research cost proxy; daily partitions had
+  no qualifying trades.
+- Root cause status: not proven. The evidence shows the current translation,
+  data source, period, and cost assumptions did not pass the OOS gate; it does
+  not isolate whether the rule translation, source quality, or proxy costs are
+  responsible.
+- Corrective action: do not optimize on this sample; keep H001 unvalidated,
+  preserve the raw evidence, and obtain broker/demo data plus an independently
+  specified strategy comparison before execution work.
+
 ## Chưa có ca thất bại thật nào được ghi nhận
 
 Hệ thống chưa chạy backtest hay giao dịch thật nào (xem

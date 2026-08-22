@@ -7,6 +7,7 @@ module does not size capital or modify project risk policy.
 
 from collections.abc import Callable, Sequence
 
+from src.backtest.costs import CostModel
 from src.backtest.spec import StrategySpec
 from src.backtest.types import BacktestResult, OpenPosition, Signal, Trade
 from src.rule_engine.incremental import CachedRuleFeatures, PointInTimeRuleCache
@@ -47,6 +48,8 @@ def _metrics(trades: list[Trade]) -> dict[str, float | int | None]:
         "expectancy_price": sum(pnls) / len(trades) if trades else 0.0,
         "profit_factor": gross_profit / gross_loss if gross_loss else None,
         "max_drawdown_price": max_drawdown,
+        "gross_pnl_price": sum(trade.gross_pnl_price for trade in trades),
+        "total_cost_price": sum(trade.cost_price for trade in trades),
     }
 
 
@@ -76,6 +79,9 @@ def run_backtest(
     bars: Sequence[Bar],
     spec: StrategySpec,
     evaluator: SignalEvaluator,
+    cost_model: CostModel | None = None,
+    signal_start_index: int = 0,
+    signal_end_index: int | None = None,
 ) -> BacktestResult:
     """Run a deterministic closed-bar simulation.
 
@@ -86,6 +92,16 @@ def run_backtest(
 
     if any(not bar.closed for bar in bars):
         raise ValueError("backtest requires all input bars to be closed")
+    if not 0 <= signal_start_index <= len(bars):
+        raise ValueError("signal_start_index is outside the bar range")
+    if signal_end_index is None:
+        signal_end_index = len(bars)
+    if not signal_start_index <= signal_end_index <= len(bars):
+        raise ValueError("signal_end_index is outside the bar range")
+
+    costs = cost_model or CostModel(
+        "spec-slippage-only", 0.0, 0.0, spec.slippage_price, 0.0
+    )
 
     trades: list[Trade] = []
     position: dict[str, object] | None = None
@@ -107,14 +123,29 @@ def run_backtest(
                 exit_reason, exit_level = "TARGET", target
 
             if exit_reason is not None:
+                slippage_price = costs.slippage_price
                 exit_price = _execution_price(
                     exit_level,
                     direction,
                     entry=False,
-                    slippage=spec.slippage_price,
+                    slippage=slippage_price,
                 )
                 entry_price = float(position["entry_price"])
-                pnl = exit_price - entry_price if direction == "UP" else entry_price - exit_price
+                theoretical_entry = float(position["reference_entry_price"])
+                gross_pnl = (
+                    exit_level - theoretical_entry
+                    if direction == "UP"
+                    else theoretical_entry - exit_level
+                )
+                executed_pnl = (
+                    exit_price - entry_price
+                    if direction == "UP"
+                    else entry_price - exit_price
+                )
+                holding_bars = index - int(position["entry_index"])
+                explicit_cost = costs.total_explicit(holding_bars)
+                total_cost = gross_pnl - executed_pnl + explicit_cost
+                pnl = executed_pnl - explicit_cost
                 trades.append(
                     Trade(
                         direction=direction,
@@ -126,6 +157,9 @@ def run_backtest(
                         target_price=target,
                         pnl_price=pnl,
                         exit_reason=exit_reason,
+                        gross_pnl_price=gross_pnl,
+                        cost_price=total_cost,
+                        holding_bars=holding_bars,
                     )
                 )
                 position = None
@@ -134,7 +168,7 @@ def run_backtest(
         if position is None and not exited_this_bar:
             history = tuple(bars[: index + 1])
             signal = evaluator(history, spec)
-            if signal is not None:
+            if signal is not None and signal_start_index <= index < signal_end_index:
                 candidate = _validate_signal(signal, bar.close, spec)
                 if candidate is not None:
                     direction, stop, target = candidate
@@ -142,13 +176,14 @@ def run_backtest(
                         bar.close,
                         direction,
                         entry=True,
-                        slippage=spec.slippage_price,
+                        slippage=costs.slippage_price,
                     )
                     position = {
                         "direction": direction,
                         "entry_index": index,
                         "entry_timestamp": bar.timestamp,
                         "entry_price": entry_price,
+                        "reference_entry_price": bar.close,
                         "stop": stop,
                         "target": target,
                     }

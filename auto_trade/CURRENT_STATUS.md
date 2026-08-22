@@ -92,11 +92,25 @@ Các hạng mục cũ trong root `CURRENT_STATUS.md` vẫn là backlog/evidence 
   engine adapter and were stopped; bounded 1H smoke runs are recorded only as
   diagnostic evidence, not out-of-sample validation.
 
+## P2 evidence - IS/OOS and cost realism
+
+- `src/backtest/costs.py` now separates theoretical gross price PnL from net
+  price-unit PnL after explicit spread, commission, slippage, and swap proxies.
+- `src/backtest/validation.py` runs chronological 70/30 IS/OOS partitions with
+  warm-up history and OOS entry gating.
+- `backtests/TF001_FX_IS_OOS_2026-08-22.md` records all six runs. Daily data had
+  no qualifying trades; all three hourly OOS samples were net negative after
+  the fixed `UNVERIFIED` research cost profile.
+- Cost/partition tests pass and the complete repository suite is now **168
+  passed** with `python -m pytest -q -p no:cacheprovider tests`.
+- H001 remains unvalidated. No parameter tuning was performed after observing
+  the result.
+
 ## Next Autonomous Action
 
-Run chronological IS/OOS or walk-forward partitions with explicit spread,
-commission, swap, and slippage cost assumptions before any paper or MT5-demo
-expansion.
+Keep H001 unvalidated. Research an independently specified Trend Following
+translation or broker/demo data source, then repeat OOS/cost validation before
+any paper or MT5-demo expansion.
 
 ## Live Trading Gate
 

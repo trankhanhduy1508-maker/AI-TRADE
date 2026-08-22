@@ -33,6 +33,9 @@ class Trade:
     target_price: float
     pnl_price: float
     exit_reason: str
+    gross_pnl_price: float = 0.0
+    cost_price: float = 0.0
+    holding_bars: int = 0
 
 
 @dataclass(frozen=True)

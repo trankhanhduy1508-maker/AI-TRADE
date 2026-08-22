@@ -13,6 +13,18 @@ tới `backtests/`).
 
 ---
 
+## H001 result update - 2026-08-22
+
+- Evidence: `backtests/TF001_FX_IS_OOS_2026-08-22.md`.
+- Test: fixed TF-001 implementation, chronological 70/30 IS/OOS, three FX
+  symbols, daily and hourly samples, with no parameter tuning after the run.
+- Result: daily samples produced zero qualifying trades. Hourly OOS net
+  price-unit PnL was negative for EURUSD, GBPUSD, and USDJPY after the declared
+  fixed research cost proxy.
+- Conclusion: H001 remains **unvalidated** for this implementation and data
+  source. This is not evidence against Trend Following generally; it is
+  evidence against claiming this exact translation passed OOS.
+
 ## H001 — Pullback sau breakout cho tỷ lệ lời/lỗ tốt hơn vào ngay tại breakout
 
 - **Nguồn gốc:** `strategies/TF_001_BREAKOUT_PULLBACK.md`.
