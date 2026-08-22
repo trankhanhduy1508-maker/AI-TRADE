@@ -347,9 +347,11 @@ Các hạng mục cũ trong root `CURRENT_STATUS.md` vẫn là backlog/evidence 
   permission to open risk unless it reconnects and records exact reconciliation.
 - Disconnect persists `connected=false` and `reconciled=false`; a restored
   connection only records the reconciliation result supplied by the caller.
-- Recovery tests pass **4 passed**, including persistence across reopen and
-  fail-closed reset after disconnect. Full-suite verification is required
-  before this milestone is committed.
+- `is_stale()` exposes a deterministic UTC freshness check for heartbeat
+  monitoring and rejects invalid age/time inputs.
+- Recovery tests pass **5 passed**, including persistence across reopen,
+  fail-closed reset after disconnect, and stale-heartbeat detection.
+  Full-suite verification is required before this milestone is committed.
 - This remains local state evidence. Broker reconciliation, MT5 demo forward
   trading, crash/restart behavior in a real terminal, and 24/7 reliability
   remain unverified.

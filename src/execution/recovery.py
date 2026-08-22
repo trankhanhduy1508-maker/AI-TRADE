@@ -1,7 +1,8 @@
 """Fail-closed connection recovery and broker reconciliation contracts."""
 
 from dataclasses import dataclass
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
+import math
 from pathlib import Path
 import sqlite3
 
@@ -78,21 +79,24 @@ class PersistentRecoveryState:
 
     def _load(self) -> None:
         row = self._connection.execute(
-            "SELECT connected, reconciled FROM recovery_state WHERE id = 1"
+            "SELECT connected, reconciled, updated_at FROM recovery_state WHERE id = 1"
         ).fetchone()
         if row is None:
             raise RuntimeError("recovery state row missing")
         self.connected = bool(row[0])
         self.reconciled = bool(row[1])
+        self.updated_at = datetime.fromisoformat(row[2])
 
     def _persist(self) -> None:
+        updated_at = self._now()
+        self.updated_at = datetime.fromisoformat(updated_at)
         self._connection.execute(
             """
             UPDATE recovery_state
             SET connected = ?, reconciled = ?, updated_at = ?
             WHERE id = 1
             """,
-            (int(self.connected), int(self.reconciled), self._now()),
+            (int(self.connected), int(self.reconciled), updated_at),
         )
         self._connection.commit()
 
@@ -108,6 +112,19 @@ class PersistentRecoveryState:
 
     def can_open_new_risk(self) -> bool:
         return self.connected and self.reconciled
+
+    def is_stale(
+        self,
+        *,
+        max_age_seconds: float,
+        now: datetime | None = None,
+    ) -> bool:
+        if not math.isfinite(max_age_seconds) or max_age_seconds < 0:
+            raise ValueError("max_age_seconds must be finite and non-negative")
+        current = now or datetime.now(timezone.utc)
+        if current.tzinfo is None:
+            raise ValueError("now must be timezone-aware")
+        return current - self.updated_at > timedelta(seconds=max_age_seconds)
 
     def close(self) -> None:
         self._connection.close()

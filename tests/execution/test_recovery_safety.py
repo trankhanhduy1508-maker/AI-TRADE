@@ -1,4 +1,5 @@
 from contextlib import contextmanager
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 import tempfile
 
@@ -54,6 +55,14 @@ def test_recovery_state_persists_across_reopen_and_fails_closed_on_loss():
         third = PersistentRecoveryState(path)
         assert not third.can_open_new_risk()
         third.close()
+
+
+def test_recovery_state_reports_stale_heartbeat():
+    with _db_path() as path:
+        state = PersistentRecoveryState(path)
+        future = datetime.now(timezone.utc) + timedelta(seconds=1)
+        assert state.is_stale(max_age_seconds=0, now=future)
+        state.close()
 
 
 def test_safety_gate_is_fail_closed_for_unknown_operational_state():

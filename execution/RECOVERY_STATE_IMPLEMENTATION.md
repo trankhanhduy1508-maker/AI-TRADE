@@ -15,11 +15,13 @@ nối và reconciliation không bị mặc định là an toàn sau khi process 
   gate về `false/false`; process mới phải reconnect và reconcile lại trước khi
   được mở risk.
 - State có `updated_at` UTC để làm nền cho heartbeat/staleness monitoring.
+- `is_stale(max_age_seconds, now=...)` dùng timestamp timezone-aware và
+  fail-closed với tham số âm/không hữu hạn hoặc thời gian không có timezone.
 
 ## Evidence
 
 - Test persistence qua ba lần mở state và reset sau disconnect: `1 passed`.
-- Test recovery/reconciliation hiện hành: `4 passed`.
+- Test recovery/reconciliation/freshness hiện hành: `5 passed`.
 - Full suite phải được chạy lại trước khi commit milestone.
 
 Đây là contract/state evidence cục bộ. Nó chưa chứng minh broker
