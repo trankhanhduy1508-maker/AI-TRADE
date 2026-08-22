@@ -369,6 +369,20 @@ Các hạng mục cũ trong root `CURRENT_STATUS.md` vẫn là backlog/evidence 
   passed**. No network endpoint, Android credential, or remote command path was
   enabled.
 
+## P22 evidence - credentialed MT5 demo boundary probe
+
+- Founder-authorized trading and investor credentials were entered only via a
+  secure interactive prompt; no credential was written to the repository,
+  logs, command line, or persistent environment file.
+- Official Python probes covered explicit/automatic terminal discovery and
+  portable/non-portable initialization. All attempts returned
+  `(-10005, 'IPC timeout')`.
+- No account state, symbol tick, `order_check()`, or `order_send()` evidence
+  was obtained. This is an IPC/terminal-boundary blocker, not evidence that
+  the Founder demo account is invalid.
+- The supplied passwords were exposed in the chat and should be rotated after
+  testing. Live-money trading remains locked.
+
 ## Next Autonomous Action
 
 Keep H001, H006, and H007 unvalidated. Continue MT5 reliability work through a

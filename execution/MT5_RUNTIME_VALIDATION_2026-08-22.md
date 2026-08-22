@@ -3,8 +3,8 @@
 ## Scope
 
 This milestone validates the official MetaTrader 5 desktop runtime and Python
-package boundary without credentials, broker access, order submission, or
-live-money activation.
+package boundary. It does not authorize order submission or live-money
+activation.
 
 ## Evidence
 
@@ -57,6 +57,27 @@ was obtained. Terminal logs also contained an authorization failure for the
 placeholder MetaQuotes-Demo context. The Founder demo login therefore remains
 not observable from this agent's terminal boundary; this is a technical
 discovery blocker, not evidence that the Founder account itself is invalid.
+
+## Credentialed demo boundary probe
+
+The Founder explicitly authorized a demo test and entered the supplied trading
+and investor passwords through a secure interactive prompt. The values were
+not written to the repository, logs, command-line arguments, or persistent
+environment files.
+
+Using the official Python package, probes were attempted with the isolated
+terminal path and the broker server candidate from the local terminal profile,
+`portable=True` and `portable=False`, both supplied passwords, and automatic
+terminal discovery.
+
+Every attempted initialization returned `(-10005, 'IPC timeout')`. No
+`account_info()`, `terminal_info()` account state, symbol tick,
+`order_check()`, or `order_send()` result was obtained. Therefore there is
+still no evidence that the supplied account is connected to this agent's
+terminal boundary, and no demo order was submitted.
+
+The credentials were exposed in the conversation itself; they must be rotated
+after testing even though the account is a demo account.
 
 ## Official references
 
