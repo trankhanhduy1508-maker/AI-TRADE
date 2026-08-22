@@ -262,6 +262,21 @@ Các hạng mục cũ trong root `CURRENT_STATUS.md` vẫn là backlog/evidence 
 - The full project suite remains **196 passed** from the previous milestone;
   no production strategy or execution code changed in P13.
 
+## P14 evidence - native MQL5 TF-003 boundary
+
+- Added `mql5/Experts/AITradeTrendFollowingEA.mq5`, a deterministic closed-bar
+  breakout implementation with ATR stop/target and a fixed `DemoLots` cap.
+- The EA is demo-locked by default and requires explicit demo enablement,
+  exact demo account mode, terminal connection, terminal trade permission,
+  input validation, and spread validation before `CTrade::Buy/Sell`.
+- TDD/static contract tests pass for default lock, gate ordering, closed-bar
+  data, fixed lot cap, and absence of direct `OrderSend`.
+- Official MetaEditor build 6140 compilation produced **0 errors, 0 warnings**
+  under X64 Regular. This validates syntax/compile only; the EA has not been
+  attached to a chart, connected to an account, or allowed to submit a demo
+  order.
+- Details are in `execution/MQL5_NATIVE_EA_IMPLEMENTATION.md`.
+
 ## Next Autonomous Action
 
 Keep H001, H006, and H007 unvalidated. Continue MT5 reliability work through a
