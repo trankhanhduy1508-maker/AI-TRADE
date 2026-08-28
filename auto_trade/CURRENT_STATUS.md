@@ -10,7 +10,21 @@
 
 ## Current Priority
 
-**P0 — TREND FOLLOWING KNOWLEDGE AUDIT**
+**P0 — VERIFIED MT5 DEMO EXECUTION PROOF**
+
+Ngày 2026-08-28, Founder đã cho phép test có kiểm soát trên tài khoản DEMO.
+Live-money vẫn khóa tuyệt đối.
+
+Đã hoàn thành trong nhánh `codex/mt5-demo-execution-proof`:
+- Ground canonical repo `trankhanhduy1508-maker/AI-TRADE` và đọc đúng source-of-truth.
+- Cài official `MetaTrader5` Python package vào runtime Python cục bộ.
+- Thêm DEMO-only account guard, append-only journal và deterministic idempotency key.
+- Thêm native Python MT5 adapter: initialize → account guard → symbol/tick → order_check → order_send.
+- Unit tests: `5 passed`.
+
+Runtime blocker hiện tại: `mt5.initialize()` trả `(-10003, 'IPC initialize failed, MetaTrader 5 x64 not found')` vì host chưa có MT5 terminal. Official installer download bị policy supply-chain chặn; chưa có terminal/account session để đặt lệnh, audit, close, reconnect hoặc chứng minh no-duplicate.
+
+Khi terminal xuất hiện, thứ tự bắt buộc là: verify DEMO context → tick → order_check → một lệnh tối thiểu → audit → close → restart/reconnect → reconcile → duplicate-order proof → forward demo validation.
 
 Trước khi mở rộng MT5/execution, audit `knowledge/TREND_FOLLOWING.md` và các knowledge hiện có theo Michael W. Covel `Trend Following`, ưu tiên Fifth Edition.
 
