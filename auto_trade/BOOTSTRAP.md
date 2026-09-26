@@ -18,7 +18,7 @@ Không ground toàn repo nếu task không cần.
 
 - Repo/evidence hiện tại là source of truth.
 - Dùng Superpowers/skills liên quan trước khi hành động nếu môi trường có hỗ trợ.
-- Knowledge First, đặc biệt Michael Covel `Trend Following`.
+- Knowledge First theo `knowledge/KNOWLEDGE_INGESTION_POLICY.md`: ưu tiên practitioner có track record kiểm chứng; Peter Lynch là core corpus, Covel/Schwager là secondary/cross-check.
 - Không tuyên bố đã học toàn bộ sách nếu source chưa đủ.
 - STABLE FIRST -> MINIMUM CHANGE -> VERIFY -> REWRITE LAST.
 - Tự xử lý routine blocker; không hỏi Founder các quyết định kỹ thuật nhỏ.
@@ -30,6 +30,6 @@ Không ground toàn repo nếu task không cần.
 
 Đọc `auto_trade/CURRENT_STATUS.md` và thực hiện ưu tiên cao nhất chưa hoàn thành.
 
-P0 hiện tại: audit + nâng cấp canonical Trend Following knowledge và provenance theo `auto_trade/MASTER_GOAL.md`.
+Ưu tiên hiện tại: tiếp tục practitioner-first ingestion + map claim thành hypothesis, sau đó hoàn thiện MT5 DEMO full lifecycle theo `execution/MT5_AUTONOMOUS_POSITION_MANAGEMENT.md`.
 
 Sau đó tiếp tục goal, không dừng chỉ để hỏi những gì repo đã trả lời được.
