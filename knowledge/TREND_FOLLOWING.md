@@ -1,5 +1,7 @@
 # Trend Following — Kiến thức canonical
 
+> **Practitioner First policy (2026-09-26):** file này vẫn là canonical cho chủ đề Trend Following và giữ provenance riêng cho Covel/primary research. Nó không còn định nghĩa Michael Covel là nguồn practitioner duy nhất hay tối cao của toàn AI-TRADE. Xem `knowledge/KNOWLEDGE_INGESTION_POLICY.md` và `knowledge/PRACTITIONER_BOOK_CORPUS.md`.
+
 > Đây là bản tóm tắt khái niệm của AI-TRADE, không phải bản sao của sách. Claim
 > có mã provenance trong `knowledge/COVEL_TREND_FOLLOWING_PROVENANCE.md`.
 > Workspace chưa có full lawful copy của `Trend Following, Fifth Edition`, nên
