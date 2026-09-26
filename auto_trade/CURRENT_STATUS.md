@@ -8,6 +8,24 @@
 
 ✅ `AGENTS.md` — Superpowers/skill discipline + autonomy + verification rules.
 
+## Refinement checkpoint — 2026-09-26
+
+Founder direction đã đổi/siết knowledge policy:
+- practitioner-first;
+- Peter Lynch core corpus;
+- track-record provenance bắt buộc;
+- Covel/Schwager là secondary synthesis/interview, không còn độc quyền làm canonical authority.
+
+Đã thêm:
+- `knowledge/KNOWLEDGE_INGESTION_POLICY.md`
+- `knowledge/PRACTITIONER_BOOK_CORPUS.md`
+- `execution/MT5_AUTONOMOUS_POSITION_MANAGEMENT.md`
+- `reports/AUTO_TRADE_REFINE_2026-09-26.md`
+
+Execution target mới bao gồm full lifecycle: entry + SL/TP + trailing/gồng lời + partial + winner pyramiding + close + reconnect/reconcile + duplicate proof.
+
+Repo hiện có code-verified safety/risk/recovery pieces và native MQL5 EA, nhưng **chưa có runtime DEMO evidence đầy đủ** cho toàn lifecycle trên broker terminal. Live-money vẫn khóa.
+
 ## Current Priority
 
 **P4 - EXIT-MODEL AND DATA-QUALITY VALIDATION - IN PROGRESS (TF-004 PRELIMINARY)**
