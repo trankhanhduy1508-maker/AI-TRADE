@@ -220,3 +220,19 @@ Data Loader dùng lại `Bar` từ `src/rule_engine/types.py` — không định
 Luồng xử lý cố định theo BACKTEST_ENGINE.md: load → sort/dedupe → validate (loại bỏ nến vi phạm H/L/volume) → detect outlier (chỉ phát hiện, KHÔNG tự động xoá — cần xác nhận theo DATA_REQUIREMENTS.md).
 
 Outlier detection mặc định ngưỡng 10% (tham số hoá qua `max_pct_jump`) — đây là giá trị mặc định kỹ thuật để test code, KHÔNG phải ngưỡng đã Project Owner chốt cho backtest thật.
+
+
+---
+
+## Decision 2026-09-26 — Practitioner First + MT5 full lifecycle
+
+Founder yêu cầu refine AI Trade theo hướng:
+- Knowledge source ưu tiên sách do người đã thành công thực tế viết, không dùng guru credibility làm bằng chứng.
+- Peter Lynch / *One Up on Wall Street* là core corpus về tư duy nghiên cứu; kiến thức stock-specific không tự động trở thành FX rule.
+- Michael Covel/Market Wizards và tài liệu tổng hợp giữ vai trò secondary/cross-check, không phải nguồn practitioner duy nhất.
+- Mọi claim phải có provenance của nguồn và provenance của track record.
+- MT5 phải tiến tới tự động quản lý trọn vòng đời: entry, protective SL, optional TP, trailing, partial close, winner pyramiding, exit, restart/reconcile, duplicate suppression, audit.
+- "Gồng lời" = giữ winner theo exit rule và chỉ ratchet stop theo hướng giảm rủi ro.
+- Pyramiding chỉ được thêm vào winner khi Risk Engine cho phép.
+- Martingale, DCA ngược xu hướng để gỡ lỗ, nới SL để tránh cắt lỗ: cấm.
+- Live-money vẫn khóa; DEMO evidence bắt buộc trước live-ready.
