@@ -53,6 +53,29 @@ Deno.serve(async(req)=>{
   try{
     if(!(await authorized(req))) return json({ok:false,status:"UNAUTHORIZED"},401);
 
+    const readinessRows=await sql`
+      select * from ai_trade.bootcamp_readiness
+      where provider='THE5ERS'
+    `;
+    const readiness=readinessRows[0];
+    if(!readiness){
+      return json({
+        ok:false,status:"BOOTCAMP_READINESS_MISSING",
+        tradingActivated:false,liveMoneyLocked:true
+      },500);
+    }
+    if(String(readiness.readiness)!=="ELIGIBLE_FOR_DEMO_PREFLIGHT"){
+      return json({
+        ok:true,
+        status:String(readiness.readiness),
+        phase:Number(readiness.phase),
+        targetBalance:Number(readiness.target_balance),
+        lossFloor:Number(readiness.loss_floor),
+        tradingActivated:false,
+        liveMoneyLocked:true
+      });
+    }
+
     const token=Deno.env.get("METAAPI_TOKEN")?.trim()??"";
     const accountId=Deno.env.get("METAAPI_ACCOUNT_ID")?.trim()??"";
     if(!token||!accountId){
@@ -72,7 +95,14 @@ Deno.serve(async(req)=>{
 
     if(String(account.platform).toLowerCase()!=="mt5") throw new Error("MT5_REQUIRED");
     if(!String(account.server??"").toLowerCase().includes("demo")) throw new Error("DEMO_SERVER_REQUIRED");
-    if(String(account.state).toUpperCase()!=="DEPLOYED") await account.deploy();
+    if(String(account.state).toUpperCase()!=="DEPLOYED"){
+      return json({
+        ok:true,
+        status:"METAAPI_ACCOUNT_NOT_DEPLOYED",
+        tradingActivated:false,
+        liveMoneyLocked:true
+      });
+    }
     await account.waitConnected();
 
     const connection=account.getRPCConnection();
