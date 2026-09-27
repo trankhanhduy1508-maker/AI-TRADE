@@ -35,7 +35,7 @@ const DEFAULT_STATE: RuntimeState = {
   exitMode: 'TRAILING_ONLY',
   magic: 260927,
   demoVolume: 0.01,
-  maxPyramidAdds: 1,
+  maxPyramidAdds: 0,
   intents: [],
   events: [],
 };
@@ -47,7 +47,7 @@ async function loadState(): Promise<StoredState> {
   const existing = items.find(item => item.key === 'singleton');
   if (existing) {
     const state = existing as StoredState;
-    if (!Number.isInteger(state.maxPyramidAdds) || state.maxPyramidAdds < 0) state.maxPyramidAdds = 1;
+    if (!Number.isInteger(state.maxPyramidAdds) || state.maxPyramidAdds < 0) state.maxPyramidAdds = 0;
     if (state.managed && !Number.isInteger(state.managed.pyramidAdds)) state.managed = { ...state.managed, pyramidAdds: 0 };
     return state;
   }
