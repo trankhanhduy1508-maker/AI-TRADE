@@ -1,3 +1,79 @@
+## Founder rule — Zero Repo Access Collaboration
+
+This rule overrides the earlier assumption that ordinary collaborators may work inside the main repository.
+
+External partners / collaborators must **not** receive direct read access to the proprietary CWS AI Trade repository or Core source.
+
+### Collaboration model
+
+Use a one-way external contribution boundary:
+
+External collaborator
+-> Collaboration Gateway / shared workspace
+-> submits idea, UI artifact, API proposal, test case, or isolated code snippet
+-> Founder/AI review
+-> internal implementation into CWS AI Trade
+-> sanitized result / API contract returned outward
+
+The collaborator does not:
+- clone the Core repository;
+- browse repository history;
+- read private strategy source;
+- inspect research/backtest lessons;
+- access trading journals used as proprietary learning data;
+- access Supabase/Vault/broker credentials;
+- deploy production;
+- directly merge to protected branches.
+
+### What collaborators may receive
+
+Only task-specific, sanitized material:
+- public/synthetic API contracts;
+- mock data;
+- screenshots;
+- wireframes;
+- isolated UI package;
+- redacted error logs;
+- acceptance criteria;
+- test fixtures with no proprietary signal logic.
+
+### Proprietary learning vault
+
+The following are treated as trade-secret material:
+- AI-derived trading lessons;
+- backtest/post-trade research conclusions;
+- failure-pattern knowledge;
+- market-regime observations;
+- strategy-selection logic;
+- promotion-gate evidence;
+- private risk heuristics;
+- customer-derived de-identified trading telemetry used for research.
+
+These materials must live behind a Founder-controlled private boundary and must never be included in collaborator-facing packages.
+
+### Integration rule
+
+External code is treated as **untrusted input**.
+
+It must be:
+1. received outside the Core repo;
+2. scanned/reviewed;
+3. tested against sanitized contracts;
+4. rewritten or cherry-picked internally where appropriate;
+5. committed by an authorized internal actor.
+
+No external contributor receives a path back into Core.
+
+### Preferred surfaces
+
+A collaborator-facing surface may be:
+- a separate public/private "Contributor Sandbox" repository containing no proprietary Core;
+- a ticket/spec system;
+- a plugin/workspace that exposes only narrow project contracts;
+- a staging API with sanitized responses.
+
+The Core repository remains invisible.
+
 # CWS AI Trade — Collaboration & Secret/Know-How Protection V1
 
 Status: security architecture draft.
