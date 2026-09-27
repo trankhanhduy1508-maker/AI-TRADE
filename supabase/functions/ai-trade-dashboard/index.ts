@@ -23,6 +23,35 @@ function fmtR(v:unknown){
   return (n>0?"+":"")+n.toFixed(2)+"R";
 }
 
+const DASH_STRATEGY="TF-013A-FORWARD-DIVERSIFIED-TREND";
+const YAHOO_SYMBOLS:Record<string,string>={
+  EURUSD:"EURUSD=X",GBPUSD:"GBPUSD=X",USDJPY:"USDJPY=X",AUDUSD:"AUDUSD=X",
+  USDCAD:"CAD=X",USDCHF:"CHF=X",NZDUSD:"NZDUSD=X",XAUUSD:"GC=F",USOIL:"CL=F",
+  BTCUSD:"BTC-USD",ETHUSD:"ETH-USD",US30:"^DJI",NAS100:"^NDX",US500:"^GSPC"
+};
+
+async function yahooCandles(symbol:string,limit:number){
+  const yahoo=YAHOO_SYMBOLS[symbol]??YAHOO_SYMBOLS.EURUSD;
+  const now=Math.floor(Date.now()/1000);
+  const start=now-45*86400;
+  const url="https://query1.finance.yahoo.com/v8/finance/chart/"+encodeURIComponent(yahoo)+
+    "?period1="+start+"&period2="+now+"&interval=1h&events=history&includeAdjustedClose=true";
+  const res=await fetch(url,{headers:{"user-agent":"AI-TRADE-dashboard/1.0"}});
+  if(!res.ok)return [];
+  const payload=await res.json();
+  const result=payload?.chart?.result?.[0];
+  const q=result?.indicators?.quote?.[0];
+  const ts:number[]=result?.timestamp??[];
+  if(!q)return [];
+  const out=[];
+  for(let i=0;i<ts.length;i++){
+    const open=Number(q.open?.[i]),high=Number(q.high?.[i]),low=Number(q.low?.[i]),close=Number(q.close?.[i]);
+    if(![open,high,low,close].every(Number.isFinite))continue;
+    out.push({time:Number(ts[i]),open,high,low,close});
+  }
+  return out.slice(-Math.max(20,Math.min(limit,300)));
+}
+
 function badgeClass(kind:string){
   if(["ACTIVE","PASS","CONNECTED","COLLECTING"].includes(kind))return "good";
   if(["BLOCKED_APPROVAL","LOCKED","WAITING"].includes(kind))return "warn";
@@ -117,6 +146,116 @@ Deno.serve(async(req)=>{
       (select demo_send_enabled from ai_trade.runtime_config where id=1) as demo_send_enabled,
       (select automation_approval_verified from ai_trade.prop_program_config where provider='THE5ERS') as automation_approval_verified
   `;
+
+  if(format==="current"){
+    const positions=await sql`
+      select symbol,direction,entry_ts,entry_price::float8 as entry_price,
+             stop_price::float8 as stop_price,synthetic_volume::float8 as synthetic_volume,
+             updated_at
+      from ai_trade.shadow_broker_positions
+      where strategy_id=${DASH_STRATEGY}
+      order by updated_at desc
+    `;
+    let currentTrade=null;
+    if(positions[0]){
+      const p=positions[0];
+      const candles=await yahooCandles(String(p.symbol),20);
+      const latest=candles.at(-1);
+      currentTrade={
+        symbol:String(p.symbol),
+        direction:String(p.direction),
+        side:String(p.direction)==="UP"?"BUY":"SELL",
+        entryTs:new Date(p.entry_ts).toISOString(),
+        entryPrice:Number(p.entry_price),
+        currentPrice:latest?Number(latest.close):Number(p.entry_price),
+        stopPrice:Number(p.stop_price),
+        takeProfit:null,
+        floatingPL:null,
+        riskReward:null,
+        volumeLabel:"Shadow "+Number(p.synthetic_volume).toFixed(1),
+        mode:"SHADOW_ONLY"
+      };
+    }
+    return new Response(JSON.stringify({
+      ok:true,currentTrade,
+      openPositions:positions.map((p:any)=>({
+        symbol:String(p.symbol),direction:String(p.direction),
+        entryTs:new Date(p.entry_ts).toISOString(),
+        entryPrice:Number(p.entry_price),stopPrice:Number(p.stop_price),
+        syntheticVolume:Number(p.synthetic_volume)
+      })),
+      brokerOrders:false,liveMoneyLocked:true
+    }),{status:200,headers:{
+      "content-type":"application/json; charset=utf-8",
+      "cache-control":"no-store","access-control-allow-origin":"*","referrer-policy":"no-referrer"
+    }});
+  }
+
+  if(format==="trades"){
+    const requested=Math.max(1,Math.min(Number(url.searchParams.get("limit")??12)||12,50));
+    const trades=await sql`
+      select id,symbol,direction,entry_ts,exit_ts,
+             entry_price::float8 as entry_price,exit_price::float8 as exit_price,
+             initial_stop::float8 as initial_stop,
+             r_10bps::float8 as r_10bps,r_20bps::float8 as r_20bps,
+             exit_reason
+      from ai_trade.forward_shadow_trades
+      where strategy_id=${DASH_STRATEGY}
+      order by exit_ts desc,id desc
+      limit ${requested}
+    `;
+    return new Response(JSON.stringify({
+      ok:true,trades:trades.map((t:any)=>({
+        id:Number(t.id),symbol:String(t.symbol),direction:String(t.direction),
+        side:String(t.direction)==="UP"?"BUY":"SELL",status:"CLOSED",
+        entryTs:new Date(t.entry_ts).toISOString(),exitTs:new Date(t.exit_ts).toISOString(),
+        entryPrice:Number(t.entry_price),exitPrice:Number(t.exit_price),
+        stopPrice:Number(t.initial_stop),r10bps:Number(t.r_10bps),
+        r20bps:Number(t.r_20bps),exitReason:String(t.exit_reason??"")
+      }))
+    }),{status:200,headers:{
+      "content-type":"application/json; charset=utf-8",
+      "cache-control":"no-store","access-control-allow-origin":"*","referrer-policy":"no-referrer"
+    }});
+  }
+
+  if(format==="journal"){
+    const requested=Math.max(1,Math.min(Number(url.searchParams.get("limit")??12)||12,50));
+    const rows=await sql`
+      select id,trade_id,symbol,direction,entry_ts,exit_ts,
+             r_10bps::float8 as r_10bps,result_label,setup,
+             entry_reason,exit_reason,lesson,chart_timeframe,tags
+      from ai_trade.forward_trade_journal
+      where strategy_id=${DASH_STRATEGY}
+      order by exit_ts desc,id desc
+      limit ${requested}
+    `;
+    return new Response(JSON.stringify({
+      ok:true,journal:rows.map((j:any)=>({
+        id:Number(j.id),tradeId:String(j.trade_id),symbol:String(j.symbol),
+        direction:String(j.direction),entryTs:new Date(j.entry_ts).toISOString(),
+        exitTs:new Date(j.exit_ts).toISOString(),r10bps:Number(j.r_10bps),
+        resultLabel:String(j.result_label),setup:String(j.setup),
+        entryReason:String(j.entry_reason),exitReason:String(j.exit_reason),
+        lesson:String(j.lesson),chartTimeframe:String(j.chart_timeframe),tags:j.tags??[]
+      }))
+    }),{status:200,headers:{
+      "content-type":"application/json; charset=utf-8",
+      "cache-control":"no-store","access-control-allow-origin":"*","referrer-policy":"no-referrer"
+    }});
+  }
+
+  if(format==="candles"){
+    const symbol=String(url.searchParams.get("symbol")??"EURUSD").toUpperCase();
+    const limit=Math.max(20,Math.min(Number(url.searchParams.get("limit")??160)||160,300));
+    const candles=await yahooCandles(symbol,limit);
+    return new Response(JSON.stringify({
+      ok:true,symbol,timeframe:"1h",candles
+    }),{status:200,headers:{
+      "content-type":"application/json; charset=utf-8",
+      "cache-control":"no-store","access-control-allow-origin":"*","referrer-policy":"no-referrer"
+    }});
+  }
 
   if(url.searchParams.get("format")==="json"){
     const payload={
