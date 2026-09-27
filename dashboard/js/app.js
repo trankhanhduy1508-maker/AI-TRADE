@@ -259,6 +259,10 @@ async function load(){
         chartOpened:true
       });
       render();
+      const pos=document.getElementById("adminPositions");
+      if(pos)pos.innerHTML='<section class="section admin-priority"><div class="section-head"><h2>Current open positions</h2></div><div class="card card-pad"><div class="empty-state">Admin Preview — vị thế runtime bị ẩn cho đến khi xác thực Founder.</div></div></section>';
+      const trade=document.getElementById("currentTrade");
+      if(trade)trade.innerHTML='<section class="section"><div class="section-head"><h2>Trạng thái giao dịch hiện tại</h2></div><div class="card card-pad"><div class="empty-state">Admin Preview — Entry / SL / TP / Lot / P&L unavailable khi chưa xác thực Founder.</div></div></section>';
       const box=document.getElementById("errorBox");
       if(box){box.textContent="ADMIN PREVIEW — giao diện Founder/Admin thật, dữ liệu runtime được ẩn cho đến khi xác thực Founder.";box.style.display="block"}
       const holder=document.getElementById("candlestickChart");
