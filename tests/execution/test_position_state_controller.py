@@ -164,3 +164,13 @@ def test_trailing_requires_fresh_reconciled_state():
         assert len(terminal.sent) == 0
         state.close()
         adapter.close()
+
+
+def test_reconcile_uses_broker_snapshot_as_source_of_truth():
+    with paths() as db:
+        state = PositionStateStore(db[1])
+        state.ensure("old", "TF-004", 1.0)
+        state.reconcile_broker_positions("TF-004", (("new", 1.1),))
+        assert state.get("old").status == "CLOSED"
+        assert state.get("new").status == "OPEN"
+        state.close()
