@@ -1,3 +1,42 @@
+## The5ers Bootcamp Guard + Compliance Mode — 2026-09-27
+
+**GUARD ACTIVE / EXECUTION LOCKED.**
+
+Current Step 1 config:
+- initial: $5,000
+- target: $5,300
+- max-loss floor: $4,750
+- automation_approval_verified: false
+- execution enabled: false
+
+Implemented:
+- Python Bootcamp challenge guard;
+- cloud Bootcamp risk oracle;
+- projected stop-loss breach guard;
+- remaining loss-budget calculation;
+- visible-SL requirement;
+- DEMO-account requirement;
+- written automation approval gate;
+- deterministic prop-firm Compliance Mode.
+
+Evidence:
+- request #32: normal $5k state -> BLOCKED by execution-disabled + approval-required;
+- request #33: equity $4,780 + $40 projected SL -> projected $4,740, correctly blocked for max-loss breach;
+- Python Bootcamp guard core regression PASS;
+- Prop compliance core regression PASS.
+
+Compliance Mode does NOT implement anti-detection human impersonation. No random deceptive delay, fake input, spoofing or anti-abuse bypass.
+
+Source:
+- `src/execution/the5ers_bootcamp_guard.py`
+- `src/execution/prop_firm_compliance.py`
+- `supabase/functions/ai-trade-the5ers-bootcamp-guard/`
+- `execution/THE5ERS_BOOTCAMP_RULES_2026-09-27.md`
+- `execution/THE5ERS_BOOTCAMP_GUARD_IMPLEMENTATION.md`
+
+Bootcamp MT5 challenge execution remains locked until official rules are re-checked and written automation approval is verified. Funded/live-money path remains hard locked.
+
+
 ## 13-market autonomous paper universe — 2026-09-27
 
 **ACTIVE.**
