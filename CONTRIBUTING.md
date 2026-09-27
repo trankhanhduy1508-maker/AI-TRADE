@@ -1,4 +1,4 @@
-# Contributing to AI-TRADE
+# Contributing to CWS AI Trade
 
 AI-TRADE uses least-privilege collaboration.
 
