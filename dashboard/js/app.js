@@ -78,6 +78,7 @@ function selectedTrade(state){
     };
   }
   if(!trade)return null;
+  trade.symbolSpec=state.symbolSpecs?.[symbol]??null;
   const latest=state.candles?.at(-1);
   if(latest&&state.selectedSymbol===symbol)trade.currentPrice=Number(latest.close);
   const entry=Number(trade.entryPrice),stop=Number(trade.stopPrice),mark=Number(trade.currentPrice);
@@ -123,6 +124,7 @@ function saveCache(){
     localStorage.setItem(cacheKey,JSON.stringify({
       savedAt:Date.now(),overview:s.overview,testerAdmin:s.testerAdmin,currentTrade:s.currentTrade,
       shadowPositions:s.shadowPositions,trades:s.trades,journal:s.journal,arena:s.arena,
+      symbolSpecs:s.symbolSpecs,
       selectedSymbol:s.selectedSymbol,selectedTimeframe:s.selectedTimeframe
     }));
   }catch{}
