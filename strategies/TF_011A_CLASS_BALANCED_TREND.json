@@ -1,0 +1,31 @@
+{
+  "strategy_id": "TF-011A-CLASS-BALANCED-TREND",
+  "version": "0.1.0",
+  "status": "PREREGISTERED_FINAL_HOLDOUT",
+  "source_signal": "TF-009A-DIVERSIFIED-TREND-ENSEMBLE",
+  "selected_markets": [
+    "GBPUSD",
+    "USDJPY",
+    "XAUUSD",
+    "USOIL",
+    "BTCUSD",
+    "ETHUSD",
+    "US30",
+    "NAS100",
+    "US500"
+  ],
+  "class_weights": {
+    "FX": 0.25,
+    "COMMODITY": 0.25,
+    "CRYPTO": 0.25,
+    "INDEX": 0.25
+  },
+  "within_class_weight": "EQUAL",
+  "entry_timing": "NEXT_OPEN",
+  "atr_bars": 20,
+  "emergency_stop_atr": 4,
+  "gap_stop_policy": "WORSE_OF_STOP_OR_BAR_OPEN",
+  "review_every_bars": 21,
+  "pyramiding": false,
+  "capital_risk": "UNCOMMITTED"
+}
