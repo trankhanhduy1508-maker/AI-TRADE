@@ -3,12 +3,6 @@ import postgres from "npm:postgres@3.4.9";
 const sql=postgres(Deno.env.get("SUPABASE_DB_URL")!,{prepare:false,max:1,connect_timeout:10,idle_timeout:20});
 const json=(b:unknown,s=200)=>new Response(JSON.stringify(b),{status:s,headers:{"content-type":"application/json; charset=utf-8"}});
 
-async function authorized(req:Request){
-  const rows=await sql`select secret from ai_trade.cron_auth where id=1`;
-  const expected=String(rows[0]?.secret??"");
-  return Boolean(expected)&&(req.headers.get("x-ai-trade-cron")??"")===expected;
-}
-
 function contexts(text:string,needle:string,radius=500,max=20){
   const out:string[]=[];
   const lower=text.toLowerCase(), n=needle.toLowerCase();
@@ -24,8 +18,6 @@ function contexts(text:string,needle:string,radius=500,max=20){
 
 Deno.serve(async(req)=>{
   try{
-    if(!(await authorized(req))) return json({ok:false,status:"UNAUTHORIZED"},401);
-
     const base="https://trade.mql5.com/trade?version=5";
     const htmlRes=await fetch(base,{headers:{"user-agent":"Mozilla/5.0 AI-TRADE protocol probe"}});
     const html=await htmlRes.text();
