@@ -114,7 +114,7 @@ Deno.serve(async(req)=>{
 
   const format=url.searchParams.get("format");
   if(!format){
-    const target="https://raw.githack.com/trankhanhduy1508-maker/AI-TRADE/3f3016094029f78e41e621b23ea906b51a741965/dashboard/index.html?t="+encodeURIComponent(token);
+    const target="https://raw.githack.com/trankhanhduy1508-maker/AI-TRADE/a83cff8d68e46becf655b7f77fafb37433b8cb83/dashboard/index.html?t="+encodeURIComponent(token);
     return new Response(null,{
       status:302,
       headers:{
@@ -158,7 +158,7 @@ Deno.serve(async(req)=>{
   `;
 
   const [demo]=await sql`
-    select server,account_type,is_active,last_verified_at,source
+    select account_login,server,account_type,is_active,last_verified_at,source
     from ai_trade.mt5_demo_accounts
     where account_type='DEMO' and is_active=true
     order by last_verified_at desc nulls last
@@ -270,7 +270,8 @@ Deno.serve(async(req)=>{
         floatingR,
         riskReward:null,
         volumeLabel:"Shadow "+Number(p.synthetic_volume).toFixed(1),
-        mode:"SHADOW_ONLY"
+        mode:"SHADOW_ONLY",
+        mt5Login:demo?.account_login?String(demo.account_login):null
       };
     }
     return new Response(JSON.stringify({
@@ -388,6 +389,7 @@ Deno.serve(async(req)=>{
       })),
       mt5:{
         connected:Boolean(demo?.is_active),
+        login:demo?.account_login?String(demo.account_login):null,
         server:String(demo?.server??""),
         accountType:String(demo?.account_type??""),
         lastVerifiedAt:demo?.last_verified_at?new Date(demo.last_verified_at).toISOString():null
