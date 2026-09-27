@@ -1,4 +1,4 @@
-# AI-TRADE — Collaboration & Secret/Know-How Protection V1
+# CWS AI Trade — Collaboration & Secret/Know-How Protection V1
 
 Status: security architecture draft.
 
