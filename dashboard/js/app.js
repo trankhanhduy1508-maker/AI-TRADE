@@ -22,6 +22,8 @@ const adminPreview=params.get("mode")==="admin-preview";
 const api=new DashboardApi(token);
 const store=new DashboardStore();
 const cacheKey="cws-ai-trade-cache-"+token.slice(0,12);
+const candleCache=new Map();
+const CANDLE_CACHE_MS=60000;
 
 function skeletonCard(title){
   return `<section class="section"><div class="section-head"><h2>${title}</h2></div><div class="card card-pad loading-card"><i></i><i></i><i></i></div></section>`;
@@ -149,16 +151,24 @@ async function reloadChart(){
     const holder=document.getElementById("candlestickChart");
     if(holder)holder.innerHTML='<div class="chart-loading">Đang tải market data công khai…</div>';
     try{
-      const u=new URL(CONFIG.apiBase);
-      u.searchParams.set("format","preview-candles");
-      u.searchParams.set("symbol",symbol);
-      u.searchParams.set("timeframe",timeframe);
-      const r=await fetch(u,{cache:"no-store"});
-      if(!r.ok)throw new Error("PREVIEW_CANDLES_"+r.status);
-      const data=await r.json();
-      const candles=data.candles??[];
-      store.set({selectedSymbol:symbol,selectedTimeframe:timeframe,chartOpened:true,candles});
-      await mountCandlestick(candles,null);
+      const key=symbol+"|"+timeframe;
+      const cached=candleCache.get(key);
+      if(cached&&Date.now()-cached.savedAt<CANDLE_CACHE_MS){
+        store.set({selectedSymbol:symbol,selectedTimeframe:timeframe,chartOpened:true,candles:cached.candles});
+        await mountCandlestick(cached.candles,null);
+      }else{
+        const u=new URL(CONFIG.apiBase);
+        u.searchParams.set("format","preview-candles");
+        u.searchParams.set("symbol",symbol);
+        u.searchParams.set("timeframe",timeframe);
+        const r=await fetch(u,{cache:"no-store"});
+        if(!r.ok)throw new Error("PREVIEW_CANDLES_"+r.status);
+        const data=await r.json();
+        const candles=data.candles??[];
+        candleCache.set(key,{savedAt:Date.now(),candles});
+        store.set({selectedSymbol:symbol,selectedTimeframe:timeframe,chartOpened:true,candles});
+        await mountCandlestick(candles,null);
+      }
     }catch{
       if(holder)holder.innerHTML='<div class="empty-state">Admin Preview — market data hiện không tải được.</div>';
     }
@@ -170,16 +180,25 @@ async function reloadChart(){
   const holder=document.getElementById("candlestickChart");
   if(holder)holder.innerHTML='<div class="chart-loading">Đang tải '+symbol+' · '+timeframe.toUpperCase()+'…</div>';
   try{
-    const [candles,specResult]=await Promise.all([
-      api.getFeature("candles",{symbol,timeframe,limit:220}),
-      api.getFeature("symbol-spec",{symbol}).catch(()=>({supported:false,spec:null,unavailableReason:"SPEC_REQUEST_FAILED"}))
-    ]);
+    const key=symbol+"|"+timeframe;
     const prior=store.get();
+    const cached=candleCache.get(key);
+    const candlesPromise=cached&&Date.now()-cached.savedAt<CANDLE_CACHE_MS
+      ?Promise.resolve({candles:cached.candles})
+      :api.getFeature("candles",{symbol,timeframe,limit:220});
+    const [candles,specResult]=await Promise.all([
+      candlesPromise,
+      prior.symbolSpecs?.[symbol]
+        ?Promise.resolve({spec:prior.symbolSpecs[symbol],supported:prior.symbolSpecs[symbol].supported})
+        :api.getFeature("symbol-spec",{symbol}).catch(()=>({supported:false,spec:null,unavailableReason:"SPEC_REQUEST_FAILED"}))
+    ]);
+    const liveCandles=candles.candles??[];
+    if(!cached||Date.now()-cached.savedAt>=CANDLE_CACHE_MS)candleCache.set(key,{savedAt:Date.now(),candles:liveCandles});
     const symbolSpec=specResult?.spec
-      ?{...specResult.spec,supported:true}
+      ?{...specResult.spec,supported:specResult?.supported!==false}
       :{supported:false,reason:specResult?.unavailableReason??"SPEC_UNAVAILABLE"};
     store.set({
-      candles:candles.candles??[],
+      candles:liveCandles,
       symbolSpecs:{...(prior.symbolSpecs??{}),[symbol]:symbolSpec},
       selectedSymbol:symbol,selectedTimeframe:timeframe,chartOpened:true
     });
