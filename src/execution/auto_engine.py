@@ -85,6 +85,8 @@ class DemoAutoTradeEngine:
             for position in self.adapter.positions(self.config.symbol)
             if position.magic == self.config.magic
         )
+        if len(ours) > 1:
+            return AutoTradeOutcome("NO_ACTION", "MULTIPLE_OWN_POSITIONS")
         if ours:
             return self._manage(ours[0], bars, snapshot)
 
@@ -108,6 +110,18 @@ class DemoAutoTradeEngine:
         )
         result: ExecutionOutcome = self.entry.submit(order, snapshot, risk_context)
         return AutoTradeOutcome(result.status, client_id)
+
+    def reconcile_owned_positions(self) -> tuple[MT5Position, ...]:
+        ours = tuple(
+            position
+            for position in self.adapter.positions(self.config.symbol)
+            if position.magic == self.config.magic
+        )
+        self.state.reconcile_broker_positions(
+            self.config.strategy_id,
+            tuple((position.position_id, position.stop_loss) for position in ours),
+        )
+        return ours
 
     def _manage(
         self,
