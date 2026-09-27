@@ -166,6 +166,101 @@ Deno.serve(async(req)=>{
   const evalState=String(readiness?.evaluation_state??"COLLECTING");
   const updated=new Date().toLocaleString("vi-VN",{timeZone:"Asia/Ho_Chi_Minh",hour12:false});
 
+  if(url.searchParams.get("format")==="svg"){
+    const W=420,H=1180;
+    const barWidth=332;
+    const p1=Math.round(barWidth*pct(closed,50)/100);
+    const p2=Math.round(barWidth*pct(days,120)/100);
+    const p3=Math.round(barWidth*pct(markets,8)/100);
+    const stateColor=evalState==="FORWARD_CANDIDATE"?"#53d18b":evalState==="FORWARD_REJECT"?"#ff6b6b":"#f1c75b";
+    const cronRows=crons.map((c:any,i:number)=>{
+      const label=c.jobname==="ai-trade-forward-shadow-daily"?"1. Tín hiệu forward":c.jobname==="ai-trade-shadow-broker-reconcile-daily"?"2. Shadow Broker":"3. Chấm điểm";
+      const time=c.schedule.startsWith("15 3")?"10:15 VN":c.schedule.startsWith("20 3")?"10:20 VN":c.schedule.startsWith("25 3")?"10:25 VN":String(c.schedule);
+      const y=430+i*66;
+      return `<rect x="24" y="${y}" width="372" height="54" rx="14" fill="#151922" stroke="#262d3a"/>
+        <text x="40" y="${y+23}" class="label">${esc(label)}</text>
+        <text x="40" y="${y+42}" class="sub">${esc(time)}</text>
+        <rect x="315" y="${y+14}" width="64" height="26" rx="13" fill="${c.active?"#173529":"#3a1d21"}"/>
+        <text x="347" y="${y+32}" text-anchor="middle" class="${c.active?"good":"bad"}">${c.active?"ACTIVE":"OFF"}</text>`;
+    }).join("");
+
+    const svg=`<svg xmlns="http://www.w3.org/2000/svg" width="100%" viewBox="0 0 ${W} ${H}" role="img" aria-label="AI-TRADE Forward Monitor">
+      <style>
+        text{font-family:Inter,Arial,sans-serif;fill:#f4f6fb}
+        .title{font-size:24px;font-weight:700}.sub{font-size:12px;fill:#939cad}.label{font-size:14px;font-weight:600}
+        .value{font-size:24px;font-weight:700}.good{font-size:11px;font-weight:700;fill:#53d18b}.warn{font-size:11px;font-weight:700;fill:#f1c75b}.bad{font-size:11px;font-weight:700;fill:#ff6b6b}
+        .small{font-size:12px}.metric{font-size:13px;fill:#939cad}.metricv{font-size:15px;font-weight:700}
+      </style>
+      <rect width="420" height="1180" fill="#0b0d12"/>
+      <text x="24" y="42" class="title">AI-TRADE Forward Monitor</text>
+      <text x="24" y="64" class="sub">TF-013A · live từ Supabase · refresh 30 giây</text>
+      <circle cx="377" cy="36" r="5" fill="#53d18b"/><text x="367" y="58" text-anchor="middle" class="good">LIVE</text>
+
+      <rect x="24" y="86" width="372" height="76" rx="16" fill="#151922" stroke="#262d3a"/>
+      <text x="40" y="113" class="sub">Trạng thái kiểm chứng</text>
+      <text x="40" y="143" font-size="20" font-weight="700">${esc(evalState)}</text>
+      <rect x="284" y="105" width="96" height="34" rx="17" fill="#222832"/>
+      <text x="332" y="127" text-anchor="middle" font-size="11" font-weight="700" fill="${stateColor}">${esc(evalState)}</text>
+
+      <text x="24" y="194" class="label">Tiến độ đủ mẫu</text>
+
+      <rect x="24" y="210" width="372" height="72" rx="14" fill="#151922" stroke="#262d3a"/>
+      <text x="40" y="236" class="sub">Closed trades</text><text x="380" y="238" text-anchor="end" class="value">${closed}/50</text>
+      <rect x="40" y="254" width="${barWidth}" height="8" rx="4" fill="#252b36"/><rect x="40" y="254" width="${p1}" height="8" rx="4" fill="#71a7ff"/>
+
+      <rect x="24" y="292" width="372" height="72" rx="14" fill="#151922" stroke="#262d3a"/>
+      <text x="40" y="318" class="sub">Số ngày</text><text x="380" y="320" text-anchor="end" class="value">${days}/120</text>
+      <rect x="40" y="336" width="${barWidth}" height="8" rx="4" fill="#252b36"/><rect x="40" y="336" width="${p2}" height="8" rx="4" fill="#71a7ff"/>
+
+      <rect x="24" y="374" width="372" height="72" rx="14" fill="#151922" stroke="#262d3a"/>
+      <text x="40" y="400" class="sub">Market có trade</text><text x="380" y="402" text-anchor="end" class="value">${markets}/8</text>
+      <rect x="40" y="418" width="${barWidth}" height="8" rx="4" fill="#252b36"/><rect x="40" y="418" width="${p3}" height="8" rx="4" fill="#71a7ff"/>
+
+      <text x="24" y="474" class="label">Pipeline tự động mỗi ngày</text>
+      ${cronRows}
+
+      <rect x="24" y="640" width="372" height="186" rx="16" fill="#151922" stroke="#262d3a"/>
+      <text x="40" y="668" class="label">Forward performance</text>
+      <text x="40" y="697" class="metric">Net R @ 10bps</text><text x="380" y="697" text-anchor="end" class="metricv">${esc(fmtR(readiness?.net_r_10bps))}</text>
+      <text x="40" y="725" class="metric">Expectancy</text><text x="380" y="725" text-anchor="end" class="metricv">${esc(fmtR(readiness?.expectancy_r_10bps))}</text>
+      <text x="40" y="753" class="metric">Profit factor</text><text x="380" y="753" text-anchor="end" class="metricv">${readiness?.profit_factor_r_10bps==null?"—":Number(readiness.profit_factor_r_10bps).toFixed(2)}</text>
+      <text x="40" y="781" class="metric">Max drawdown</text><text x="380" y="781" text-anchor="end" class="metricv">${esc(fmtR(readiness?.max_drawdown_r_10bps))}</text>
+      <text x="40" y="809" class="metric">Net R @ 20bps</text><text x="380" y="809" text-anchor="end" class="metricv">${esc(fmtR(readiness?.net_r_20bps))}</text>
+
+      <rect x="24" y="840" width="180" height="190" rx="16" fill="#151922" stroke="#262d3a"/>
+      <text x="40" y="868" class="label">Execution</text>
+      <text x="40" y="898" class="metric">Forward states</text><text x="188" y="898" text-anchor="end" class="metricv">${Number(counts?.forward_states??0)}</text>
+      <text x="40" y="926" class="metric">Closed trades</text><text x="188" y="926" text-anchor="end" class="metricv">${Number(counts?.forward_trades??0)}</text>
+      <text x="40" y="954" class="metric">Shadow orders</text><text x="188" y="954" text-anchor="end" class="metricv">${Number(counts?.shadow_orders??0)}</text>
+      <text x="40" y="982" class="metric">Open positions</text><text x="188" y="982" text-anchor="end" class="metricv">${Number(counts?.shadow_positions??0)}</text>
+      <text x="40" y="1010" class="metric">Flagged bars</text><text x="188" y="1010" text-anchor="end" class="metricv">${Number(readiness?.flagged_bars??0)}</text>
+
+      <rect x="216" y="840" width="180" height="190" rx="16" fill="#151922" stroke="#262d3a"/>
+      <text x="232" y="868" class="label">MT5 DEMO</text>
+      <text x="232" y="898" class="metric">Kết nối</text><text x="380" y="898" text-anchor="end" class="${demo?.is_active?"good":"bad"}">${demo?.is_active?"CONNECTED":"OFF"}</text>
+      <text x="232" y="926" class="metric">Server</text><text x="380" y="926" text-anchor="end" class="small">${esc(demo?.server??"—")}</text>
+      <text x="232" y="954" class="metric">Loại</text><text x="380" y="954" text-anchor="end" class="metricv">${esc(demo?.account_type??"—")}</text>
+      <text x="232" y="982" class="metric">The5ers</text><text x="380" y="982" text-anchor="end" class="warn">${esc(gates?.the5ers_readiness??"—")}</text>
+      <text x="232" y="1010" class="metric">Live money</text><text x="380" y="1010" text-anchor="end" class="warn">LOCKED</text>
+
+      <rect x="24" y="1046" width="372" height="80" rx="16" fill="#151922" stroke="#262d3a"/>
+      <text x="40" y="1074" class="label">Safety gates</text>
+      <text x="40" y="1100" class="metric">Approval: ${gates?.automation_approval_verified?"VERIFIED":"CHƯA CÓ"} · Risk: ${gates?.risk_profile_approved?"APPROVED":"CHƯA DUYỆT"} · DEMO send: ${gates?.demo_send_enabled?"ON":"OFF"}</text>
+      <text x="40" y="1148" class="sub">Cập nhật ${esc(updated)} · Không hiển thị credential MT5</text>
+    </svg>`;
+
+    return new Response(svg,{
+      status:200,
+      headers:{
+        "content-type":"image/svg+xml; charset=utf-8",
+        "cache-control":"no-store, max-age=0",
+        "refresh":"30",
+        "referrer-policy":"no-referrer",
+        "access-control-allow-origin":"*"
+      }
+    });
+  }
+
   const cronCards=crons.map((c:any)=>{
     const label=
       c.jobname==="ai-trade-forward-shadow-daily"?"1. Tín hiệu forward":
