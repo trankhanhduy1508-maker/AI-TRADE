@@ -1,0 +1,25 @@
+name: MT5 Demo Protocol Probe
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'cloud/mt5-demo-bootstrap/**'
+      - '.github/workflows/mt5-demo-protocol-probe.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  protocol-probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install pinned pymt5
+        run: pip install 'git+https://github.com/cloudQuant/pymt5.git@e7b5a8d28201879576e6cd22a39b9ea8677d4ee1'
+      - name: Probe official MetaTrader WebTerminal transport only
+        run: python cloud/mt5-demo-bootstrap/probe.py
