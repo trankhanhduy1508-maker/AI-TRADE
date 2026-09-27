@@ -6,6 +6,7 @@ import{renderCurrentTrade}from"./modules/current-trade.js";
 import{renderProgress}from"./modules/progress.js";
 import{renderPipeline}from"./modules/pipeline.js";
 import{renderRecentTrades}from"./modules/recent-trades.js";
+import{renderTrainingArena}from"./modules/training-arena.js";
 import{renderJournal}from"./modules/journal.js";
 import{renderCandlestickShell,mountCandlestick}from"./modules/candlestick.js";
 import{renderPerformance}from"./modules/performance.js";
@@ -23,6 +24,7 @@ function shell(){
     <div id="progress"></div>
     <div id="pipeline"></div>
     <div id="recentTrades"></div>
+    <div id="trainingArena"></div>
     <div id="journal"></div>
     <div id="chart"></div>
     <div id="performance"></div>
@@ -36,6 +38,7 @@ function render(){
   document.getElementById("progress").innerHTML=renderProgress(o.evaluation,CONFIG.sampleTargets);
   document.getElementById("pipeline").innerHTML=renderPipeline(o.crons);
   document.getElementById("recentTrades").innerHTML=renderRecentTrades(s.trades);
+  document.getElementById("trainingArena").innerHTML=renderTrainingArena(s.arena??{});
   document.getElementById("journal").innerHTML=renderJournal(s.journal);
   document.getElementById("chart").innerHTML=renderCandlestickShell(s.selectedSymbol,s.selectedTimeframe);
   document.getElementById("performance").innerHTML=renderPerformance(o.evaluation);
@@ -84,9 +87,10 @@ async function load(){
     const current=await api.getFeature("current").catch(()=>({currentTrade:null}));
     const trades=await api.getFeature("trades",{limit:12}).catch(()=>({trades:[]}));
     const journal=await api.getFeature("journal",{limit:12}).catch(()=>({journal:[]}));
+    const arena=await api.getFeature("arena").catch(()=>({positions:[],trades:[],journal:[]}));
     const symbol=current.currentTrade?.symbol||trades.trades?.[0]?.symbol||store.get().selectedSymbol||CONFIG.defaultSymbol;
     const candles=await api.getFeature("candles",{symbol,timeframe:store.get().selectedTimeframe,limit:160}).catch(()=>({candles:[]}));
-    store.set({overview,currentTrade:current.currentTrade??null,trades:trades.trades??[],journal:journal.journal??[],candles:candles.candles??[],selectedSymbol:symbol});
+    store.set({overview,currentTrade:current.currentTrade??null,trades:trades.trades??[],journal:journal.journal??[],arena,candles:candles.candles??[],selectedSymbol:symbol});
     render();
   }catch(e){
     const box=document.getElementById("errorBox");if(box){box.textContent="Không tải được dashboard: "+e.message;box.style.display="block"}
