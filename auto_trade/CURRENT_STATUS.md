@@ -1,3 +1,23 @@
+## Canonical MT5 DEMO recovered — 2026-09-27
+
+Do not create a duplicate account.
+
+- MetaQuotes-Demo login: `113247784`.
+- account_type: DEMO; is_active: true.
+- GitHub Actions run `36309825439` / job `108593487045`: SUCCESS.
+- Runtime evidence: is_demo=true, is_real=false, trade_allowed=true, balance=100000 demo units, leverage=100.
+- Master + investor credentials are referenced from Supabase Vault; passwords are not stored in GitHub/logs.
+- Source: `github-actions-oidc`.
+- Direct Supabase Deno WebTerminal probe request #116: MT5_PROTOCOL_READY, build 6230, initCode=0.
+- Temporary manual credential-onboarding path has been disabled and tokens revoked.
+- Current chat tool surface blocked direct financial-account login/order execution; no bypass attempted.
+- No broker order was sent in this continuation.
+- TF-013A forward shadow remains ACTIVE: 14 state rows, 0 closed trades, daily cron `15 3 * * *` UTC.
+- The5ers readiness remains BLOCKED_APPROVAL; risk profile remains unapproved; live/funded hard lock remains.
+
+Full evidence:
+`reports/AI_TRADE_RESEARCH_TO_FORWARD_2026-09-27.md`.
+
 ## Generic MT5 DEMO cloud bootstrap — 2026-09-27
 
 A direct Supabase → MetaTrader WebTerminal protocol path is now implemented.
