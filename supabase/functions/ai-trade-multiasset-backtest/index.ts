@@ -171,6 +171,58 @@ async function yahooBars(symbol:string,start:string,endExclusive:string):Promise
   return bars;
 }
 
+async function cryptoCompareBars(
+  fsym:string,
+  tsym:string,
+  start:string,
+  endExclusive:string,
+):Promise<Bar[]>{
+  const startTs=Math.floor(new Date(start+"T00:00:00Z").getTime()/1000);
+  let toTs=Math.floor(new Date(endExclusive+"T00:00:00Z").getTime()/1000)-1;
+  const byTs=new Map<number,Bar>();
+
+  for(let page=0;page<4;page++){
+    const url=
+      "https://min-api.cryptocompare.com/data/v2/histoday"+
+      "?fsym="+encodeURIComponent(fsym)+
+      "&tsym="+encodeURIComponent(tsym)+
+      "&limit=2000&aggregate=1&toTs="+toTs+
+      "&e=CCCAGG&tryConversion=true";
+    const response=await fetch(url,{
+      headers:{"user-agent":"AI-TRADE-research/0.5"},
+    });
+    if(!response.ok) throw new Error("CRYPTOCOMPARE_HTTP_"+response.status);
+    const payload=await response.json();
+    if(String(payload?.Response??"").toLowerCase()==="error"){
+      throw new Error("CRYPTOCOMPARE_"+String(payload?.Message??"ERROR"));
+    }
+    const rows=payload?.Data?.Data??[];
+    if(!Array.isArray(rows)||rows.length===0) break;
+
+    let earliest=Number.POSITIVE_INFINITY;
+    for(const row of rows){
+      const timestamp=Number(row.time);
+      earliest=Math.min(earliest,timestamp);
+      if(timestamp<startTs||timestamp>=Math.floor(new Date(endExclusive+"T00:00:00Z").getTime()/1000)) continue;
+      const open=finite(row.open);
+      const high=finite(row.high);
+      const low=finite(row.low);
+      const close=finite(row.close);
+      if(open===null||high===null||low===null||close===null) continue;
+      if(open<=0||high<=0||low<=0||close<=0) continue;
+      if(!(high>=Math.max(open,close)&&low<=Math.min(open,close))) continue;
+      byTs.set(timestamp,{timestamp,open,high,low,close});
+    }
+    if(!Number.isFinite(earliest)||earliest<=startTs) break;
+    toTs=earliest-1;
+    await new Promise(resolve=>setTimeout(resolve,150));
+  }
+
+  const bars=[...byTs.values()].sort((a,b)=>a.timestamp-b.timestamp);
+  if(bars.length<80) throw new Error("INSUFFICIENT_CRYPTOCOMPARE_BARS");
+  return bars;
+}
+
 function summarize(rs:number[]):Metrics{
   if(rs.length===0){
     return {
@@ -370,6 +422,19 @@ function analyze(instrument:Instrument,bars:Bar[]){
 Deno.serve(async(req)=>{
   try{
     if(!(await authorized(req))) return json({ok:false,status:"UNAUTHORIZED"},401);
+    const body=await req.json().catch(()=>({})) as {
+      symbols?:string[];
+      runKey?:string;
+    };
+    const requestedSymbols=Array.isArray(body.symbols)
+      ? new Set(body.symbols.map(x=>String(x).toUpperCase()))
+      : null;
+    const selected=requestedSymbols
+      ? UNIVERSE.filter(x=>requestedSymbols.has(x.key))
+      : UNIVERSE;
+    if(selected.length===0){
+      return json({ok:false,status:"NO_MATCHING_SYMBOLS",brokerOrders:false},400);
+    }
 
     const today=new Date();
     const requestedEnd=today.toISOString().slice(0,10);
@@ -378,10 +443,17 @@ Deno.serve(async(req)=>{
     )).toISOString().slice(0,10);
 
     const results=[];
-    for(const instrument of UNIVERSE){
+    for(const instrument of selected){
       try{
-        const bars=await yahooBars(instrument.yahooSymbol,REQUESTED_START,endExclusive);
-        results.push({ok:true,...analyze(instrument,bars)});
+        const useCryptoCompare=instrument.key==="ETHUSD";
+        const bars=useCryptoCompare
+          ? await cryptoCompareBars("ETH","USD",REQUESTED_START,endExclusive)
+          : await yahooBars(instrument.yahooSymbol,REQUESTED_START,endExclusive);
+        results.push({
+          ok:true,
+          dataSource:useCryptoCompare?"CRYPTOCOMPARE_CCCAGG":"YAHOO_RESEARCH_PROXY",
+          ...analyze(instrument,bars)
+        });
       }catch(error){
         results.push({
           ok:false,
@@ -397,7 +469,8 @@ Deno.serve(async(req)=>{
 
     const successful=results.filter((x:any)=>x.ok);
     const failed=results.filter((x:any)=>!x.ok);
-    const runKey="TF004_MISSING_ASSETS_2016_"+requestedEnd.replaceAll("-","")+"_V1";
+    const runKey=body.runKey?.trim()||
+      ("TF004_"+selected.map(x=>x.key).join("_")+"_2016_"+requestedEnd.replaceAll("-","")+"_V2");
     const result={
       ok:failed.length===0,
       status:failed.length===0?"COMPLETE":"PARTIAL",
@@ -406,7 +479,7 @@ Deno.serve(async(req)=>{
       strategyId:STRATEGY_ID,
       requestedStart:REQUESTED_START,
       requestedEnd,
-      universeSize:UNIVERSE.length,
+      universeSize:selected.length,
       successfulCount:successful.length,
       failedCount:failed.length,
       results,
@@ -424,7 +497,7 @@ Deno.serve(async(req)=>{
       )
       values(
         ${runKey},${STRATEGY_ID},${REQUESTED_START}::date,
-        ${requestedEnd}::date,${UNIVERSE.length},
+        ${requestedEnd}::date,${selected.length},
         ${sql.json(result)}
       )
       on conflict (run_key) do nothing
