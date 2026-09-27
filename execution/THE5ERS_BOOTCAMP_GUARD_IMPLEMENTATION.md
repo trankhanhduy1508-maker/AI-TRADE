@@ -41,28 +41,36 @@ The guard is therefore intentionally fail-closed.
 
 ## Evidence
 
-Synthetic normal-state probe:
-- request id 32
-- balance/equity: 5000/5000
-- projected SL loss: 50
-- target: 5300
-- floor: 4750
-- remaining loss budget: 250
-- decision: BLOCKED
-- reasons:
+Synthetic normal-state probes:
+- request #32 established the original guard baseline.
+- request #35 verified monitor v2 at balance/equity 5000/5000 with projected SL loss 50.
+- target: 5300; floor: 4750; remaining loss budget: 250.
+- projected equity at SL: 4950; projected remaining budget: 200.
+- alert: NORMAL.
+- decision: BLOCKED by:
   - BOOTCAMP_EXECUTION_DISABLED
   - AUTOMATION_APPROVAL_REQUIRED
 
-Synthetic near-floor probe:
-- request id 33
-- balance/equity: 4800/4780
-- projected SL loss: 40
-- projected equity at SL: 4740
-- remaining loss budget: 30
-- decision: BLOCKED
-- additional reasons:
+Synthetic near-floor probes:
+- request #33 established the original floor-breach baseline.
+- request #36 verified monitor v2 at balance/equity 4800/4780 with projected SL loss 40.
+- projected equity at SL: 4740; remaining loss budget: 30.
+- projected remaining budget: 0.
+- alert: PROJECTED_STOP_BREACH.
+- decision: BLOCKED with:
+  - BOOTCAMP_EXECUTION_DISABLED
+  - AUTOMATION_APPROVAL_REQUIRED
   - PROJECTED_STOP_BREACHES_MAX_LOSS
   - INTENT_EXCEEDS_REMAINING_LOSS_BUDGET
+
+Cloud integration:
+- ai-trade-the5ers-bootcamp-guard v2 is ACTIVE.
+- ai-trade-tick v5 checks unified readiness before broker access.
+- request #37 returned BLOCKED_APPROVAL, tradingActivated=false, liveMoneyLocked=true.
+- durable ai_trade.compliance_intents enforces one intent per (strategy_id, symbol, closed bar).
+- same-bar partial close + TP removal was split: TP removal is deferred to the next closed bar.
+- every broker mutation path reserves a compliance intent with visible-SL and written-approval checks.
+- projected entry loss uses broker lossTickValue and tickSize; unavailable broker loss geometry fails closed.
 
 Python core regression:
 - Bootcamp guard core tests PASS.
