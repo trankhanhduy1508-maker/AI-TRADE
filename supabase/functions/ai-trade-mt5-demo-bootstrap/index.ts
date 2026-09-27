@@ -474,7 +474,7 @@ Deno.serve(async (req) => {
 
     const base = buildBasePayload(firstName, secondName, email, emailCode);
 
-    if (!emailCode) {
+    if (!emailCode && !aliasMode) {
       const verificationPayload = Buffer.concat([
         i16(mt.serverBuild || 0),
         fixedBytes(cid, 16),
@@ -515,7 +515,7 @@ Deno.serve(async (req) => {
           liveMoneyLocked: true,
         });
       }
-    } else {
+    } else if (emailCode) {
       const submitted = await mt.send(CMD_SEND_VERIFY_CODES, base, 20000);
       if (submitted.code !== 0) {
         return json({
