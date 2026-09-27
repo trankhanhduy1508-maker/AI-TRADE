@@ -151,7 +151,7 @@ Deno.serve(async(req)=>{
   }
   const url=new URL(req.url);
   if(url.searchParams.get("admin")==="1"){
-    const target="https://raw.githack.com/trankhanhduy1508-maker/AI-TRADE/31c65a7e12626cf8100a052cc94699710c2b10c0/dashboard/admin.html";
+    const target="https://raw.githack.com/trankhanhduy1508-maker/AI-TRADE/5a26e11316c1cfec6153f0f08f8067733e07775f/dashboard/admin.html";
     return new Response(null,{status:302,headers:{
       "location":target,
       "cache-control":"no-store, max-age=0",
@@ -159,7 +159,7 @@ Deno.serve(async(req)=>{
     }});
   }
   if(url.searchParams.get("admin_preview")==="1"){
-    const target="https://raw.githack.com/trankhanhduy1508-maker/AI-TRADE/31c65a7e12626cf8100a052cc94699710c2b10c0/dashboard/admin.html-preview";
+    const target="https://raw.githack.com/trankhanhduy1508-maker/AI-TRADE/5a26e11316c1cfec6153f0f08f8067733e07775f/dashboard/index.html?mode=admin-preview";
     return new Response(null,{status:302,headers:{
       "location":target,
       "cache-control":"no-store, max-age=0",
