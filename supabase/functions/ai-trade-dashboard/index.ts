@@ -209,10 +209,10 @@ Deno.serve(async(req)=>{
   `;
 
   const [demo]=await sql`
-    select account_login,server,account_type,is_active,last_verified_at,source
-    from ai_trade.mt5_demo_accounts
-    where account_type='DEMO' and is_active=true
-    order by last_verified_at desc nulls last
+    select account_login,server,account_type,connection_state,last_verified_at
+    from ai_trade.account_mt5_bindings
+    where access_token_id=${access.id}
+      and connection_state<>'REVOKED'
     limit 1
   `;
 
@@ -451,7 +451,7 @@ Deno.serve(async(req)=>{
         active:Boolean(c.active)
       })):[],
       mt5:{
-        connected:Boolean(demo?.is_active),
+        connected:String(demo?.connection_state??"")==="CONNECTED",
         login:demo?.account_login?String(demo.account_login):null,
         server:String(demo?.server??""),
         accountType:String(demo?.account_type??""),
