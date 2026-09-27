@@ -1,297 +1,188 @@
-"""MetaApi cloud MT5 adapter.
+"""Async MetaApi cloud adapter for MT5 DEMO execution.
 
-This is the cloud-only execution path. It talks to a MetaTrader account through
-MetaApi REST instead of requiring a local Windows MetaTrader terminal.
-
-Secrets are injected at runtime and never persisted by this module.
-LIVE accounts are rejected. The adapter is intentionally DEMO-only.
+This path removes the Windows/desktop MetaTrader dependency. The account is
+hosted by MetaApi and accessed through its official Python SDK/WebSocket API.
+LIVE is deliberately not implemented here.
 """
 
 from __future__ import annotations
 
-from dataclasses import dataclass
-from datetime import datetime, timezone
 import hashlib
-import json
 import math
 from pathlib import Path
-from typing import Any, Protocol
-from urllib.error import HTTPError, URLError
-from urllib.parse import quote, urlencode
-from urllib.request import Request, urlopen
+from typing import Any
 
 from src.execution.mt5_adapter import (
     MT5OrderRequest,
     MT5OrderResult,
     MT5Position,
+    MT5SymbolContract,
     OrderIntentLedger,
     TradingDisabledError,
 )
 
 
-class MetaApiTransport(Protocol):
-    def request(
-        self,
-        method: str,
-        url: str,
-        *,
-        token: str,
-        body: dict[str, Any] | None = None,
-        timeout: float = 30.0,
-    ) -> Any: ...
-
-
-class UrllibMetaApiTransport:
-    """Small stdlib HTTP transport to avoid coupling the core to one SDK."""
-
-    def request(
-        self,
-        method: str,
-        url: str,
-        *,
-        token: str,
-        body: dict[str, Any] | None = None,
-        timeout: float = 30.0,
-    ) -> Any:
-        headers = {
-            "Accept": "application/json",
-            "auth-token": token,
-        }
-        data = None
-        if body is not None:
-            headers["Content-Type"] = "application/json"
-            data = json.dumps(body, separators=(",", ":")).encode("utf-8")
-        request = Request(url, data=data, headers=headers, method=method)
-        try:
-            with urlopen(request, timeout=timeout) as response:
-                payload = response.read().decode("utf-8")
-        except HTTPError as exc:
-            detail = exc.read().decode("utf-8", errors="replace")
-            raise RuntimeError(f"MetaApi HTTP {exc.code}: {detail[:500]}") from exc
-        except URLError as exc:
-            raise ConnectionError(f"MetaApi network error: {exc.reason}") from exc
-        return json.loads(payload) if payload else None
-
-
-@dataclass(frozen=True)
-class MetaApiCloudConfig:
-    account_id: str
-    token: str
-    region: str = "new-york"
-    client_base_url: str | None = None
-    market_base_url: str | None = None
-    request_timeout: float = 30.0
-
-    def __post_init__(self) -> None:
-        if not self.account_id.strip():
-            raise ValueError("MetaApi account_id is required")
-        if not self.token.strip():
-            raise ValueError("MetaApi token is required")
-        if not self.region.strip():
-            raise ValueError("MetaApi region is required")
-        if not math.isfinite(self.request_timeout) or self.request_timeout <= 0:
-            raise ValueError("request_timeout must be finite and positive")
-
-    @property
-    def client_base(self) -> str:
-        return (
-            self.client_base_url.rstrip("/")
-            if self.client_base_url
-            else f"https://mt-client-api-v1.{self.region}.agiliumtrade.ai"
-        )
-
-    @property
-    def market_base(self) -> str:
-        return (
-            self.market_base_url.rstrip("/")
-            if self.market_base_url
-            else f"https://mt-market-data-client-api-v1.{self.region}.agiliumtrade.ai"
-        )
-
-
-@dataclass(frozen=True)
-class MetaApiSymbolContract:
-    tick_size: float
-    digits: int
-    min_volume: float
-    max_volume: float
-    volume_step: float
-
-    @classmethod
-    def from_payload(cls, payload: dict[str, Any]) -> "MetaApiSymbolContract":
-        contract = cls(
-            tick_size=float(payload["tickSize"]),
-            digits=int(payload["digits"]),
-            min_volume=float(payload["minVolume"]),
-            max_volume=float(payload["maxVolume"]),
-            volume_step=float(payload["volumeStep"]),
-        )
-        if (
-            contract.tick_size <= 0
-            or contract.digits < 0
-            or contract.min_volume <= 0
-            or contract.max_volume < contract.min_volume
-            or contract.volume_step <= 0
-        ):
-            raise ValueError("invalid MetaApi symbol specification")
-        return contract
-
-    def valid_volume(self, volume: float) -> bool:
-        if not math.isfinite(volume) or volume < self.min_volume or volume > self.max_volume:
-            return False
-        steps = (volume - self.min_volume) / self.volume_step
-        return math.isclose(steps, round(steps), rel_tol=0.0, abs_tol=1e-9)
+def _get(value: Any, key: str, default: Any = None) -> Any:
+    if isinstance(value, dict):
+        return value.get(key, default)
+    return getattr(value, key, default)
 
 
 class MetaApiCloudAdapter:
-    """Duck-compatible broker adapter for the existing AI-TRADE coordinators."""
-
-    SUCCESS_CODES = {10009: "FILLED", 10010: "PARTIAL"}
+    """Fail-closed async broker adapter for a MetaApi-hosted MT5 DEMO account."""
 
     def __init__(
         self,
-        config: MetaApiCloudConfig,
+        account: Any,
+        connection: Any,
         *,
-        ledger_path: str | Path = ":memory:",
         allow_order_send: bool = False,
-        transport: MetaApiTransport | None = None,
+        ledger_path: str | Path = ":memory:",
     ):
-        self.config = config
-        self._allow_order_send = allow_order_send
-        self._transport = transport or UrllibMetaApiTransport()
+        self.account = account
+        self.connection = connection
+        self.allow_order_send = allow_order_send
         self._ledger = OrderIntentLedger(ledger_path)
         self._connected = False
 
-    def connect(self) -> bool:
-        info = self.account_information(refresh=True)
-        account_type = str(info.get("type", ""))
-        if account_type != "ACCOUNT_TRADE_MODE_DEMO":
-            raise TradingDisabledError("MetaApi DEMO account required; LIVE is locked")
-        if info.get("tradeAllowed") is not True:
-            raise TradingDisabledError("MetaApi DEMO account trading is disabled")
+    async def connect(self) -> bool:
+        platform = str(_get(self.account, "platform", "")).lower()
+        server = str(_get(self.account, "server", ""))
+        if platform != "mt5":
+            raise TradingDisabledError("MetaApi cloud path requires MT5")
+        # MetaApi account objects do not expose a universal real/demo flag.
+        # Fail closed unless the broker server itself is explicitly a DEMO server.
+        if "demo" not in server.lower():
+            raise TradingDisabledError(
+                "DEMO server marker required; live-money cloud execution is locked"
+            )
+
+        if str(_get(self.account, "state", "")).upper() != "DEPLOYED":
+            await self.account.deploy()
+        if str(_get(self.account, "connection_status", "")).upper() != "CONNECTED":
+            await self.account.wait_connected()
+
+        await self.connection.connect()
+        await self.connection.wait_synchronized()
+
+        terminal = self.connection.terminal_state
+        if not bool(_get(terminal, "connected", False)):
+            raise ConnectionError("MetaApi terminal state is disconnected")
+        if not bool(_get(terminal, "connected_to_broker", False)):
+            raise ConnectionError("MetaApi is not connected to broker")
+
+        info = _get(terminal, "account_information")
+        if info is None:
+            raise ConnectionError("MetaApi account information unavailable")
+        if _get(info, "tradeAllowed", _get(info, "trade_allowed", True)) is False:
+            raise TradingDisabledError("account trading is disabled")
+        if _get(info, "investorMode", _get(info, "investor_mode", False)) is True:
+            raise TradingDisabledError("investor/read-only account cannot trade")
+
         self._connected = True
         return True
 
-    def close(self) -> None:
-        self._ledger.close()
+    async def close(self) -> None:
+        close_method = getattr(self.connection, "close", None)
+        if callable(close_method):
+            result = close_method()
+            if hasattr(result, "__await__"):
+                await result
         self._connected = False
+        self._ledger.close()
 
-    def account_information(self, *, refresh: bool = False) -> dict[str, Any]:
-        path = "/account-information"
-        if refresh:
-            path += "?refreshTerminalState=true"
-        result = self._client_get(path)
-        if not isinstance(result, dict):
-            raise RuntimeError("invalid MetaApi account-information response")
-        return result
-
-    def positions(self, symbol: str | None = None) -> tuple[MT5Position, ...]:
-        rows = self._client_get("/positions?refreshTerminalState=true")
-        if not isinstance(rows, list):
-            raise RuntimeError("invalid MetaApi positions response")
-        positions = tuple(self._position_from_payload(row) for row in rows)
+    async def positions(self, symbol: str | None = None) -> tuple[MT5Position, ...]:
+        await self._ensure_connected()
+        records = tuple(_get(self.connection.terminal_state, "positions", ()) or ())
+        positions = tuple(self._position_from_record(record) for record in records)
         if symbol is not None:
-            positions = tuple(position for position in positions if position.symbol == symbol)
+            positions = tuple(p for p in positions if p.symbol == symbol)
         return positions
 
-    def broker_position_ids(self, *, magic: int | None = None) -> set[str]:
-        positions = self.positions()
+    async def broker_position_ids(self, *, magic: int | None = None) -> set[str]:
+        positions = await self.positions()
         if magic is not None:
             positions = tuple(position for position in positions if position.magic == magic)
         return {position.position_id for position in positions}
 
-    def current_price(self, symbol: str) -> dict[str, Any]:
-        result = self._client_get(
-            f"/symbols/{quote(symbol, safe='')}/current-price?keepSubscription=true"
-        )
-        if not isinstance(result, dict):
-            raise RuntimeError("invalid MetaApi current-price response")
-        bid = float(result.get("bid", 0.0))
-        ask = float(result.get("ask", 0.0))
+    async def quote(self, symbol: str) -> tuple[float, float, Any]:
+        await self._ensure_connected()
+        terminal = self.connection.terminal_state
+        price = terminal.price(symbol)
+        if price is None:
+            await self.connection.subscribe_to_market_data(symbol)
+            price = terminal.price(symbol)
+        if price is None:
+            raise RuntimeError(f"MetaApi price unavailable for {symbol}")
+        bid = float(_get(price, "bid", 0.0) or 0.0)
+        ask = float(_get(price, "ask", 0.0) or 0.0)
         if not math.isfinite(bid) or not math.isfinite(ask) or bid <= 0 or ask <= 0 or bid > ask:
-            raise RuntimeError("invalid MetaApi price")
-        return result
+            raise RuntimeError("invalid MetaApi quote")
+        return bid, ask, _get(price, "time")
 
-    def symbol_contract(self, symbol: str) -> MetaApiSymbolContract:
-        result = self._client_get(f"/symbols/{quote(symbol, safe='')}/specification")
-        if not isinstance(result, dict):
-            raise RuntimeError("invalid MetaApi specification response")
-        return MetaApiSymbolContract.from_payload(result)
-
-    def historical_candles(
-        self,
-        symbol: str,
-        timeframe: str,
-        *,
-        limit: int,
-    ) -> tuple[dict[str, Any], ...]:
-        if not 1 <= limit <= 1000:
-            raise ValueError("MetaApi candle limit must be between 1 and 1000")
-        query = urlencode({"limit": limit})
-        path = (
-            f"/historical-market-data/symbols/{quote(symbol, safe='')}"
-            f"/timeframes/{quote(timeframe, safe='')}/candles?{query}"
+    async def symbol_contract(self, symbol: str) -> MT5SymbolContract:
+        await self._ensure_connected()
+        spec = self.connection.terminal_state.specification(symbol)
+        if spec is None:
+            await self.connection.subscribe_to_market_data(symbol)
+            spec = self.connection.terminal_state.specification(symbol)
+        if spec is None:
+            raise ValueError("SYMBOL_INFO_MISSING")
+        trade_mode = str(_get(spec, "tradeMode", "")).upper()
+        disabled = "DISABLED" in trade_mode if trade_mode else False
+        return MT5SymbolContract(
+            point=float(_get(spec, "point")),
+            digits=int(_get(spec, "digits")),
+            volume_min=float(_get(spec, "minVolume")),
+            volume_max=float(_get(spec, "maxVolume")),
+            volume_step=float(_get(spec, "volumeStep")),
+            trade_stops_level=int(_get(spec, "stopsLevel", 0) or 0),
+            trade_mode=0 if disabled else 1,
         )
-        rows = self._market_get(path)
-        if not isinstance(rows, list):
-            raise RuntimeError("invalid MetaApi candles response")
-        return tuple(rows)
 
-    def daily_pnl(self, *, magic: int, now: datetime | None = None) -> float:
-        current = now or datetime.now(timezone.utc)
-        if current.tzinfo is None:
-            raise ValueError("now must be timezone-aware")
-        current = current.astimezone(timezone.utc)
-        start = current.replace(hour=0, minute=0, second=0, microsecond=0)
-        start_iso = start.isoformat(timespec="milliseconds").replace("+00:00", "Z")
-        end_iso = current.isoformat(timespec="milliseconds").replace("+00:00", "Z")
-        path = (
-            "/history-deals/time/"
-            f"{quote(start_iso, safe=':.-TZ')}/{quote(end_iso, safe=':.-TZ')}"
-            "?limit=1000"
-        )
-        rows = self._client_get(path)
-        if not isinstance(rows, list):
-            raise RuntimeError("invalid MetaApi history-deals response")
-        total = 0.0
-        for deal in rows:
-            if int(deal.get("magic", 0) or 0) != magic:
-                continue
-            total += float(deal.get("profit", 0.0) or 0.0)
-            total += float(deal.get("commission", 0.0) or 0.0)
-            total += float(deal.get("swap", 0.0) or 0.0)
-            total += float(deal.get("fee", 0.0) or 0.0)
-        return total
-
-    def submit(self, order: MT5OrderRequest) -> MT5OrderResult:
+    async def submit(self, order: MT5OrderRequest) -> MT5OrderResult:
         duplicate = self._duplicate_result(order.client_order_id)
         if duplicate is not None:
             return duplicate
-        self._ensure_send_allowed()
-        if not self._connected:
-            self.connect()
-        contract = self.symbol_contract(order.symbol)
-        rejection = self._entry_rejection(order, contract)
+        self._ensure_mutation_allowed()
+        await self._ensure_connected()
+
+        contract = await self.symbol_contract(order.symbol)
+        rejection = contract.rejection_reason(order)
         if rejection is not None:
             return MT5OrderResult(order.client_order_id, "CONTRACT_REJECTED", message=rejection)
 
-        client_id = self._cloud_client_id(order.client_order_id)
-        body: dict[str, Any] = {
-            "actionType": "ORDER_TYPE_BUY" if order.direction.upper() == "UP" else "ORDER_TYPE_SELL",
-            "symbol": order.symbol,
-            "volume": order.volume,
-            "clientId": client_id,
-            "magic": order.magic,
-        }
-        if order.stop_loss is not None:
-            body["stopLoss"] = order.stop_loss
-        if order.take_profit is not None:
-            body["takeProfit"] = order.take_profit
-
         self._ledger.record(order.client_order_id, "SUBMITTING")
-        return self._trade(order.client_order_id, body)
+        client_id = self._broker_client_id(order.client_order_id)
+        options = {"clientId": client_id, "magic": order.magic}
+        try:
+            if order.direction.upper() == "UP":
+                response = await self.connection.create_market_buy_order(
+                    order.symbol,
+                    order.volume,
+                    order.stop_loss,
+                    order.take_profit,
+                    options,
+                )
+            else:
+                response = await self.connection.create_market_sell_order(
+                    order.symbol,
+                    order.volume,
+                    order.stop_loss,
+                    order.take_profit,
+                    options,
+                )
+        except Exception as exc:
+            # Keep SUBMITTING in the ledger. A retry with the same intent is
+            # suppressed until broker reconciliation resolves the ambiguity.
+            return MT5OrderResult(
+                order.client_order_id,
+                "AMBIGUOUS",
+                message=f"{type(exc).__name__}: {exc}",
+            )
+        return self._record_response(order.client_order_id, response)
 
-    def modify_position(
+    async def modify_position(
         self,
         position_id: str,
         *,
@@ -302,47 +193,65 @@ class MetaApiCloudAdapter:
         duplicate = self._duplicate_result(client_order_id)
         if duplicate is not None:
             return duplicate
-        self._ensure_send_allowed()
-        position = self._require_position(position_id)
-        price = self.current_price(position.symbol)
-        market_price = float(price["bid"] if position.direction == "UP" else price["ask"])
-        if position.direction == "UP":
-            if stop_loss >= market_price:
-                return MT5OrderResult(client_order_id, "CONTRACT_REJECTED", message="STOP_DISTANCE_INVALID")
-            if position.stop_loss is not None and stop_loss < position.stop_loss:
+        self._ensure_mutation_allowed()
+        position = await self._require_position(position_id)
+        bid, ask, _ = await self.quote(position.symbol)
+        contract = await self.symbol_contract(position.symbol)
+        market_price = bid if position.direction == "UP" else ask
+        validation = MT5OrderRequest(
+            client_order_id,
+            position.symbol,
+            position.direction,
+            position.volume,
+            market_price,
+            stop_loss,
+            take_profit,
+            position.magic,
+        )
+        rejection = contract.rejection_reason(validation)
+        if rejection is not None:
+            return MT5OrderResult(client_order_id, "CONTRACT_REJECTED", message=rejection)
+        if position.stop_loss is not None:
+            if position.direction == "UP" and stop_loss < position.stop_loss:
                 return MT5OrderResult(client_order_id, "RISK_REJECTED", message="STOP_WOULD_INCREASE_RISK")
-        else:
-            if stop_loss <= market_price:
-                return MT5OrderResult(client_order_id, "CONTRACT_REJECTED", message="STOP_DISTANCE_INVALID")
-            if position.stop_loss is not None and stop_loss > position.stop_loss:
+            if position.direction == "DOWN" and stop_loss > position.stop_loss:
                 return MT5OrderResult(client_order_id, "RISK_REJECTED", message="STOP_WOULD_INCREASE_RISK")
 
-        body: dict[str, Any] = {
-            "actionType": "POSITION_MODIFY",
-            "positionId": str(position_id),
-            "stopLoss": stop_loss,
-        }
-        body["takeProfit"] = take_profit if take_profit is not None else 0.0
-        self._ledger.record(client_order_id, "SUBMITTING", str(position_id))
-        return self._trade(client_order_id, body, broker_order_id=str(position_id))
+        self._ledger.record(client_order_id, "SUBMITTING", position.position_id)
+        try:
+            response = await self.connection.modify_position(
+                position_id,
+                stop_loss,
+                0.0 if take_profit is None else take_profit,
+            )
+        except Exception as exc:
+            return MT5OrderResult(
+                client_order_id,
+                "AMBIGUOUS",
+                position.position_id,
+                message=f"{type(exc).__name__}: {exc}",
+            )
+        return self._record_response(client_order_id, response, position.position_id)
 
-    def normalize_partial_volume(self, position: MT5Position, fraction: float) -> float:
+    async def normalize_partial_volume(self, position: MT5Position, fraction: float) -> float:
         if not math.isfinite(fraction) or not 0 < fraction < 1:
             raise ValueError("fraction must be between 0 and 1")
-        contract = self.symbol_contract(position.symbol)
+        contract = await self.symbol_contract(position.symbol)
         raw = position.volume * fraction
         steps = math.floor((raw + 1e-12) / contract.volume_step)
-        volume = round(steps * contract.volume_step, contract.digits)
-        if volume < contract.min_volume:
-            volume = contract.min_volume
+        volume = steps * contract.volume_step
+        decimals = max(0, len(f"{contract.volume_step:.10f}".rstrip("0").split(".")[-1]))
+        volume = round(volume, decimals)
+        if volume < contract.volume_min:
+            volume = contract.volume_min
         remaining = position.volume - volume
-        if remaining > 1e-12 and remaining < contract.min_volume:
-            volume = position.volume - contract.min_volume
+        if remaining > 1e-12 and remaining < contract.volume_min:
+            volume = round(position.volume - contract.volume_min, decimals)
         if volume <= 0 or volume >= position.volume or not contract.valid_volume(volume):
             raise ValueError("PARTIAL_VOLUME_NOT_REPRESENTABLE")
         return volume
 
-    def close_position(
+    async def close_position(
         self,
         position_id: str,
         *,
@@ -352,97 +261,67 @@ class MetaApiCloudAdapter:
         duplicate = self._duplicate_result(client_order_id)
         if duplicate is not None:
             return duplicate
-        self._ensure_send_allowed()
-        position = self._require_position(position_id)
-        body: dict[str, Any] = {
-            "actionType": "POSITION_CLOSE_ID" if volume is None else "POSITION_PARTIAL",
-            "positionId": str(position_id),
-            "clientId": self._cloud_client_id(client_order_id),
-            "magic": position.magic,
-        }
-        if volume is not None:
-            contract = self.symbol_contract(position.symbol)
-            if volume <= 0 or volume >= position.volume or not contract.valid_volume(volume):
-                return MT5OrderResult(client_order_id, "CONTRACT_REJECTED", message="CLOSE_VOLUME_INVALID")
-            body["volume"] = volume
-        self._ledger.record(client_order_id, "SUBMITTING", str(position_id))
-        return self._trade(client_order_id, body, broker_order_id=str(position_id))
+        self._ensure_mutation_allowed()
+        position = await self._require_position(position_id)
+        close_volume = position.volume if volume is None else float(volume)
+        if close_volume <= 0 or close_volume > position.volume:
+            return MT5OrderResult(client_order_id, "CONTRACT_REJECTED", message="CLOSE_VOLUME_INVALID")
 
-    def _ensure_send_allowed(self) -> None:
-        if not self._allow_order_send:
-            raise TradingDisabledError("MetaApi order submission is disabled")
+        contract = await self.symbol_contract(position.symbol)
+        partial = not math.isclose(close_volume, position.volume, rel_tol=0.0, abs_tol=1e-12)
+        if partial and not contract.valid_volume(close_volume):
+            return MT5OrderResult(client_order_id, "CONTRACT_REJECTED", message="CLOSE_VOLUME_STEP_INVALID")
 
-    def _entry_rejection(
-        self,
-        order: MT5OrderRequest,
-        contract: MetaApiSymbolContract,
-    ) -> str | None:
-        if not contract.valid_volume(order.volume):
-            return "VOLUME_INVALID"
-        direction = order.direction.upper()
-        if order.stop_loss is None:
-            return "STOP_REQUIRED"
-        if direction == "UP":
-            if order.stop_loss >= order.price:
-                return "STOP_DISTANCE_INVALID"
-            if order.take_profit is not None and order.take_profit <= order.price:
-                return "TARGET_DISTANCE_INVALID"
-        else:
-            if order.stop_loss <= order.price:
-                return "STOP_DISTANCE_INVALID"
-            if order.take_profit is not None and order.take_profit >= order.price:
-                return "TARGET_DISTANCE_INVALID"
-        return None
+        self._ledger.record(client_order_id, "SUBMITTING", position.position_id)
+        try:
+            if partial:
+                response = await self.connection.close_position_partially(position_id, close_volume)
+            else:
+                response = await self.connection.close_position(position_id)
+        except Exception as exc:
+            return MT5OrderResult(
+                client_order_id,
+                "AMBIGUOUS",
+                position.position_id,
+                message=f"{type(exc).__name__}: {exc}",
+            )
+        return self._record_response(client_order_id, response, position.position_id)
 
-    def _require_position(self, position_id: str) -> MT5Position:
-        for position in self.positions():
+    async def _ensure_connected(self) -> None:
+        if not self._connected:
+            await self.connect()
+
+    def _ensure_mutation_allowed(self) -> None:
+        if not self.allow_order_send:
+            raise TradingDisabledError("MetaApi cloud order submission is disabled")
+
+    async def _require_position(self, position_id: str) -> MT5Position:
+        for position in await self.positions():
             if position.position_id == str(position_id):
                 return position
-        raise LookupError(f"MetaApi position {position_id} not found")
+        raise LookupError(f"position {position_id} not found")
 
-    def _position_from_payload(self, row: dict[str, Any]) -> MT5Position:
-        kind = str(row.get("type", ""))
-        if kind == "POSITION_TYPE_BUY":
+    def _position_from_record(self, record: Any) -> MT5Position:
+        position_type = str(_get(record, "type", "")).upper()
+        if position_type == "POSITION_TYPE_BUY":
             direction = "UP"
-        elif kind == "POSITION_TYPE_SELL":
+        elif position_type == "POSITION_TYPE_SELL":
             direction = "DOWN"
         else:
-            raise RuntimeError(f"unknown MetaApi position type: {kind}")
-        stop = float(row.get("stopLoss", 0.0) or 0.0)
-        target = float(row.get("takeProfit", 0.0) or 0.0)
+            raise RuntimeError(f"unknown MetaApi position type: {position_type}")
+        stop = float(_get(record, "stopLoss", 0.0) or 0.0)
+        target = float(_get(record, "takeProfit", 0.0) or 0.0)
         return MT5Position(
-            position_id=str(row["id"]),
-            symbol=str(row["symbol"]),
+            position_id=str(_get(record, "id")),
+            symbol=str(_get(record, "symbol")),
             direction=direction,
-            volume=float(row["volume"]),
-            entry_price=float(row["openPrice"]),
+            volume=float(_get(record, "volume")),
+            entry_price=float(_get(record, "openPrice")),
             stop_loss=stop if stop > 0 else None,
             take_profit=target if target > 0 else None,
-            magic=int(row.get("magic", 0) or 0),
-            comment=str(row.get("clientId", "") or row.get("comment", "") or ""),
+            magic=int(_get(record, "magic", 0) or 0),
+            comment=str(_get(record, "comment", _get(record, "clientId", "")) or ""),
         )
-
-    def _trade(
-        self,
-        client_order_id: str,
-        body: dict[str, Any],
-        *,
-        broker_order_id: str | None = None,
-    ) -> MT5OrderResult:
-        response = self._client_post("/trade", body)
-        if not isinstance(response, dict):
-            self._ledger.record(client_order_id, "REJECTED", broker_order_id)
-            return MT5OrderResult(client_order_id, "REJECTED", broker_order_id, message="invalid MetaApi trade response")
-        code_raw = response.get("numericCode")
-        code = int(code_raw) if isinstance(code_raw, (int, float)) else None
-        status = self.SUCCESS_CODES.get(code, "REJECTED")
-        remote_id = (
-            str(response.get("positionId") or response.get("orderId") or broker_order_id or "")
-            or None
-        )
-        message = str(response.get("message", "") or response.get("stringCode", ""))
-        self._ledger.record(client_order_id, status, remote_id, code)
-        return MT5OrderResult(client_order_id, status, remote_id, code, message)
 
     def _duplicate_result(self, client_order_id: str) -> MT5OrderResult | None:
         existing = self._ledger.get(client_order_id)
@@ -457,33 +336,30 @@ class MetaApiCloudAdapter:
             f"existing cloud intent status={status}; reconcile before retry",
         )
 
-    @staticmethod
-    def _cloud_client_id(client_order_id: str) -> str:
-        digest = hashlib.sha256(client_order_id.encode("utf-8")).hexdigest()
-        return f"AI_{digest[:8]}_{digest[8:16]}"
-
-    def _client_get(self, path: str) -> Any:
-        return self._request("GET", self.config.client_base + self._account_path(path))
-
-    def _client_post(self, path: str, body: dict[str, Any]) -> Any:
-        return self._request("POST", self.config.client_base + self._account_path(path), body)
-
-    def _market_get(self, path: str) -> Any:
-        return self._request("GET", self.config.market_base + self._account_path(path))
-
-    def _account_path(self, path: str) -> str:
-        return f"/users/current/accounts/{quote(self.config.account_id, safe='')}{path}"
-
-    def _request(
+    def _record_response(
         self,
-        method: str,
-        url: str,
-        body: dict[str, Any] | None = None,
-    ) -> Any:
-        return self._transport.request(
-            method,
-            url,
-            token=self.config.token,
-            body=body,
-            timeout=self.config.request_timeout,
-        )
+        client_order_id: str,
+        response: Any,
+        fallback_position_id: str | None = None,
+    ) -> MT5OrderResult:
+        numeric = _get(response, "numericCode")
+        retcode = int(numeric) if numeric is not None else None
+        string_code = str(_get(response, "stringCode", ""))
+        if retcode == 10009 or string_code == "TRADE_RETCODE_DONE":
+            status = "FILLED"
+        elif retcode == 10010 or string_code == "TRADE_RETCODE_DONE_PARTIAL":
+            status = "PARTIAL"
+        else:
+            status = "REJECTED"
+        broker_id = _get(response, "positionId", _get(response, "orderId", fallback_position_id))
+        broker_id = str(broker_id) if broker_id not in (None, "") else fallback_position_id
+        message = str(_get(response, "message", string_code))
+        self._ledger.record(client_order_id, status, broker_id, retcode)
+        return MT5OrderResult(client_order_id, status, broker_id, retcode, message)
+
+    @staticmethod
+    def _broker_client_id(client_order_id: str) -> str:
+        # MetaApi documents comment + clientId <= 26 chars for MT positions.
+        if len(client_order_id) <= 26:
+            return client_order_id
+        return "AI" + hashlib.sha256(client_order_id.encode()).hexdigest()[:20]
