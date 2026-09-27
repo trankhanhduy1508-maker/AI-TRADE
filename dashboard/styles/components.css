@@ -34,3 +34,28 @@
 .tester-actions button:hover{border-color:rgba(69,169,255,.45)}
 .tester-actions button:disabled{opacity:.5;cursor:wait}
 @media(max-width:760px){.tester-row{grid-template-columns:1fr}.tester-actions{justify-content:flex-start}}
+
+.header-actions{display:flex;align-items:center;gap:9px;flex-wrap:wrap;justify-content:flex-end}
+.google-login{display:inline-flex;align-items:center;gap:8px;max-width:220px;border:1px solid var(--line);background:#fff;color:#172033;border-radius:11px;padding:8px 11px;font-weight:700;font-size:12px;cursor:pointer}
+.google-login.connected{background:#0d1828;color:var(--text)}
+.google-login span:last-child{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.google-dot{width:21px;height:21px;border-radius:50%;display:grid;place-items:center;background:#fff;color:#4285f4;border:1px solid #d6d9df;font-weight:800}
+.loading-card{min-height:92px;display:grid;gap:10px}
+.loading-card i{display:block;height:13px;border-radius:8px;background:linear-gradient(90deg,rgba(255,255,255,.05),rgba(255,255,255,.12),rgba(255,255,255,.05));background-size:200% 100%;animation:cwsPulse 1.25s linear infinite}
+.loading-card i:nth-child(1){width:48%}.loading-card i:nth-child(2){width:82%}.loading-card i:nth-child(3){width:65%}
+@keyframes cwsPulse{0%{background-position:200% 0}100%{background-position:-200% 0}}
+.chart-trade-summary{display:flex;align-items:center;min-height:31px;margin:2px 0 10px}
+.chart-position{display:inline-flex;align-items:center;border-radius:999px;padding:6px 10px;font-size:11px;font-weight:750;border:1px solid var(--line)}
+.chart-position.buy{color:var(--green);background:rgba(46,230,166,.08);border-color:rgba(46,230,166,.2)}
+.chart-position.sell{color:var(--red);background:rgba(255,91,120,.08);border-color:rgba(255,91,120,.2)}
+.chart-position.neutral{color:var(--muted)}
+.chart-loading{height:100%;display:grid;place-items:center;color:var(--muted);font-size:13px}
+.chart-wrap{height:min(62vh,620px);min-height:430px;touch-action:pan-y}
+@media(max-width:760px){
+  .topbar{align-items:flex-start}
+  .header-actions{max-width:56%}
+  .google-login{max-width:165px}
+  .chart-card{padding:10px}
+  .chart-toolbar{position:sticky;top:0;z-index:2;background:rgba(7,17,29,.96);padding:4px 0 8px}
+  .chart-wrap{height:56vh;min-height:440px}
+}
