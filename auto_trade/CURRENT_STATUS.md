@@ -1,3 +1,54 @@
+## Premium modular dashboard — 2026-09-27
+
+Founder selected Direction B: full premium UI with feature-level rollback boundaries.
+
+Frontend is now split into independent modules:
+- shell / design tokens / responsive layout / component styles
+- API transport / client store / utilities
+- current trade
+- progress
+- pipeline
+- recent trades
+- persistent post-trade journal
+- H1 Japanese candlestick chart with EMA21/EMA50 + Entry/SL/TP overlays
+- performance
+- MT5 DEMO + safety gates
+- app orchestrator
+
+Architecture / rollback map:
+`dashboard/ARCHITECTURE.md`
+
+Runtime data rule:
+- no fake trade values from design mockups;
+- no open trade => explicit empty state;
+- no closed trade => recent trades empty;
+- no journal => learning journal waiting state;
+- candle chart uses real Yahoo H1 market data through the token-protected Supabase dashboard API.
+
+Dashboard API v7 endpoints:
+- `format=json`
+- `format=current`
+- `format=trades`
+- `format=journal`
+- `format=candles`
+
+Runtime evidence:
+- current #138: HTTP 200, no open positions (truthful empty state).
+- candles #139: HTTP 200, real EURUSD H1 candles.
+- journal updater #129: HTTP 200, inserted=0 because no closed forward trades yet.
+- live dashboard #137: HTTP 200 and redirects to pinned modular frontend build.
+- raw.githack index returns text/html.
+- raw.githack app.js returns application/javascript.
+
+Persistent learning journal:
+- table: `ai_trade.forward_trade_journal`
+- function: `ai-trade-journal-update` v2 ACTIVE
+- cron: `03:30 UTC` daily after forward/shadow/evaluator pipeline.
+- journal entries contain setup, entry reason, exit reason, deterministic lesson, result label, tags and chart timeframe.
+- journal does not change strategy parameters or self-retune TF-013A.
+
+Supabase advisors after changes showed no new AI-TRADE-specific security warning; remaining warnings are pre-existing public CWS/Auth/pg_net findings.
+
 ## Dashboard rendering fix — 2026-09-27
 
 Root cause:
