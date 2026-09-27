@@ -1,7 +1,7 @@
 import{badge,empty,fmtPrice,fmtUsd}from"../utils.js";
 export function renderCurrentTrade(trade){
   if(!trade)return `<section class="section"><div class="section-head"><h2>Trạng thái giao dịch hiện tại</h2></div><div class="card card-pad">${empty("Chưa có lệnh forward đang mở. Hệ thống đang chờ tín hiệu mới.")}</div></section>`;
-  const side=trade.side||trade.direction==="UP"?"BUY":"SELL";
+  const side=trade.side?trade.side:(trade.direction==="UP"?"BUY":"SELL");
   const pl=Number(trade.floatingPL??0);
   return `<section class="section"><div class="section-head"><h2>Trạng thái giao dịch hiện tại</h2></div>
   <div class="card card-pad current-trade"><div class="trade-grid">
