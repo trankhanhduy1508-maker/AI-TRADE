@@ -1,3 +1,114 @@
+## CWS AI Trade Admin UI — verified symbol specs + exact USD P/L gate — 2026-09-28
+
+Status: **DONE / runtime evidence thật** cho task symbol specification → horizontal price/P&L helper.
+
+### Git / deploy
+- branch duy nhất: `codex/p0-covel-knowledge-audit`;
+- frontend exact-P/L build: `c87c08174b3adfa9b80641d1afdf19a2718e38f1`;
+- deploy-pin commit: `2744d4de11585788f6b85a7aa5ceb4d3172716b2`;
+- Supabase Edge Function `ai-trade-dashboard` v19 ACTIVE;
+- TradingView Lightweight Charts vẫn là 5.0.8;
+- không thay Google Login, live-money lock, broker execution, risk gate hoặc The5ers gate.
+
+### Broker specification source
+Không hardcode broker assumptions.
+
+Runtime đã đăng nhập server-side vào **MetaQuotes-Demo** bằng credential đang lưu trong Vault, không lộ secret, sau đó dùng read-only WebTerminal protocol:
+- command 6: lấy symbol catalog;
+- command 18: lấy full contract specification cho symbol IDs đã chọn;
+- không gửi command trade/order;
+- evidence request nội bộ: `net._http_response id=178`;
+- `brokerOrders=false`, `liveMoneyLocked=true`, `passwordExposed=false`.
+
+Account runtime được verify riêng:
+- currency tài khoản: **USD**;
+- server: MetaQuotes-Demo;
+- evidence request nội bộ: `net._http_response id=179`;
+- password không xuất hiện trong response.
+
+### 14 market mapping
+MetaQuotes-Demo hiện có contract spec thật cho 10/14 market:
+- EURUSD, GBPUSD, USDJPY, AUDUSD, USDCAD, USDCHF, NZDUSD;
+- XAUUSD;
+- US30;
+- US500.
+
+Không có exact broker symbol trên account này cho:
+- USOIL;
+- BTCUSD;
+- ETHUSD;
+- NAS100.
+
+Bốn market trên vẫn tồn tại trong chart/data universe, nhưng broker spec được đánh dấu unavailable. Không tạo alias giả để ép PASS.
+
+Ví dụ spec runtime thật:
+- EURUSD: digits 5, contract size 100000, profit currency USD, calc mode 0;
+- USDJPY: digits 3, contract size 100000, profit currency JPY, calc mode 0;
+- XAUUSD: digits 2, contract size 100, tick size 0.01, tick value 0.1, profit currency USD, calc mode 4;
+- US30: digits 2, contract size 1, profit currency USD, calc mode 2;
+- US500: digits 2, contract size 1, profit currency USD, calc mode 2.
+
+### Safe cache
+Migration `create_dashboard_symbol_specs_cache` tạo:
+- `ai_trade.dashboard_symbol_specs`;
+- RLS enabled;
+- không có public RLS policy;
+- explicit REVOKE ALL từ `anon` và `authenticated`.
+
+Table này chỉ phục vụ Admin/dashboard observability, không thay `broker_symbol_map` và không tác động execution routing.
+
+### Dashboard integration
+`ai-trade-dashboard?format=symbol-spec&symbol=...`:
+- chỉ hoạt động sau dashboard access token validation hiện hữu;
+- trả broker spec đã verify từ cache;
+- trả `supported=false` + reason khi broker không có market;
+- luôn giữ `brokerOrders=false` và `liveMoneyLocked=true`.
+
+Frontend:
+- market/timeframe switch tải candles + symbol spec song song;
+- spec cache theo market trong DashboardStore;
+- selected trade được gắn spec đúng market;
+- horizontal helper dùng contract size / tick metadata / account currency thật;
+- không dùng synthetic volume như lot thật.
+
+### Exact USD P/L rules
+Chỉ tính Estimated P/L khi có **lot thật** và đủ metadata.
+
+Với calc mode đang gặp trên MetaQuotes-Demo:
+- calc mode 0 / 2 / 4: tính P/L từ price delta × contract size × lot;
+- nếu profit currency = account currency USD: dùng trực tiếp;
+- với USD là base currency và profit currency khác USD (USDJPY/USDCAD/USDCHF): đổi profit currency về USD bằng target price;
+- tick-value formula chỉ là fallback khi tickSize/tickValue thực sự > 0;
+- thiếu lot/spec/conversion → hiện đúng:
+  `P/L chưa đủ dữ liệu để tính chính xác`.
+
+Không coi `synthetic_volume` của shadow position là lot thật.
+
+### Formula verification
+Read-only test cases, không tạo production position:
+- EURUSD BUY 1.1000 → 1.1010, 0.10 lot → expected +$10.00;
+- USDJPY BUY 150.000 → 151.000, 0.10 lot → expected +$66.225165...;
+- XAUUSD BUY 2500 → 2501, 0.10 lot → expected +$10.00;
+- US30 BUY 45000 → 45100, 0.10 lot → expected +$10.00.
+
+Evidence label: `TEST_ONLY_NO_PRODUCTION_POSITION`.
+
+### Runtime UI verification
+TinyFish browser run:
+`8d44b28f-1cdd-4ed9-bef2-9a78b0eb9164`
+
+PASS:
+- mobile shell render;
+- 14 market selector;
+- M15/M30/H1/H4/D1;
+- projection module loads and placeholder renders;
+- không có blocking JS/runtime syntax error;
+- không horizontal overflow.
+
+Không có Founder raw token trong tool context nên không tạo credential giả để ép authenticated browser test.
+
+Hiện `shadow_broker_positions` của strategy đang rỗng, do đó production UI không có lot thật để hiển thị USD floating P/L. Đây là **đúng data-integrity behavior**, không phải feature failure: helper sẽ tự tính khi một vị thế có lot thật + spec đủ dữ liệu.
+
 ## CWS AI Trade Founder/Admin terminal UI checkpoint — 2026-09-28
 
 Founder/Admin UI đã được nâng thành bề mặt terminal trading riêng trong cùng codebase, không fork customer UI.
