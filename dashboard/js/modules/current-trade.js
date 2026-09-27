@@ -2,7 +2,7 @@ import{badge,empty,fmtPrice,fmtUsd}from"../utils.js";
 export function renderCurrentTrade(trade){
   if(!trade)return `<section class="section"><div class="section-head"><h2>Trạng thái giao dịch hiện tại</h2></div><div class="card card-pad">${empty("Chưa có lệnh forward đang mở. Hệ thống đang chờ tín hiệu mới.")}</div></section>`;
   const side=trade.side?trade.side:(trade.direction==="UP"?"BUY":"SELL");
-  const pl=Number(trade.floatingPL??0);
+  const pl=trade.floatingPL==null?null:Number(trade.floatingPL);const floatingLabel=pl==null?(Number.isFinite(Number(trade.floatingR))?`${Number(trade.floatingR)>=0?"+":""}${Number(trade.floatingR).toFixed(2)}R`:"—"):fmtUsd(pl);
   return `<section class="section"><div class="section-head"><h2>Trạng thái giao dịch hiện tại</h2></div>
   <div class="card card-pad current-trade"><div class="trade-grid">
     <div><div class="trade-title">Lệnh đang mở</div><div class="pair-row"><div class="pair">${trade.symbol}</div>${badge(side,side==="BUY"?"green":"red")}${badge("ĐANG MỞ LỆNH","green")}</div>
@@ -14,6 +14,6 @@ export function renderCurrentTrade(trade){
         <div class="field"><label>Khối lượng</label><strong>${trade.volumeLabel??"Shadow 1.0"}</strong></div>
       </div>
     </div>
-    <div class="pl-card"><div class="trade-title">Floating P/L</div><div class="amount">${fmtUsd(pl)}</div><div class="metric-row"><span>Risk/Reward</span><b>${trade.riskReward??"—"}</b></div><div class="metric-row"><span>Mô hình</span><b>SHADOW</b></div></div>
+    <div class="pl-card"><div class="trade-title">Floating P/L</div><div class="amount">${floatingLabel}</div><div class="metric-row"><span>Risk/Reward</span><b>${trade.riskReward??"—"}</b></div><div class="metric-row"><span>Mô hình</span><b>SHADOW</b></div></div>
   </div></div></section>`;
 }
