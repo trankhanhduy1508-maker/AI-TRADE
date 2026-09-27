@@ -1,3 +1,48 @@
+## MT5 WebTerminal demo connector research — 2026-09-27
+
+A generic MT5 DEMO cloud path was investigated without using a local PC.
+
+Protocol checkpoint:
+- official WebTerminal bootstrap and current public bundle were inspected;
+- server directory, HTTP handshake and binary WebSocket registration flow were mapped;
+- no password/token/identity data was committed;
+- full safe notes: `research/MT5_WEBTERMINAL_DEMO_PROTOCOL_2026-09-27.md`.
+
+Production-safe connector now exists:
+- function: `ai-trade-mt5-demo-handshake` v1;
+- mode: `HANDSHAKE_ONLY`;
+- secret-gated by existing cron auth;
+- never creates an account;
+- never sends a broker order;
+- never returns upstream key/token values;
+- fail-closed blocker: `WEBTERMINAL_DISABLED_FOR_CURRENT_EGRESS`.
+
+Runtime evidence:
+- request #106, MetaQuotes-Demo -> `DEMO_HANDSHAKE_BLOCKED`;
+- request #107, FPMarkets-Demo -> `DEMO_HANDSHAKE_BLOCKED`;
+- both resolved the public server metadata but returned `enabled=false`, no token;
+- current egress is Mumbai / ap-south-1.
+
+Multiple public DEMO servers, GWT node variants, cookies and browser-like request headers were tested. The result was unchanged.
+
+External cloud alternatives tested:
+- Replit: active subscription required;
+- Firecrawl interactive: credits blocked;
+- AppDeploy: daily credit limit;
+- Railway agent: usage quota;
+- Hugging Face Jobs: HTTP 402;
+- both existing Supabase projects are ap-south-1;
+- no GitHub Codespaces/workflow-dispatch write surface available;
+- TinyFish live cloud browser was discovered as a suitable possible browser route but is not currently connected.
+
+All temporary public research probe functions were retired to HTTP 410 after extracting the evidence.
+
+Current rule:
+- keep TF-013A forward shadow autonomous;
+- keep brokerOrders=false and liveMoneyLocked=true;
+- do not weaken research/risk gates;
+- use MT5 connector only after a legitimate DEMO credential or an accepted WebTerminal egress/browser path exists.
+
 ## Research → forward transition — 2026-09-27
 
 Historical validation has reached the point where additional post-result tuning would increase data-mining risk.
