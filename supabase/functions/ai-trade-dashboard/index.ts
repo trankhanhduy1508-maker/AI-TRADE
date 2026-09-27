@@ -85,24 +85,39 @@ function badgeClass(kind:string){
   return "muted";
 }
 
-async function validToken(token:string){
-  if(!token)return false;
+async function accessContext(token:string){
+  if(!token)return null;
   const rows=await sql`
-    select id
+    select id,access_role,entitlement_state,subject_label,tester_expires_at,expires_at
     from ai_trade.dashboard_access_tokens
     where token_hash=encode(digest(${token},'sha256'),'hex')
       and revoked_at is null
       and expires_at>now()
     limit 1
   `;
-  return Boolean(rows[0]?.id);
+  const row=rows[0];
+  if(!row)return null;
+  if(row.entitlement_state==="ACTIVE_TESTER" && row.tester_expires_at && new Date(row.tester_expires_at)<=new Date()){
+    await sql.begin(async(tx)=>{
+      await tx`update ai_trade.dashboard_access_tokens
+        set entitlement_state='CUSTOMER_FREE',access_role='CUSTOMER',updated_at=now()
+        where id=${row.id} and entitlement_state='ACTIVE_TESTER'`;
+      await tx`insert into ai_trade.account_entitlement_audit
+        (token_id,actor_token_id,old_state,new_state,action,reason)
+        values(${row.id},null,'ACTIVE_TESTER','CUSTOMER_FREE','AUTO_EXPIRE','Tester expiry reached')`;
+    });
+    row.entitlement_state="CUSTOMER_FREE";
+    row.access_role="CUSTOMER";
+  }
+  return row;
 }
 
 Deno.serve(async(req)=>{
   const url=new URL(req.url);
   const token=url.searchParams.get("t")??"";
-  if(!(await validToken(token))){
-    return new Response("<h1>Liên kết dashboard không hợp lệ hoặc đã hết hạn.</h1>",{
+  const access=await accessContext(token);
+  if(!access || ["SUSPENDED","REVOKED"].includes(String(access.entitlement_state))){
+    return new Response("<h1>Tài khoản không còn quyền truy cập CWS AI Trade.</h1>",{
       status:403,
       headers:{
         "content-type":"text/html; charset=utf-8",
@@ -113,6 +128,42 @@ Deno.serve(async(req)=>{
   }
 
   const format=url.searchParams.get("format");
+  const isFounder=String(access.access_role)==="FOUNDER";
+
+  if(format==="admin-testers"){
+    if(!isFounder)return new Response(JSON.stringify({ok:false,error:"FOUNDER_ONLY"}),{status:403,headers:{"content-type":"application/json"}});
+    if(req.method==="POST"){
+      const body=await req.json().catch(()=>({}));
+      const targetId=Number(body?.tokenId??0);
+      const action=String(body?.action??"");
+      const map:Record<string,{role:string,state:string}>={
+        TO_CUSTOMER_FREE:{role:"CUSTOMER",state:"CUSTOMER_FREE"},
+        TO_CUSTOMER_PAID:{role:"CUSTOMER",state:"CUSTOMER_PAID"},
+        SUSPEND:{role:"CUSTOMER",state:"SUSPENDED"},
+        REVOKE:{role:"CUSTOMER",state:"REVOKED"},
+        RESTORE_TESTER:{role:"TESTER",state:"ACTIVE_TESTER"}
+      };
+      const next=map[action];
+      if(!targetId||!next)return new Response(JSON.stringify({ok:false,error:"INVALID_ACTION"}),{status:400,headers:{"content-type":"application/json"}});
+      const [old]=await sql`select id,entitlement_state from ai_trade.dashboard_access_tokens where id=${targetId} and access_role<>'FOUNDER' limit 1`;
+      if(!old)return new Response(JSON.stringify({ok:false,error:"TARGET_NOT_FOUND"}),{status:404,headers:{"content-type":"application/json"}});
+      await sql.begin(async(tx)=>{
+        await tx`update ai_trade.dashboard_access_tokens
+          set access_role=${next.role},entitlement_state=${next.state},
+              tester_expires_at=case when ${action}='RESTORE_TESTER' then now()+interval '30 days' else tester_expires_at end,
+              updated_at=now()
+          where id=${targetId}`;
+        await tx`insert into ai_trade.account_entitlement_audit
+          (token_id,actor_token_id,old_state,new_state,action,reason)
+          values(${targetId},${access.id},${String(old.entitlement_state)},${next.state},${action},'Founder dashboard action')`;
+      });
+      return new Response(JSON.stringify({ok:true,tokenId:targetId,state:next.state}),{status:200,headers:{"content-type":"application/json","cache-control":"no-store"}});
+    }
+    const testers=await sql`select id,label,subject_label,access_role,entitlement_state,tester_expires_at,expires_at,updated_at
+      from ai_trade.dashboard_access_tokens where id<>${access.id} order by id`;
+    return new Response(JSON.stringify({ok:true,testers}),{status:200,headers:{"content-type":"application/json","cache-control":"no-store","access-control-allow-origin":"*"}});
+  }
+
   if(!format){
     const target="https://raw.githack.com/trankhanhduy1508-maker/AI-TRADE/0ca350340d0bf31e68b7cdc855482ec2d62809db/dashboard/index.html?t="+encodeURIComponent(token);
     return new Response(null,{
@@ -223,7 +274,7 @@ Deno.serve(async(req)=>{
         stopPrice:Number(t.initial_stop),r10bps:Number(t.r_10bps),
         r20bps:Number(t.r_20bps),exitReason:String(t.exit_reason)
       })),
-      journal:journal.map((j:any)=>({
+      journal:isFounder?journal.map((j:any)=>({
         id:Number(j.id),symbol:String(j.symbol),eventType:String(j.event_type),
         eventTs:new Date(j.event_ts).toISOString(),direction:j.direction?String(j.direction):null,
         side:String(j.direction)==="UP"?"BUY":String(j.direction)==="DOWN"?"SELL":null,
@@ -231,7 +282,7 @@ Deno.serve(async(req)=>{
         realizedR:j.realized_r==null?null:Number(j.realized_r),
         unrealizedR:j.unrealized_r==null?null:Number(j.unrealized_r),
         setup:String(j.setup),reason:String(j.reason),lesson:String(j.lesson),metadata:j.metadata??{}
-      }))
+      })): []
     }),{status:200,headers:{
       "content-type":"application/json; charset=utf-8","cache-control":"no-store",
       "access-control-allow-origin":"*","referrer-policy":"no-referrer"
@@ -318,6 +369,11 @@ Deno.serve(async(req)=>{
   }
 
   if(format==="journal"){
+    if(!isFounder){
+      return new Response(JSON.stringify({ok:true,journal:[],restricted:true}),{status:200,headers:{
+        "content-type":"application/json; charset=utf-8","cache-control":"no-store","access-control-allow-origin":"*","referrer-policy":"no-referrer"
+      }});
+    }
     const requested=Math.max(1,Math.min(Number(url.searchParams.get("limit")??12)||12,50));
     const rows=await sql`
       select id,trade_id,symbol,direction,entry_ts,exit_ts,
@@ -382,11 +438,18 @@ Deno.serve(async(req)=>{
         shadowPositions:Number(counts?.shadow_positions??0),
         shadowRuns:Number(counts?.shadow_runs??0)
       },
-      crons:crons.map((c:any)=>({
+      viewer:{
+        role:String(access.access_role),
+        entitlementState:String(access.entitlement_state),
+        subjectLabel:String(access.subject_label??""),
+        testerExpiresAt:access.tester_expires_at?new Date(access.tester_expires_at).toISOString():null,
+        founder:isFounder
+      },
+      crons:isFounder?crons.map((c:any)=>({
         jobname:String(c.jobname),
         schedule:String(c.schedule),
         active:Boolean(c.active)
-      })),
+      })):[],
       mt5:{
         connected:Boolean(demo?.is_active),
         login:demo?.account_login?String(demo.account_login):null,
@@ -394,13 +457,13 @@ Deno.serve(async(req)=>{
         accountType:String(demo?.account_type??""),
         lastVerifiedAt:demo?.last_verified_at?new Date(demo.last_verified_at).toISOString():null
       },
-      gates:{
+      gates:isFounder?{
         the5ersReadiness:String(gates?.the5ers_readiness??""),
         automationApprovalVerified:Boolean(gates?.automation_approval_verified),
         riskProfileApproved:Boolean(gates?.risk_profile_approved),
         demoSendEnabled:Boolean(gates?.demo_send_enabled),
         liveMoneyLocked:true
-      },
+      }:{liveMoneyLocked:true,demoOnly:true},
       updatedAt:new Date().toISOString()
     };
     return new Response(JSON.stringify(payload),{
