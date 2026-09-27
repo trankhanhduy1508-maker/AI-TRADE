@@ -164,6 +164,50 @@ Deno.serve(async(req)=>{
     return new Response(JSON.stringify({ok:true,testers}),{status:200,headers:{"content-type":"application/json","cache-control":"no-store","access-control-allow-origin":"*"}});
   }
 
+  if(format==="symbol-spec"){
+    const symbol=String(url.searchParams.get("symbol")??"").toUpperCase();
+    if(!YAHOO_SYMBOLS[symbol]){
+      return new Response(JSON.stringify({ok:false,error:"UNSUPPORTED_MARKET"}),{status:400,headers:{"content-type":"application/json","cache-control":"no-store"}});
+    }
+    const [row]=await sql`
+      select market,broker_symbol,supported,description,digits,
+             contract_size::float8 as contract_size,
+             tick_size::float8 as tick_size,
+             tick_value::float8 as tick_value,
+             currency_base,currency_profit,currency_margin,calc_mode,
+             source,observed_at,details
+      from ai_trade.dashboard_symbol_specs
+      where market=${symbol}
+      limit 1
+    `;
+    const accountCurrency=String(row?.details?.accountCurrency??"");
+    const spec=row?.supported?{
+      market:String(row.market),
+      brokerSymbol:String(row.broker_symbol??row.market),
+      description:String(row.description??""),
+      digits:row.digits==null?null:Number(row.digits),
+      contractSize:row.contract_size==null?null:Number(row.contract_size),
+      tickSize:row.tick_size==null?null:Number(row.tick_size),
+      tickValue:row.tick_value==null?null:Number(row.tick_value),
+      currencyBase:String(row.currency_base??""),
+      currencyProfit:String(row.currency_profit??""),
+      currencyMargin:String(row.currency_margin??""),
+      accountCurrency:accountCurrency||null,
+      calcMode:row.calc_mode==null?null:Number(row.calc_mode),
+      source:String(row.source??""),
+      observedAt:row.observed_at?new Date(row.observed_at).toISOString():null
+    }:null;
+    return new Response(JSON.stringify({
+      ok:true,symbol,supported:Boolean(row?.supported),spec,
+      unavailableReason:row?.supported?null:String(row?.details?.reason??"SPEC_UNAVAILABLE"),
+      brokerOrders:false,liveMoneyLocked:true
+    }),{status:200,headers:{
+      "content-type":"application/json; charset=utf-8",
+      "cache-control":"private, max-age=60",
+      "access-control-allow-origin":"*","referrer-policy":"no-referrer"
+    }});
+  }
+
   if(!format){
     const target="https://raw.githack.com/trankhanhduy1508-maker/AI-TRADE/50739eeb59d15a0621ad4503d1f63d1e4aa17660/dashboard/index.html?t="+encodeURIComponent(token);
     return new Response(null,{
