@@ -65,7 +65,7 @@ Synthetic near-floor probes:
 
 Cloud integration:
 - ai-trade-the5ers-bootcamp-guard v2 is ACTIVE.
-- ai-trade-tick v5 checks unified readiness before broker access.
+- ai-trade-tick v6 checks evidence-backed unified readiness before broker access.
 - request #37 returned BLOCKED_APPROVAL, tradingActivated=false, liveMoneyLocked=true.
 - durable ai_trade.compliance_intents enforces one intent per (strategy_id, symbol, closed bar).
 - same-bar partial close + TP removal was split: TP removal is deferred to the next closed bar.
@@ -138,3 +138,24 @@ Readiness precedence:
 5. ELIGIBLE_FOR_DEMO_PREFLIGHT
 
 This is a readiness status only. `ELIGIBLE_FOR_DEMO_PREFLIGHT` still does not mean an order may be sent; broker/account/symbol/stop/compliance gates must pass afterward.
+
+
+## Evidence-backed governance
+
+Supabase migration `20260927041836_ai_trade_evidence_backed_approval_gates` makes the boolean flags insufficient by themselves:
+
+- `automation_approval_verified=true` requires non-empty written-approval evidence plus a verification timestamp.
+- `risk_profile_approved=true` requires non-empty risk-approval evidence, an approval timestamp, and a positive approved `max_total_volume_demo`.
+- The legacy spread/daily-loss configuration values are not Founder-approved merely because rows already contain defaults; the unified readiness gate remains blocked until real risk evidence is recorded.
+- `max_total_volume_demo` is currently NULL.
+- `max_pyramid_adds=0`; no pyramiding promotion exists.
+
+Constraint probes attempted to set the approval booleans true without evidence and were rejected by database check constraints. Final flags remained false.
+
+## Read-only DEMO preflight v2
+
+`ai-trade-demo-preflight` now checks unified readiness before reading broker credentials or contacting MetaApi.
+
+It no longer calls `account.deploy()`. If an eventually eligible MetaApi account is not already deployed, preflight returns `METAAPI_ACCOUNT_NOT_DEPLOYED` without mutating account state.
+
+Current runtime probe #40 returns `BLOCKED_APPROVAL`; therefore broker symbol/contract preflight has deliberately not run yet.
