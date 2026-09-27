@@ -85,8 +85,36 @@ function badgeClass(kind:string){
   return "muted";
 }
 
-async function accessContext(token:string){
-  if(!token)return null;
+const SUPABASE_URL="https://oziktadfeenydvgobudr.supabase.co";
+const SUPABASE_PUBLISHABLE_KEY="sb_publishable_0cpWKAruLpo2lm412LKWKg_QN8RRU-l";
+
+async function accessContext(req:Request,token:string){
+  if(!token){
+    const auth=req.headers.get("authorization")??"";
+    const bearer=auth.match(/^Bearer\s+(.+)$/i)?.[1]??"";
+    if(!bearer)return null;
+    const userRes=await fetch(SUPABASE_URL+"/auth/v1/user",{
+      headers:{apikey:SUPABASE_PUBLISHABLE_KEY,Authorization:"Bearer "+bearer},
+      cache:"no-store"
+    });
+    if(!userRes.ok)return null;
+    const user=await userRes.json().catch(()=>null);
+    const userId=String(user?.id??"");
+    if(!userId)return null;
+    const rows=await sql`
+      select d.id,d.access_role,d.entitlement_state,d.subject_label,d.tester_expires_at,d.expires_at
+      from ai_trade.dashboard_google_access g
+      join ai_trade.dashboard_access_tokens d on d.id=g.access_token_id
+      where g.user_id=${userId}
+        and g.active=true
+        and d.revoked_at is null
+        and d.expires_at>now()
+      limit 1
+    `;
+    const row=rows[0];
+    if(!row)return null;
+    return row;
+  }
   const rows=await sql`
     select id,access_role,entitlement_state,subject_label,tester_expires_at,expires_at
     from ai_trade.dashboard_access_tokens
@@ -113,7 +141,23 @@ async function accessContext(token:string){
 }
 
 Deno.serve(async(req)=>{
+  if(req.method==="OPTIONS"){
+    return new Response(null,{status:204,headers:{
+      "access-control-allow-origin":"*",
+      "access-control-allow-methods":"GET,POST,OPTIONS",
+      "access-control-allow-headers":"authorization,content-type,apikey,x-client-info",
+      "access-control-max-age":"86400"
+    }});
+  }
   const url=new URL(req.url);
+  if(url.searchParams.get("admin")==="1"){
+    const target="https://raw.githack.com/trankhanhduy1508-maker/AI-TRADE/PLACEHOLDER_ADMIN_BUILD/dashboard/index.html?mode=admin";
+    return new Response(null,{status:302,headers:{
+      "location":target,
+      "cache-control":"no-store, max-age=0",
+      "referrer-policy":"no-referrer"
+    }});
+  }
   if(url.searchParams.get("admin_preview")==="1"){
     const target="https://raw.githack.com/trankhanhduy1508-maker/AI-TRADE/e55956eed27c618d33f741a75e5985b788bfb650/dashboard/index.html?mode=admin-preview";
     return new Response(null,{status:302,headers:{
@@ -138,7 +182,7 @@ Deno.serve(async(req)=>{
     }});
   }
   const token=url.searchParams.get("t")??"";
-  const access=await accessContext(token);
+  const access=await accessContext(req,token);
   if(!access || ["SUSPENDED","REVOKED"].includes(String(access.entitlement_state))){
     return new Response("<h1>Tài khoản không còn quyền truy cập CWS AI Trade.</h1>",{
       status:403,
