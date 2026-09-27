@@ -969,6 +969,301 @@ async function tf004RiskLab() {
   };
 }
 
+
+function runTf004PyramidResearch(
+  bars: ResearchBar[],
+  baseCost: ResearchCost,
+  multiplier: number,
+  maxAdds: number,
+  signalStart = 0,
+  signalEnd = bars.length
+) {
+  const cost = {
+    spread: baseCost.spread * multiplier,
+    commission: baseCost.commission * multiplier,
+    slippage: baseCost.slippage * multiplier,
+    swapPerBar: baseCost.swapPerBar * multiplier,
+  };
+  const trades: ResearchTrade[] = [];
+  let totalAdds = 0;
+  let position:
+    | {
+        direction: 'UP' | 'DOWN';
+        originalEntryIndex: number;
+        originalEntryPrice: number;
+        originalRisk: number;
+        stop: number;
+        legs: Array<{ entryIndex: number; entryPrice: number }>;
+        adds: number;
+      }
+    | null = null;
+
+  for (let index = 0; index < bars.length; index += 1) {
+    const bar = bars[index];
+    let exitedThisBar = false;
+
+    if (position && index > position.originalEntryIndex) {
+      if (index >= 20) {
+        const prior = bars.slice(index - 20, index);
+        if (position.direction === 'UP') {
+          position.stop = Math.max(
+            position.stop,
+            Math.min(...prior.map((item) => item.low))
+          );
+        } else {
+          position.stop = Math.min(
+            position.stop,
+            Math.max(...prior.map((item) => item.high))
+          );
+        }
+      }
+
+      const stopHit =
+        position.direction === 'UP'
+          ? bar.low <= position.stop
+          : bar.high >= position.stop;
+
+      if (stopHit) {
+        const exitPrice =
+          position.direction === 'UP'
+            ? position.stop - cost.slippage
+            : position.stop + cost.slippage;
+        let totalPnl = 0;
+        for (const leg of position.legs) {
+          const executed =
+            position.direction === 'UP'
+              ? exitPrice - leg.entryPrice
+              : leg.entryPrice - exitPrice;
+          const holdingBars = index - leg.entryIndex;
+          totalPnl +=
+            executed -
+            cost.spread -
+            cost.commission -
+            cost.swapPerBar * holdingBars;
+        }
+        if (position.originalRisk > 0) {
+          trades.push({
+            r: totalPnl / position.originalRisk,
+            exitDay: new Date(bar.timestamp * 1000).toISOString().slice(0, 10),
+          });
+        }
+        position = null;
+        exitedThisBar = true;
+      }
+    }
+
+    if (position && index > position.originalEntryIndex && position.adds < maxAdds) {
+      const reference = index > 20 ? bars[index - 21].close : bar.close;
+      const sameDirection =
+        reference !== bar.close &&
+        (bar.close > reference) === (position.direction === 'UP');
+      const winning =
+        position.direction === 'UP'
+          ? bar.close > position.originalEntryPrice
+          : bar.close < position.originalEntryPrice;
+      const breakevenProtected =
+        position.direction === 'UP'
+          ? position.stop >= position.originalEntryPrice
+          : position.stop <= position.originalEntryPrice;
+      const stopStillProtective =
+        position.direction === 'UP'
+          ? position.stop < bar.close
+          : position.stop > bar.close;
+
+      if (
+        sameDirection &&
+        winning &&
+        breakevenProtected &&
+        stopStillProtective &&
+        signalStart <= index &&
+        index < signalEnd
+      ) {
+        const entryPrice =
+          position.direction === 'UP'
+            ? bar.close + cost.slippage
+            : bar.close - cost.slippage;
+        position.legs.push({ entryIndex: index, entryPrice });
+        position.adds += 1;
+        totalAdds += 1;
+      }
+    }
+
+    if (!position && !exitedThisBar) {
+      if (index <= 20 || index <= 5 || index < signalStart || index >= signalEnd) {
+        continue;
+      }
+      const reference = bars[index - 21].close;
+      if (reference === bar.close) continue;
+      const direction: 'UP' | 'DOWN' = bar.close > reference ? 'UP' : 'DOWN';
+      const prior = bars.slice(index - 5, index);
+      const stop =
+        direction === 'UP'
+          ? Math.min(...prior.map((item) => item.low))
+          : Math.max(...prior.map((item) => item.high));
+      if (
+        (direction === 'UP' && stop >= bar.close) ||
+        (direction === 'DOWN' && stop <= bar.close)
+      ) {
+        continue;
+      }
+      const entryPrice =
+        direction === 'UP'
+          ? bar.close + cost.slippage
+          : bar.close - cost.slippage;
+      const originalRisk = Math.abs(entryPrice - stop);
+      if (originalRisk <= 0) continue;
+      position = {
+        direction,
+        originalEntryIndex: index,
+        originalEntryPrice: entryPrice,
+        originalRisk,
+        stop,
+        legs: [{ entryIndex: index, entryPrice }],
+        adds: 0,
+      };
+    }
+  }
+
+  return { ...researchMetrics(trades), adds: totalAdds };
+}
+
+function walkForwardPyramidResearch(
+  bars: ResearchBar[],
+  cost: ResearchCost,
+  multiplier: number,
+  maxAdds: number
+) {
+  const trainBars = Math.floor(bars.length * 0.5);
+  const testBars = Math.max(1, Math.floor(bars.length * 0.1));
+  const folds = [];
+  let trainEnd = trainBars;
+  while (trainEnd < bars.length) {
+    const testEnd = Math.min(trainEnd + testBars, bars.length);
+    folds.push(
+      runTf004PyramidResearch(
+        bars.slice(0, testEnd),
+        cost,
+        multiplier,
+        maxAdds,
+        trainEnd,
+        testEnd
+      )
+    );
+    trainEnd = testEnd;
+  }
+  return {
+    folds: folds.length,
+    positiveFolds: folds.filter((fold) => fold.netR > 0).length,
+    netRSum: Number(
+      folds.reduce((sum, fold) => sum + fold.netR, 0).toFixed(3)
+    ),
+    worstFoldDrawdownR: Number(
+      Math.max(...folds.map((fold) => fold.maxDrawdownR), 0).toFixed(3)
+    ),
+    trades: folds.reduce((sum, fold) => sum + fold.trades, 0),
+    adds: folds.reduce((sum, fold) => sum + fold.adds, 0),
+  };
+}
+
+async function tf004PyramidLab() {
+  const definitions: Array<{ symbol: string; cost: ResearchCost }> = [
+    {
+      symbol: 'EURUSD=X',
+      cost: {
+        spread: 0.0002,
+        commission: 0.00002,
+        slippage: 0.00005,
+        swapPerBar: 0.00001,
+      },
+    },
+    {
+      symbol: 'GBPUSD=X',
+      cost: {
+        spread: 0.0002,
+        commission: 0.00002,
+        slippage: 0.00005,
+        swapPerBar: 0.00001,
+      },
+    },
+    {
+      symbol: 'USDJPY=X',
+      cost: {
+        spread: 0.02,
+        commission: 0.002,
+        slippage: 0.005,
+        swapPerBar: 0.001,
+      },
+    },
+  ];
+
+  const result = await Promise.all(
+    definitions.map(async ({ symbol, cost }) => {
+      const bars = await yahooDailyBars(symbol);
+      const split = Math.floor(bars.length * 0.7);
+      const baseOos = runTf004PyramidResearch(
+        bars,
+        cost,
+        1,
+        0,
+        split,
+        bars.length
+      );
+      const addOos = runTf004PyramidResearch(
+        bars,
+        cost,
+        1,
+        1,
+        split,
+        bars.length
+      );
+      const baseWf = walkForwardPyramidResearch(bars, cost, 1, 0);
+      const addWf = walkForwardPyramidResearch(bars, cost, 1, 1);
+      return {
+        symbol,
+        base: { oos: baseOos, walkForward: baseWf },
+        pyramid1: { oos: addOos, walkForward: addWf },
+        delta: {
+          oosNetR: Number((addOos.netR - baseOos.netR).toFixed(3)),
+          oosMaxDrawdownR: Number(
+            (addOos.maxDrawdownR - baseOos.maxDrawdownR).toFixed(3)
+          ),
+          wfNetR: Number((addWf.netRSum - baseWf.netRSum).toFixed(3)),
+          wfWorstDrawdownR: Number(
+            (addWf.worstFoldDrawdownR - baseWf.worstFoldDrawdownR).toFixed(3)
+          ),
+        },
+      };
+    })
+  );
+
+  const uniformlyImproved = result.every(
+    (item) =>
+      item.delta.oosNetR > 0 &&
+      item.delta.wfNetR > 0 &&
+      item.delta.oosMaxDrawdownR <= 0 &&
+      item.delta.wfWorstDrawdownR <= 0
+  );
+
+  return {
+    generatedAt: new Date().toISOString(),
+    strategy: 'TF-004-TIME-SERIES-CHANNEL',
+    experiment: 'winner-only one-add pyramiding',
+    rule: {
+      addOnlyWhenWinning: true,
+      priorStopAtLeastBreakeven: true,
+      sameDirectionMomentum: true,
+      maxAdds: 1,
+      normalization:
+        'total leg PnL divided by original entry-to-stop risk; research metric only',
+    },
+    provenance: 'IMPLEMENTATION_DERIVATION_RESEARCH_ONLY',
+    result,
+    conclusion: uniformlyImproved
+      ? 'RESEARCH_CANDIDATE_ONLY'
+      : 'NO_PYRAMID_PROMOTION',
+  };
+}
+
 export const tradeCronHandler = async () => {
   await runTick();
   return { statusCode: 200 };
@@ -980,6 +1275,9 @@ export const handler = router({
   ],
   'GET /api/research/tf004-risk': [
     async () => json(await tf004RiskLab()),
+  ],
+  'GET /api/research/tf004-pyramid': [
+    async () => json(await tf004PyramidLab()),
   ],
   'GET /api/status': [
     async () => {
