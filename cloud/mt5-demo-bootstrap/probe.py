@@ -1,4 +1,5 @@
-# temporary PR transport probe trigger\nimport asyncio, json
+# temporary PR transport probe trigger
+import asyncio, json
 from pymt5 import MT5WebClient
 
 async def main():
