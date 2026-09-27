@@ -85,3 +85,28 @@ contract preflight, check-before-send, persistent duplicate suppression,
 reconnect gating, exact reconciliation, and kill-switch persistence with local
 fakes. Real MT5/demo verification remains an external-account blocker and must
 not be simulated as passed.
+
+## Autonomous lifecycle extension — 2026-09-27
+
+Code hiện không còn dừng ở entry adapter. Các module mới:
+
+- `src/execution/position_lifecycle.py`: exit mode + winner-only pyramid policy.
+- `src/execution/position_policy.py`: closed-bar STOP_FIRST management decisions.
+- `src/execution/position_state.py`: persistent partial/pyramid/stop/status state.
+- `src/execution/position_controller.py`: risk-reducing broker actions + audit boundary.
+- `src/execution/auto_engine.py`: signal -> guarded entry hoặc existing-position management.
+- `src/execution/mt5_runtime.py`: MT5 closed bars/ticks/spread/daily PnL.
+- `scripts/run_mt5_demo_autotrade.py`: autonomous DEMO loop.
+
+`MT5BrokerAdapter` đã có read positions, `TRADE_ACTION_SLTP`, partial/full close, partial-volume normalization, magic ownership và persistent idempotency cho mutation intents.
+
+Pyramiding chỉ mở khi:
+- position hiện tại là winner;
+- strategy cho phép add;
+- add-count chưa vượt limit;
+- SafetyGate/RiskEngine cho phép;
+- total symbol volume không vượt hard cap.
+
+Martingale, averaging down và widen-SL không có execution path.
+
+Verification patch hiện hành: py_compile PASS và targeted suite **36 passed**. Đây vẫn là code evidence; broker runtime evidence bị chặn vì Windows hosts offline.
