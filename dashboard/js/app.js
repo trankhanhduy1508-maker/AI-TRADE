@@ -12,6 +12,8 @@ import{renderCandlestickShell,mountCandlestick,prewarmChartLibrary}from"./module
 import{renderPerformance}from"./modules/performance.js";
 import{renderSafety}from"./modules/safety.js";
 import{renderTesterAdmin}from"./modules/tester-admin.js";
+import{renderAdminStatus}from"./modules/admin-status.js";
+import{renderAdminPositions}from"./modules/admin-positions.js";
 import{getGoogleUser,signInWithGoogle,signOutGoogle}from"./auth.js";
 
 const token=new URLSearchParams(location.search).get("t")||"";
@@ -27,58 +29,88 @@ function shell(){
   document.getElementById("app").innerHTML=`
     ${renderHeader()}
     <div id="errors">${renderError("")}</div>
-    <div id="testerAdmin"></div>
+    <div id="adminStatus">${skeletonCard("System status")}</div>
+    <div id="adminPositions"></div>
     <div id="currentTrade">${skeletonCard("Trạng thái giao dịch")}</div>
-    <div id="progress">${skeletonCard("Tiến độ")}</div>
-    <div id="pipeline"></div>
-    <div id="recentTrades">${skeletonCard("Giao dịch gần đây")}</div>
-    <div id="trainingArena">${skeletonCard("Training Arena")}</div>
-    <div id="journal"></div>
     <div id="chart">${renderCandlestickShell(CONFIG.defaultSymbol,CONFIG.defaultTimeframe,false,null)}</div>
-    <div id="performance"></div>
+    <div id="progress">${skeletonCard("Tiến độ")}</div>
     <div id="safety">${skeletonCard("MT5 DEMO")}</div>
-    <div class="footer"><span id="updated">Đang đồng bộ dữ liệu…</span></div>`;
+    <div id="pipeline"></div>
+    <div id="trainingArena">${skeletonCard("Training Arena")}</div>
+    <div id="performance"></div>
+    <div id="recentTrades">${skeletonCard("Giao dịch gần đây")}</div>
+    <div id="journal"></div>
+    <div id="testerAdmin"></div>
+    <div class="footer"><span id="updated">Đang đồng bộ dữ liệu…</span><span id="latency"></span></div>`;
   bindChartControls();
   bindGoogleControls();
 }
 
 function selectedTrade(state){
   const symbol=state.selectedSymbol||CONFIG.defaultSymbol;
-  if(state.currentTrade?.symbol===symbol)return state.currentTrade;
-  const p=state.arena?.positions?.find(x=>x.symbol===symbol);
-  if(!p)return null;
-  return {
-    symbol:p.symbol,
-    side:p.side,
-    direction:p.direction,
-    entryTs:p.entryTs,
-    entryPrice:p.entryPrice,
-    currentPrice:p.lastMarkPrice,
-    stopPrice:p.stopPrice,
-    takeProfit:p.takeProfit??null,
-    floatingR:p.unrealizedR,
-    volumeLabel:p.volumeLabel??"Paper"
-  };
+  let trade=null;
+  if(state.currentTrade?.symbol===symbol)trade={...state.currentTrade};
+  if(!trade){
+    const p=state.shadowPositions?.find(x=>x.symbol===symbol);
+    if(p)trade={
+      symbol:p.symbol,
+      side:p.side??(p.direction==="UP"?"BUY":"SELL"),
+      direction:p.direction,
+      entryTs:p.entryTs,
+      entryPrice:p.entryPrice,
+      stopPrice:p.stopPrice,
+      takeProfit:p.takeProfit??null,
+      floatingPL:null,
+      floatingR:null,
+      volumeLabel:p.syntheticVolume!=null?"Shadow "+Number(p.syntheticVolume).toFixed(1):"—",
+      mode:"SHADOW_ONLY"
+    };
+  }
+  if(!trade){
+    const p=state.arena?.positions?.find(x=>x.symbol===symbol);
+    if(p)trade={
+      symbol:p.symbol,side:p.side,direction:p.direction,entryTs:p.entryTs,
+      entryPrice:p.entryPrice,currentPrice:p.lastMarkPrice,stopPrice:p.stopPrice,
+      takeProfit:p.takeProfit??null,floatingR:p.unrealizedR,
+      volumeLabel:p.volumeLabel??"Paper",mode:"PAPER_TRAINING_ARENA"
+    };
+  }
+  if(!trade)return null;
+  const latest=state.candles?.at(-1);
+  if(latest&&state.selectedSymbol===symbol)trade.currentPrice=Number(latest.close);
+  const entry=Number(trade.entryPrice),stop=Number(trade.stopPrice),mark=Number(trade.currentPrice);
+  const risk=Math.abs(entry-stop);
+  if(Number.isFinite(mark)&&Number.isFinite(entry)&&risk>0){
+    trade.floatingR=(trade.side==="SELL"||trade.direction==="DOWN")?(entry-mark)/risk:(mark-entry)/risk;
+  }
+  return trade;
 }
 
 function render(){
   const s=store.get(),o=s.overview;if(!o)return;
+  const founder=Boolean(o.viewer?.founder);
+  document.body.classList.toggle("founder-console",founder);
   document.querySelector(".topbar")?.remove();
   document.getElementById("app").insertAdjacentHTML("afterbegin",renderHeader(o.viewer??{},s.googleUser??null));
-  document.getElementById("testerAdmin").innerHTML=s.testerAdmin?renderTesterAdmin(s.testerAdmin):"";
-  document.getElementById("currentTrade").innerHTML=renderCurrentTrade(s.currentTrade);
-  document.getElementById("progress").innerHTML=renderProgress(o.evaluation,CONFIG.sampleTargets);
-  document.getElementById("pipeline").innerHTML=o.viewer?.founder?renderPipeline(o.crons):"";
-  document.getElementById("recentTrades").innerHTML=renderRecentTrades(s.trades);
-  document.getElementById("trainingArena").innerHTML=renderTrainingArena(s.arena??{});
-  document.getElementById("journal").innerHTML=o.viewer?.founder?renderJournal(s.journal):"";
+  document.getElementById("adminStatus").innerHTML=founder?renderAdminStatus(o,s.shadowPositions??[]):"";
+  document.getElementById("adminPositions").innerHTML=founder?renderAdminPositions(s.shadowPositions??[],s.selectedSymbol):"";
   const trade=selectedTrade(s);
+  document.getElementById("currentTrade").innerHTML=renderCurrentTrade(trade);
   document.getElementById("chart").innerHTML=renderCandlestickShell(s.selectedSymbol,s.selectedTimeframe,Boolean(s.chartOpened),trade);
-  document.getElementById("performance").innerHTML=o.viewer?.founder?renderPerformance(o.evaluation):"";
+  document.getElementById("progress").innerHTML=renderProgress(o.evaluation,CONFIG.sampleTargets);
   document.getElementById("safety").innerHTML=renderSafety(o.mt5,o.gates);
+  document.getElementById("pipeline").innerHTML=founder?renderPipeline(o.crons):"";
+  document.getElementById("trainingArena").innerHTML=renderTrainingArena(s.arena??{});
+  document.getElementById("performance").innerHTML=founder?renderPerformance(o.evaluation):"";
+  document.getElementById("recentTrades").innerHTML=renderRecentTrades(s.trades);
+  document.getElementById("journal").innerHTML=founder?renderJournal(s.journal):"";
+  document.getElementById("testerAdmin").innerHTML=founder&&s.testerAdmin?renderTesterAdmin(s.testerAdmin):"";
   document.getElementById("updated").textContent="Cập nhật: "+new Date(o.updatedAt).toLocaleString("vi-VN")+" · refresh 60 giây";
+  const timings=api.getTimings();
+  document.getElementById("latency").textContent=Object.keys(timings).length?" · API "+Object.entries(timings).map(([k,v])=>k+" "+v+"ms").join(" · "):"";
   if(s.chartOpened)mountCandlestick(s.candles,trade);
   bindChartControls();
+  bindAdminPositions();
   bindTesterAdmin();
   bindGoogleControls();
 }
@@ -87,9 +119,8 @@ function saveCache(){
   try{
     const s=store.get();
     localStorage.setItem(cacheKey,JSON.stringify({
-      savedAt:Date.now(),
-      overview:s.overview,testerAdmin:s.testerAdmin,currentTrade:s.currentTrade,
-      trades:s.trades,journal:s.journal,arena:s.arena,
+      savedAt:Date.now(),overview:s.overview,testerAdmin:s.testerAdmin,currentTrade:s.currentTrade,
+      shadowPositions:s.shadowPositions,trades:s.trades,journal:s.journal,arena:s.arena,
       selectedSymbol:s.selectedSymbol,selectedTimeframe:s.selectedTimeframe
     }));
   }catch{}
@@ -119,7 +150,10 @@ async function reloadChart(){
     document.getElementById("chart").innerHTML=renderCandlestickShell(symbol,timeframe,true,trade);
     await mountCandlestick(current.candles,trade);
     bindChartControls();
-  }catch(e){
+    bindAdminPositions();
+    const latency=document.getElementById("latency");
+    if(latency){const timings=api.getTimings();latency.textContent=" · API "+Object.entries(timings).map(([k,v])=>k+" "+v+"ms").join(" · ")}
+  }catch{
     const chart=document.getElementById("candlestickChart");
     if(chart)chart.innerHTML='<div class="empty-state">Không tải được dữ liệu cho market/khung thời gian này.</div>';
   }
@@ -129,47 +163,39 @@ function bindChartControls(){
   const tf=document.getElementById("chartTimeframe");
   if(tf&&!tf.dataset.bound){
     tf.dataset.bound="1";
-    tf.addEventListener("change",()=>{
-      store.set({selectedTimeframe:tf.value});
-      if(store.get().chartOpened)reloadChart();
-      else render();
-    });
+    tf.addEventListener("change",()=>{store.set({selectedTimeframe:tf.value});reloadChart()});
   }
   const symbol=document.getElementById("chartSymbol");
   if(symbol&&!symbol.dataset.bound){
     symbol.dataset.bound="1";
-    symbol.addEventListener("change",()=>{
-      store.set({selectedSymbol:symbol.value,candles:[]});
-      if(store.get().chartOpened)reloadChart();
-      else render();
-    });
+    symbol.addEventListener("change",()=>{store.set({selectedSymbol:symbol.value,candles:[]});reloadChart()});
   }
   const toggle=document.getElementById("chartToggle");
   if(toggle&&!toggle.dataset.bound){
     toggle.dataset.bound="1";
     toggle.addEventListener("click",async()=>{
-      const s=store.get();
-      if(s.chartOpened){
-        store.set({chartOpened:false});
-        render();
-      }else{
-        await reloadChart();
-      }
+      if(store.get().chartOpened){store.set({chartOpened:false});render()}
+      else await reloadChart();
     });
   }
 }
 
+function bindAdminPositions(){
+  document.querySelectorAll(".position-row[data-symbol]").forEach(btn=>{
+    if(btn.dataset.bound)return;
+    btn.dataset.bound="1";
+    btn.addEventListener("click",()=>{
+      store.set({selectedSymbol:btn.dataset.symbol,candles:[],chartOpened:true});
+      reloadChart();
+    });
+  });
+}
+
 function bindGoogleControls(){
   const login=document.getElementById("googleLoginBtn");
-  if(login&&!login.dataset.bound){
-    login.dataset.bound="1";
-    login.addEventListener("click",signInWithGoogle);
-  }
+  if(login&&!login.dataset.bound){login.dataset.bound="1";login.addEventListener("click",signInWithGoogle)}
   const account=document.getElementById("googleAccountBtn");
-  if(account&&!account.dataset.bound){
-    account.dataset.bound="1";
-    account.addEventListener("click",signOutGoogle);
-  }
+  if(account&&!account.dataset.bound){account.dataset.bound="1";account.addEventListener("click",signOutGoogle)}
 }
 
 function bindTesterAdmin(){
@@ -182,10 +208,8 @@ function bindTesterAdmin(){
       const action=btn.dataset.action;
       if(!tokenId||!action)return;
       btn.disabled=true;
-      try{
-        await api.founderAction(tokenId,action);
-        await load();
-      }finally{btn.disabled=false}
+      try{await api.founderAction(tokenId,action);await load()}
+      finally{btn.disabled=false}
     });
   });
 }
@@ -198,34 +222,34 @@ async function load(){
 
     const googlePromise=getGoogleUser().catch(()=>null);
     const overviewPromise=api.getOverview();
+    const currentPromise=api.getFeature("current").catch(()=>({currentTrade:null,openPositions:[]}));
+    const tradesPromise=api.getFeature("trades",{limit:12}).catch(()=>({trades:[]}));
+    const arenaPromise=api.getFeature("arena").catch(()=>({positions:[],trades:[],journal:[]}));
 
     const overview=await overviewPromise;
     store.set({overview});
     render();
 
-    const requests=[
-      googlePromise,
-      overview.viewer?.founder?api.getFeature("admin-testers").catch(()=>({testers:[]})):Promise.resolve(null),
-      api.getFeature("current").catch(()=>({currentTrade:null})),
-      api.getFeature("trades",{limit:12}).catch(()=>({trades:[]})),
-      overview.viewer?.founder?api.getFeature("journal",{limit:12}).catch(()=>({journal:[]})):Promise.resolve({journal:[]}),
-      api.getFeature("arena").catch(()=>({positions:[],trades:[],journal:[]}))
-    ];
-    const [googleUser,testerAdmin,current,trades,journal,arena]=await Promise.all(requests);
+    const adminPromise=overview.viewer?.founder?api.getFeature("admin-testers").catch(()=>({testers:[]})):Promise.resolve(null);
+    const journalPromise=overview.viewer?.founder?api.getFeature("journal",{limit:12}).catch(()=>({journal:[]})):Promise.resolve({journal:[]});
+
+    const [googleUser,current,trades,arena,testerAdmin,journal]=await Promise.all([
+      googlePromise,currentPromise,tradesPromise,arenaPromise,adminPromise,journalPromise
+    ]);
     const currentState=store.get();
+    const shadowPositions=(current.openPositions??[]).map(p=>({...p,side:p.side??(p.direction==="UP"?"BUY":"SELL")}));
     const symbol=current.currentTrade?.symbol||currentState.selectedSymbol||CONFIG.defaultSymbol;
 
     store.set({
-      googleUser,
-      testerAdmin,
-      currentTrade:current.currentTrade??null,
-      trades:trades.trades??[],
-      journal:journal.journal??[],
-      arena,
-      selectedSymbol:symbol
+      googleUser,testerAdmin,currentTrade:current.currentTrade??null,shadowPositions,
+      trades:trades.trades??[],journal:journal.journal??[],arena,selectedSymbol:symbol
     });
     render();
     saveCache();
+
+    if(overview.viewer?.founder&&!store.get().chartOpened){
+      requestAnimationFrame(()=>reloadChart());
+    }
   }catch(e){
     const box=document.getElementById("errorBox");
     if(box){box.textContent="Không tải được dashboard: "+e.message;box.style.display="block"}
