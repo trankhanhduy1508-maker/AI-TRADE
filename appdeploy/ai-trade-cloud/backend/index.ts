@@ -591,6 +591,384 @@ async function runTick() {
   }
 }
 
+
+type ResearchBar = {
+  timestamp: number;
+  open: number;
+  high: number;
+  low: number;
+  close: number;
+};
+
+type ResearchCost = {
+  spread: number;
+  commission: number;
+  slippage: number;
+  swapPerBar: number;
+};
+
+type ResearchTrade = {
+  r: number;
+  exitDay: string;
+};
+
+function researchMetrics(trades: ResearchTrade[]) {
+  let equity = 0;
+  let peak = 0;
+  let maxDrawdownR = 0;
+  let lossStreak = 0;
+  let maxLossStreak = 0;
+  let grossWin = 0;
+  let grossLoss = 0;
+  let worstTradeR = 0;
+  const byDay = new Map<string, number>();
+
+  for (const trade of trades) {
+    equity += trade.r;
+    peak = Math.max(peak, equity);
+    maxDrawdownR = Math.max(maxDrawdownR, peak - equity);
+    worstTradeR = Math.min(worstTradeR, trade.r);
+    if (trade.r < 0) {
+      lossStreak += 1;
+      maxLossStreak = Math.max(maxLossStreak, lossStreak);
+      grossLoss += Math.abs(trade.r);
+    } else {
+      lossStreak = 0;
+      grossWin += trade.r;
+    }
+    byDay.set(trade.exitDay, (byDay.get(trade.exitDay) ?? 0) + trade.r);
+  }
+
+  const dayValues = [...byDay.values()];
+  return {
+    trades: trades.length,
+    netR: Number(equity.toFixed(3)),
+    expectancyR: Number((trades.length ? equity / trades.length : 0).toFixed(3)),
+    profitFactorR: grossLoss > 0 ? Number((grossWin / grossLoss).toFixed(3)) : null,
+    maxDrawdownR: Number(maxDrawdownR.toFixed(3)),
+    worstTradeR: Number(worstTradeR.toFixed(3)),
+    maxLossStreak,
+    worstRealizedDayR: Number((dayValues.length ? Math.min(...dayValues) : 0).toFixed(3)),
+  };
+}
+
+function runTf004Research(
+  bars: ResearchBar[],
+  baseCost: ResearchCost,
+  multiplier: number,
+  signalStart = 0,
+  signalEnd = bars.length
+) {
+  const cost = {
+    spread: baseCost.spread * multiplier,
+    commission: baseCost.commission * multiplier,
+    slippage: baseCost.slippage * multiplier,
+    swapPerBar: baseCost.swapPerBar * multiplier,
+  };
+
+  const trades: ResearchTrade[] = [];
+  let position:
+    | {
+        direction: 'UP' | 'DOWN';
+        entryIndex: number;
+        referenceEntry: number;
+        entryPrice: number;
+        stop: number;
+        initialStop: number;
+      }
+    | null = null;
+
+  for (let index = 0; index < bars.length; index += 1) {
+    const bar = bars[index];
+    let exitedThisBar = false;
+
+    if (position && index > position.entryIndex) {
+      if (index >= 20) {
+        const prior = bars.slice(index - 20, index);
+        if (position.direction === 'UP') {
+          const candidate = Math.min(...prior.map((item) => item.low));
+          position.stop = Math.max(position.stop, candidate);
+        } else {
+          const candidate = Math.max(...prior.map((item) => item.high));
+          position.stop = Math.min(position.stop, candidate);
+        }
+      }
+
+      const stopHit =
+        position.direction === 'UP'
+          ? bar.low <= position.stop
+          : bar.high >= position.stop;
+
+      if (stopHit) {
+        const theoreticalExit = position.stop;
+        const exitPrice =
+          position.direction === 'UP'
+            ? theoreticalExit - cost.slippage
+            : theoreticalExit + cost.slippage;
+        const executedPnl =
+          position.direction === 'UP'
+            ? exitPrice - position.entryPrice
+            : position.entryPrice - exitPrice;
+        const holdingBars = index - position.entryIndex;
+        const explicit =
+          cost.spread + cost.commission + cost.swapPerBar * holdingBars;
+        const pnl = executedPnl - explicit;
+        const initialRisk = Math.abs(position.entryPrice - position.initialStop);
+        if (initialRisk > 0) {
+          trades.push({
+            r: pnl / initialRisk,
+            exitDay: new Date(bar.timestamp * 1000).toISOString().slice(0, 10),
+          });
+        }
+        position = null;
+        exitedThisBar = true;
+      }
+    }
+
+    if (!position && !exitedThisBar) {
+      if (index <= 20 || index <= 5 || index < signalStart || index >= signalEnd) {
+        continue;
+      }
+      const reference = bars[index - 21].close;
+      if (reference === bar.close) continue;
+      const direction: 'UP' | 'DOWN' = bar.close > reference ? 'UP' : 'DOWN';
+      const prior = bars.slice(index - 5, index);
+      const stop =
+        direction === 'UP'
+          ? Math.min(...prior.map((item) => item.low))
+          : Math.max(...prior.map((item) => item.high));
+      if (
+        (direction === 'UP' && stop >= bar.close) ||
+        (direction === 'DOWN' && stop <= bar.close)
+      ) {
+        continue;
+      }
+      const entryPrice =
+        direction === 'UP'
+          ? bar.close + cost.slippage
+          : bar.close - cost.slippage;
+      position = {
+        direction,
+        entryIndex: index,
+        referenceEntry: bar.close,
+        entryPrice,
+        stop,
+        initialStop: stop,
+      };
+    }
+  }
+
+  return researchMetrics(trades);
+}
+
+async function yahooDailyBars(symbol: string): Promise<ResearchBar[]> {
+  const start = 1451606400;
+  const now = new Date();
+  const end = Math.floor(
+    Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()) / 1000
+  );
+  const url =
+    'https://query1.finance.yahoo.com/v8/finance/chart/' +
+    encodeURIComponent(symbol) +
+    '?period1=' +
+    start +
+    '&period2=' +
+    end +
+    '&interval=1d&events=history&includeAdjustedClose=true';
+  const response = await fetch(url, {
+    headers: { 'user-agent': 'AI-TRADE-research/0.2' },
+  });
+  if (!response.ok) {
+    throw new Error('YAHOO_HTTP_' + response.status + '_' + symbol);
+  }
+  const payload = (await response.json()) as {
+    chart?: {
+      error?: unknown;
+      result?: Array<{
+        timestamp?: number[];
+        indicators?: {
+          quote?: Array<{
+            open?: Array<number | null>;
+            high?: Array<number | null>;
+            low?: Array<number | null>;
+            close?: Array<number | null>;
+          }>;
+        };
+      }>;
+    };
+  };
+  if (payload.chart?.error) throw new Error('YAHOO_CHART_' + symbol);
+  const result = payload.chart?.result?.[0];
+  const timestamps = result?.timestamp ?? [];
+  const quote = result?.indicators?.quote?.[0];
+  if (!quote) throw new Error('YAHOO_NO_DATA_' + symbol);
+
+  const bars: ResearchBar[] = [];
+  for (let i = 0; i < timestamps.length; i += 1) {
+    const open = quote.open?.[i];
+    const high = quote.high?.[i];
+    const low = quote.low?.[i];
+    const close = quote.close?.[i];
+    if (
+      timestamps[i] >= end ||
+      open == null ||
+      high == null ||
+      low == null ||
+      close == null ||
+      !Number.isFinite(open) ||
+      !Number.isFinite(high) ||
+      !Number.isFinite(low) ||
+      !Number.isFinite(close)
+    ) {
+      continue;
+    }
+    bars.push({ timestamp: timestamps[i], open, high, low, close });
+  }
+  bars.sort((a, b) => a.timestamp - b.timestamp);
+  if (bars.length < 500) throw new Error('YAHOO_TOO_FEW_BARS_' + symbol);
+  return bars;
+}
+
+function walkForwardResearch(
+  bars: ResearchBar[],
+  cost: ResearchCost,
+  multiplier: number
+) {
+  const trainBars = Math.floor(bars.length * 0.5);
+  const testBars = Math.max(1, Math.floor(bars.length * 0.1));
+  const folds = [];
+  let trainEnd = trainBars;
+  while (trainEnd < bars.length) {
+    const testEnd = Math.min(trainEnd + testBars, bars.length);
+    const metrics = runTf004Research(
+      bars.slice(0, testEnd),
+      cost,
+      multiplier,
+      trainEnd,
+      testEnd
+    );
+    folds.push(metrics);
+    trainEnd = testEnd;
+  }
+  return {
+    folds: folds.length,
+    positiveFolds: folds.filter((fold) => fold.netR > 0).length,
+    netRSum: Number(
+      folds.reduce((sum, fold) => sum + fold.netR, 0).toFixed(3)
+    ),
+    worstFoldDrawdownR: Number(
+      Math.max(...folds.map((fold) => fold.maxDrawdownR), 0).toFixed(3)
+    ),
+    trades: folds.reduce((sum, fold) => sum + fold.trades, 0),
+  };
+}
+
+async function tf004RiskLab() {
+  const definitions: Array<{
+    symbol: string;
+    cost: ResearchCost;
+  }> = [
+    {
+      symbol: 'EURUSD=X',
+      cost: {
+        spread: 0.0002,
+        commission: 0.00002,
+        slippage: 0.00005,
+        swapPerBar: 0.00001,
+      },
+    },
+    {
+      symbol: 'GBPUSD=X',
+      cost: {
+        spread: 0.0002,
+        commission: 0.00002,
+        slippage: 0.00005,
+        swapPerBar: 0.00001,
+      },
+    },
+    {
+      symbol: 'USDJPY=X',
+      cost: {
+        spread: 0.02,
+        commission: 0.002,
+        slippage: 0.005,
+        swapPerBar: 0.001,
+      },
+    },
+  ];
+  const multipliers = [0, 1, 1.5, 2];
+
+  const results = await Promise.all(
+    definitions.map(async ({ symbol, cost }) => {
+      const bars = await yahooDailyBars(symbol);
+      const split = Math.floor(bars.length * 0.7);
+      const stress = multipliers.map((multiplier) => {
+        const oos = runTf004Research(bars, cost, multiplier, split, bars.length);
+        const walkForward = walkForwardResearch(bars, cost, multiplier);
+        return { multiplier, oos, walkForward };
+      });
+      const baseline = stress.find((item) => item.multiplier === 1)!;
+      const positiveStress = stress.filter(
+        (item) => item.oos.netR > 0 && item.walkForward.netRSum > 0
+      );
+      return {
+        symbol,
+        bars: bars.length,
+        firstBar: new Date(bars[0].timestamp * 1000).toISOString().slice(0, 10),
+        lastBar: new Date(bars[bars.length - 1].timestamp * 1000)
+          .toISOString()
+          .slice(0, 10),
+        baseline,
+        stress,
+        highestPositiveCostMultiplier:
+          positiveStress.length > 0
+            ? Math.max(...positiveStress.map((item) => item.multiplier))
+            : null,
+      };
+    })
+  );
+
+  const baselineRobust = results.every(
+    (item) =>
+      item.baseline.oos.netR > 0 &&
+      item.baseline.walkForward.netRSum > 0 &&
+      item.baseline.walkForward.positiveFolds >=
+        Math.ceil(item.baseline.walkForward.folds / 2)
+  );
+
+  return {
+    generatedAt: new Date().toISOString(),
+    strategy: 'TF-004-TIME-SERIES-CHANNEL',
+    source: 'Yahoo chart daily research proxy',
+    provenance: 'UNVERIFIED_RESEARCH_DATA_AND_COSTS',
+    window: '2016-01-01 through last completed UTC day',
+    parameters: {
+      lookbackBars: 20,
+      stopLookbackBars: 5,
+      exitLookbackBars: 20,
+      positionPolicy: 'ONE_OPEN',
+      ambiguousBarPolicy: 'STOP_FIRST',
+    },
+    result: results,
+    riskProfileCandidate: {
+      status: baselineRobust ? 'RESEARCH_CANDIDATE_ONLY' : 'FAIL_CLOSED',
+      maxSpreadPoints: null,
+      maxDailyLossDemo: null,
+      maxPyramidAdds: null,
+      maxTotalVolumeDemo: null,
+      reasons: [
+        'Yahoo data is not broker execution data.',
+        'Cost assumptions are unverified price-unit proxies.',
+        'Backtest is normalized in R and does not size account capital.',
+        'Pyramiding is not included in this fixed TF-004 historical engine.',
+        baselineRobust
+          ? 'Baseline passed the narrow research rule, but broker-aligned evidence is still required.'
+          : 'Baseline did not pass the narrow cross-pair OOS/walk-forward robustness rule.',
+      ],
+    },
+  };
+}
+
 export const tradeCronHandler = async () => {
   await runTick();
   return { statusCode: 200 };
@@ -599,6 +977,9 @@ export const tradeCronHandler = async () => {
 export const handler = router({
   'GET /api/_healthcheck': [
     async () => json({ ok: true, runtime: 'cloud', liveMoneyLocked: true }),
+  ],
+  'GET /api/research/tf004-risk': [
+    async () => json(await tf004RiskLab()),
   ],
   'GET /api/status': [
     async () => {
