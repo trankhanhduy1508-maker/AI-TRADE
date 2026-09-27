@@ -1,0 +1,11 @@
+[
+  {
+    "name": "trade-tick",
+    "cron": "*/5 * * * *",
+    "handler": "tradeCronHandler",
+    "timezone": "UTC",
+    "payload": {
+      "source": "appdeploy-cron"
+    }
+  }
+]
