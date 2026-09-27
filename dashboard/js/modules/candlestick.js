@@ -1,7 +1,9 @@
-import{ema,empty,esc}from"../utils.js";
+import{ema,empty}from"../utils.js";
+import{renderProjection}from"./price-projection.js";
 
 let chart=null;
 let chartLibraryPromise=null;
+let resizeObserver=null;
 
 const SYMBOLS=[
  ["EURUSD","EUR/USD"],["GBPUSD","GBP/USD"],["USDJPY","USD/JPY"],["AUDUSD","AUD/USD"],
@@ -15,8 +17,20 @@ export function renderCandlestickShell(symbol="EURUSD",timeframe="1h",opened=fal
  const symbolOptions=SYMBOLS.map(([value,label])=>`<option value="${value}" ${value===symbol?"selected":""}>${label}</option>`).join("");
  const frameOptions=FRAMES.map(([value,label])=>`<option value="${value}" ${value===timeframe?"selected":""}>${label}</option>`).join("");
  const side=trade?.side??(trade?.direction==="UP"?"BUY":trade?.direction==="DOWN"?"SELL":null);
- const status=trade?`<span class="chart-position ${side==="BUY"?"buy":"sell"}">${side||""} · Entry ${trade.entryPrice??"—"} · SL ${trade.stopPrice??"—"} · TP ${trade.takeProfit??"— chưa đặt"}</span>`:"<span class=\"chart-position neutral\">Chưa có vị thế cho market này</span>";
- return `<section class="section">
+ const lot=trade?.lot!=null?Number(trade.lot).toFixed(2):(trade?.volumeLabel??"—");
+ const pl=trade?.floatingPL==null?"—":`${Number(trade.floatingPL)>=0?"+":""}$${Number(trade.floatingPL).toFixed(2)}`;
+ const rr=Number.isFinite(Number(trade?.floatingR))?`${Number(trade.floatingR)>=0?"+":""}${Number(trade.floatingR).toFixed(2)}R`:"—";
+ const status=trade?`<div class="chart-position-detail">
+   <span class="chart-position ${side==="BUY"?"buy":"sell"}">${side||""}</span>
+   <span>Entry <b>${trade.entryPrice??"—"}</b></span>
+   <span>SL <b>${trade.stopPrice??"—"}</b></span>
+   <span>TP <b>${trade.takeProfit??"— chưa đặt"}</b></span>
+   <span>Lot/Vol <b>${lot}</b></span>
+   <span>Price <b>${trade.currentPrice??"—"}</b></span>
+   <span>P/L <b>${pl}</b></span>
+   <span>R <b>${rr}</b></span>
+ </div>`:"<span class=\"chart-position neutral\">Chưa có vị thế cho market này</span>";
+ return `<section class="section admin-priority chart-section">
   <div class="card chart-card">
     <div class="chart-toolbar">
       <div class="left">
@@ -29,6 +43,7 @@ export function renderCandlestickShell(symbol="EURUSD",timeframe="1h",opened=fal
     <div id="chartContent" class="${opened?"":"hidden"}">
       <div id="chartLegend" class="chart-legend"></div>
       <div id="candlestickChart" class="chart-wrap">${opened?"":empty("Biểu đồ chỉ tải khi bạn mở.")}</div>
+      <div id="priceProjection" class="price-projection">${renderProjection(trade)}</div>
     </div>
   </div>
  </section>`;
@@ -60,6 +75,7 @@ function addSeriesCompat(L,kind,options){
 export async function mountCandlestick(candles=[],trade=null){
  const el=document.getElementById("candlestickChart");
  if(!el)return;
+ if(resizeObserver){try{resizeObserver.disconnect()}catch{}resizeObserver=null}
  if(chart){try{chart.remove()}catch{}chart=null}
  if(!candles.length){
    el.innerHTML=empty("Chưa tải được dữ liệu nến cho market/khung thời gian này.");
@@ -77,11 +93,7 @@ export async function mountCandlestick(candles=[],trade=null){
    layout:{background:{type:L.ColorType?.Solid??"solid",color:"#07111d"},textColor:"#9badc6",fontSize:12},
    grid:{vertLines:{color:"rgba(255,255,255,.035)"},horzLines:{color:"rgba(255,255,255,.035)"}},
    rightPriceScale:{borderColor:"rgba(255,255,255,.12)",scaleMargins:{top:.08,bottom:.08},autoScale:true},
-   timeScale:{
-     borderColor:"rgba(255,255,255,.12)",timeVisible:true,secondsVisible:false,
-     rightOffset:6,barSpacing:11,minBarSpacing:4,fixLeftEdge:false,fixRightEdge:false,
-     lockVisibleTimeRangeOnResize:true
-   },
+   timeScale:{borderColor:"rgba(255,255,255,.12)",timeVisible:true,secondsVisible:false,rightOffset:6,barSpacing:11,minBarSpacing:4,fixLeftEdge:false,fixRightEdge:false,lockVisibleTimeRangeOnResize:true},
    crosshair:{mode:L.CrosshairMode?.Normal??0},
    handleScroll:{mouseWheel:true,pressedMouseMove:true,horzTouchDrag:true,vertTouchDrag:false},
    handleScale:{axisPressedMouseMove:true,mouseWheel:true,pinch:true},
@@ -89,11 +101,7 @@ export async function mountCandlestick(candles=[],trade=null){
    attributionLogo:true
  });
 
- const cs=addSeriesCompat(L,"candles",{
-   upColor:"#18d7a0",downColor:"#ff5b78",
-   borderVisible:false,wickUpColor:"#18d7a0",wickDownColor:"#ff5b78",
-   priceLineVisible:false,lastValueVisible:true
- });
+ const cs=addSeriesCompat(L,"candles",{upColor:"#18d7a0",downColor:"#ff5b78",borderVisible:false,wickUpColor:"#18d7a0",wickDownColor:"#ff5b78",priceLineVisible:false,lastValueVisible:true});
  cs.setData(candles.map(c=>({time:c.time,open:Number(c.open),high:Number(c.high),low:Number(c.low),close:Number(c.close)})));
 
  const closes=candles.map(c=>Number(c.close));
@@ -104,40 +112,50 @@ export async function mountCandlestick(candles=[],trade=null){
  s.setData(candles.map((c,i)=>({time:c.time,value:slow[i]})));
 
  if(trade){
-   const lines=[
-     [trade.entryPrice,trade.side||trade.direction==="UP"?"BUY Entry":"SELL Entry","#45a9ff"],
-     [trade.stopPrice,"SL","#ff5b78"],
-     [trade.takeProfit,"TP","#2ee6a6"]
-   ];
+   const side=(trade.side==="SELL"||trade.direction==="DOWN")?"SELL":"BUY";
+   const lines=[[trade.entryPrice,`${side} Entry`,"#45a9ff"],[trade.stopPrice,"SL","#ff5b78"],[trade.takeProfit,"TP","#2ee6a6"],[trade.currentPrice,"Current","#f5c451"]];
    for(const [price,title,color] of lines){
-     if(Number.isFinite(Number(price))){
-       cs.createPriceLine({price:Number(price),color,lineWidth:2,lineStyle:2,axisLabelVisible:true,title});
-     }
+     if(Number.isFinite(Number(price)))cs.createPriceLine({price:Number(price),color,lineWidth:title==="Current"?1:2,lineStyle:title==="Current"?3:2,axisLabelVisible:true,title});
    }
    const entryTime=trade.entryTs?Math.floor(new Date(trade.entryTs).getTime()/1000):candles.at(-1)?.time;
-   const marker={time:entryTime,position:(trade.side==="SELL"||trade.direction==="DOWN")?"aboveBar":"belowBar",color:(trade.side==="SELL"||trade.direction==="DOWN")?"#ff5b78":"#2ee6a6",shape:(trade.side==="SELL"||trade.direction==="DOWN")?"arrowDown":"arrowUp",text:(trade.side||trade.direction==="UP"?"BUY":"SELL")};
+   const marker={time:entryTime,position:side==="SELL"?"aboveBar":"belowBar",color:side==="SELL"?"#ff5b78":"#2ee6a6",shape:side==="SELL"?"arrowDown":"arrowUp",text:side};
    try{
      if(typeof L.createSeriesMarkers==="function")L.createSeriesMarkers(cs,[marker]);
      else if(typeof cs.setMarkers==="function")cs.setMarkers([marker]);
    }catch{}
  }
 
- const barsToShow=Math.min(72,candles.length);
- if(barsToShow>=20){
-   chart.timeScale().setVisibleLogicalRange({from:candles.length-barsToShow-2,to:candles.length+4});
- }else{
-   chart.timeScale().fitContent();
- }
+ const barsToShow=Math.min(window.matchMedia?.("(max-width: 760px)")?.matches?54:72,candles.length);
+ if(barsToShow>=20)chart.timeScale().setVisibleLogicalRange({from:candles.length-barsToShow-2,to:candles.length+4});
+ else chart.timeScale().fitContent();
 
  const last=candles.at(-1);
  const legend=document.getElementById("chartLegend");
- if(legend)legend.innerHTML=`<span><i class="legend-line" style="background:#45a9ff"></i>EMA 21</span>
- <span><i class="legend-line" style="background:#f5a742"></i>EMA 50</span>
- ${last?`<span>O ${Number(last.open).toFixed(5)} · H ${Number(last.high).toFixed(5)} · L ${Number(last.low).toFixed(5)} · C ${Number(last.close).toFixed(5)}</span>`:""}`;
+ if(legend)legend.innerHTML=`<span><i class="legend-line" style="background:#45a9ff"></i>EMA 21</span><span><i class="legend-line" style="background:#f5a742"></i>EMA 50</span>${last?`<span>O ${Number(last.open).toFixed(5)} · H ${Number(last.high).toFixed(5)} · L ${Number(last.low).toFixed(5)} · C ${Number(last.close).toFixed(5)}</span>`:""}`;
 
- new ResizeObserver(()=>{
+ const projection=document.getElementById("priceProjection");
+ let helperLine=null;
+ const showTarget=price=>{
+   if(!trade||!projection||!Number.isFinite(Number(price)))return;
+   projection.innerHTML=renderProjection(trade,price);
+ };
+ chart.subscribeCrosshairMove(param=>{
+   if(!param?.point)return;
+   showTarget(cs.coordinateToPrice(param.point.y));
+ });
+ chart.subscribeClick(param=>{
+   if(!param?.point||!trade)return;
+   const price=cs.coordinateToPrice(param.point.y);
+   if(!Number.isFinite(Number(price)))return;
+   showTarget(price);
+   if(helperLine){try{cs.removePriceLine(helperLine)}catch{}}
+   helperLine=cs.createPriceLine({price:Number(price),color:"#b265ff",lineWidth:1,lineStyle:3,axisLabelVisible:true,title:"Target"});
+ });
+
+ resizeObserver=new ResizeObserver(()=>{
    if(chart&&el.clientWidth)chart.applyOptions({width:el.clientWidth,height:Math.max(el.clientHeight,420)});
- }).observe(el);
+ });
+ resizeObserver.observe(el);
 }
 
 export function prewarmChartLibrary(){
