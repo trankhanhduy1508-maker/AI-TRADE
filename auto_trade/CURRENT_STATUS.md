@@ -1,3 +1,105 @@
+## CWS AI Trade Founder/Admin terminal UI checkpoint — 2026-09-28
+
+Founder/Admin UI đã được nâng thành bề mặt terminal trading riêng trong cùng codebase, không fork customer UI.
+
+### Implementation checkpoint
+- implementation HEAD trước status commit: `d1fe00c2278f0c5aab762c840ebc467b2d8bd4ce`;
+- static dashboard build được Edge Function trỏ tới: `50739eeb59d15a0621ad4503d1f63d1e4aa17660`;
+- Supabase Edge Function `ai-trade-dashboard` v17 ACTIVE;
+- TradingView Lightweight Charts giữ nguyên official v5.0.8.
+
+### Founder/Admin hierarchy
+Thứ tự ưu tiên runtime hiện tại:
+1. System status;
+2. Current open positions;
+3. Selected current trade;
+4. Central chart + market/timeframe;
+5. Lot / P&L / R / Entry / SL / TP;
+6. Forward + MT5/safety;
+7. Research/performance;
+8. Journal/tester admin thấp hơn.
+
+Lower-priority Founder sections dùng `content-visibility:auto` để không chiếm first render work không cần thiết.
+
+### Load / perceived performance
+- static HTML shell + skeleton vẫn render trước JavaScript, không blank screen;
+- cache last-known state vẫn hydrate tối đa 10 phút rồi refresh live ở nền;
+- `overview`, `current`, `trades`, `arena` bắt đầu request song song ngay từ đầu thay vì chờ overview xong mới fan-out;
+- Founder-only journal/tester-admin chỉ bắt đầu sau khi role Founder đã được xác nhận;
+- chart request bắt đầu sau main live render bằng `requestAnimationFrame`, nên chart không block first paint;
+- per-endpoint client network timing được đo bằng `performance.now()` và hiện ở footer Founder.
+
+Một mẫu network trực tiếp raw.githack trước/sau:
+- old index: ~342.8 ms;
+- new index: ~387.1 ms;
+- old app.js: ~382.6 ms;
+- new app.js: ~473.0 ms.
+
+Các số trên là latency CDN một lần và KHÔNG được dùng để tuyên bố network bytes nhanh hơn. Cải thiện chính là giảm waterfall và cải thiện perceived load/runtime scheduling. Không fake benchmark.
+
+### Market / timeframe
+Market selector đủ 14 market:
+EURUSD, GBPUSD, USDJPY, AUDUSD, USDCAD, USDCHF, NZDUSD,
+XAUUSD, USOIL, BTCUSD, ETHUSD, US30, NAS100, US500.
+
+Timeframe:
+M15 / M30 / H1 / H4 / D1.
+
+Switch market/timeframe chỉ reload candle/chart state, không reload toàn dashboard.
+
+### Chart / position overlay
+- smooth mouse/touch pan, wheel zoom, pinch zoom, kinetic scroll;
+- responsive ResizeObserver;
+- autoscale + practical bar spacing;
+- desktop khoảng 72 visible bars, mobile khoảng 54;
+- selected position được resolve theo market từ current shadow position, shadow position list hoặc paper arena;
+- chart hiển thị BUY/SELL marker, Entry, SL, current price, TP chỉ khi có thật;
+- chart summary hiện Lot/Volume, current price, floating P/L và floating R khi dữ liệu có;
+- không có TP thì hiện rõ `TP — chưa đặt`.
+
+### Horizontal price helper
+Đã thêm target-price helper:
+- crosshair hiển thị Target + khoảng cách từ Entry;
+- click ghim horizontal Target line;
+- FX hiển thị pip, tài sản khác hiển thị point;
+- USD P/L CHỈ tính khi có đủ `lot + tickSize + tickValue + entry + target`;
+- nếu thiếu symbol specification thì hiện đúng: `P/L chưa đủ dữ liệu để tính chính xác`.
+
+Hiện API chưa cung cấp symbol specification đủ để tính USD P/L chính xác, nên UI fail-closed thay vì dựng số giả.
+
+### Runtime evidence
+Cloud browser run:
+- TinyFish run `b8dc9169-21b9-4c2c-864d-e75825f1afd4`;
+- viewport mobile tương đương ~412x915;
+- PASS shell/skeleton first paint, không blank;
+- PASS đủ 14 market;
+- PASS đủ M15/M30/H1/H4/D1;
+- PASS market/timeframe interaction client-side, không full-page reload;
+- PASS không horizontal overflow trên mobile;
+- không có blocking JS runtime error trong unauthenticated static-build test.
+
+Live public candle source checks, không fake data:
+- EURUSD H1: Yahoo `EURUSD=X`, granularity 1h, runtime fetch ~2041.8 ms;
+- BTCUSD H1: Yahoo `BTC-USD`, granularity 1h, dữ liệu OHLC trả về thành công;
+- XAUUSD M15: Yahoo `GC=F`, granularity 15m, 357 points, ~2439.8 ms;
+- NAS100 H4 source: Yahoo `^NDX`, granularity 1h, 211 points, ~2215.7 ms; dashboard H4 aggregate từ 1h theo backend hiện hành.
+
+### Verified blocker / limitation
+Không có raw Founder dashboard token trong tool context. Runtime auth lưu token dạng SHA-256 hash một chiều, nên không thể phục hồi token để chạy authenticated browser E2E cho overlay trên dữ liệu Founder thật mà không tạo/fake credential hoặc thay auth scope.
+
+Vì vậy:
+- static/mobile/browser behavior đã runtime PASS thật;
+- public candle source cho các market/timeframe bắt buộc đã runtime trả dữ liệu thật;
+- authenticated Founder overlay E2E chưa được tuyên bố PASS giả.
+
+### Safety / scope
+- không thay live-money lock;
+- không thay broker execution gate;
+- không thay The5ers gate;
+- không thay risk approval;
+- không implement/chỉnh Google Login trong task này;
+- không tạo branch mới.
+
 ## CWS AI Trade fast UI + Google Login + TradingView v5 — 2026-09-27
 
 Founder feedback from mobile tester screenshot triggered a shared Founder/Tester UI upgrade.
