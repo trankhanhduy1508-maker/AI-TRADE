@@ -1,3 +1,15 @@
+## The5ers approval request + risk packet — 2026-09-27
+
+- Written approval request sent to The5ers Support at help@the5ers.com.
+- Gmail sent message id: 1a0e12ba86e3e300.
+- No reply found in the latest inbox check.
+- automation_approval_verified remains false.
+- Added `risk/RISK_PROFILE_APPROVAL_PACKET_2026-09-27.md`.
+- Opened GitHub Issue #1: `[GATE] The5ers written approval + DEMO risk-profile evidence`.
+- max_total_volume_demo remains NULL; no hard-risk number was auto-approved.
+- readiness remains BLOCKED_APPROVAL.
+- live/funded-money automation remains HARD LOCKED.
+
 ## AI-TRADE cloud continuation checkpoint — 2026-09-27
 
 **PAPER ACTIVE / BOOTCAMP MONITOR ACTIVE / EXECUTION FAIL-CLOSED.**
