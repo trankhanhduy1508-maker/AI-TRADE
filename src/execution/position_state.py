@@ -89,5 +89,33 @@ class PositionStateStore:
         if self.get(position_id) is None:
             raise KeyError(position_id)
 
+    def open_states(self, strategy_id: str | None = None) -> tuple[ManagedPositionState, ...]:
+        if strategy_id is None:
+            rows = self._connection.execute(
+                "SELECT position_id, strategy_id, partial_done, pyramid_adds, last_stop, status FROM managed_positions WHERE status='OPEN' ORDER BY position_id"
+            ).fetchall()
+        else:
+            rows = self._connection.execute(
+                "SELECT position_id, strategy_id, partial_done, pyramid_adds, last_stop, status FROM managed_positions WHERE status='OPEN' AND strategy_id=? ORDER BY position_id",
+                (strategy_id,),
+            ).fetchall()
+        return tuple(
+            ManagedPositionState(row[0], row[1], bool(row[2]), int(row[3]), row[4], row[5])
+            for row in rows
+        )
+
+    def reconcile_broker_positions(
+        self,
+        strategy_id: str,
+        broker_positions: tuple[tuple[str, float | None], ...],
+    ) -> None:
+        """Treat a successful broker position snapshot as source of truth."""
+        broker_ids = {position_id for position_id, _ in broker_positions}
+        for position_id, last_stop in broker_positions:
+            self.ensure(position_id, strategy_id, last_stop)
+        for state in self.open_states(strategy_id):
+            if state.position_id not in broker_ids:
+                self.mark_closed(state.position_id)
+
     def close(self) -> None:
         self._connection.close()
