@@ -85,25 +85,6 @@ def daily_pnl(connection: Any, *, magic: int, now: datetime | None = None) -> fl
     return total
 
 
-async def runtime_inputs(
-    adapter: MetaApiCloudAdapter,
-    *,
-    own_open_positions: int,
-    current_symbol_volume: float,
-    daily_loss: float,
-    max_tick_age_seconds: float,
-    now: datetime | None = None,
-) -> tuple[float, float, SafetySnapshot, RiskContext]:
-    current = now or datetime.now(timezone.utc)
-    bid, ask, tick_time = await adapter.quote(
-        next(
-            p.symbol for p in await adapter.positions()
-            if p.magic >= 0
-        )
-    ) if False else (None, None, None)
-    raise RuntimeError("use runtime_inputs_for_symbol")
-
-
 async def runtime_inputs_for_symbol(
     adapter: MetaApiCloudAdapter,
     *,
