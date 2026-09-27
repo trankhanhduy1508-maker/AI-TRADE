@@ -159,9 +159,30 @@ class CloudAutoTradeEngine:
             return CloudAutoTradeOutcome(result.status, instruction.reason)
 
         if instruction.action == PositionAction.PARTIAL_CLOSE:
-            volume = await self.adapter.normalize_partial_volume(
-                position, float(instruction.partial_fraction)
-            )
+            try:
+                volume = await self.adapter.normalize_partial_volume(
+                    position, float(instruction.partial_fraction)
+                )
+            except ValueError as exc:
+                if str(exc) != "PARTIAL_VOLUME_NOT_REPRESENTABLE":
+                    raise
+                if position.stop_loss is None:
+                    return CloudAutoTradeOutcome(
+                        "BLOCKED", "PARTIAL_UNAVAILABLE_AND_NO_PROTECTIVE_STOP"
+                    )
+                fallback = await self.adapter.modify_position(
+                    position.position_id,
+                    client_order_id=self._intent_id(
+                        "PARTIAL_FALLBACK_TRAIL", stamp, position.position_id
+                    ),
+                    stop_loss=float(position.stop_loss),
+                    take_profit=None,
+                )
+                if fallback.status in {"FILLED", "PARTIAL"}:
+                    self.state.mark_partial_done(position.position_id)
+                return CloudAutoTradeOutcome(
+                    fallback.status, "PARTIAL_UNAVAILABLE_SWITCHED_TO_TRAILING"
+                )
             result = await self.adapter.close_position(
                 position.position_id,
                 client_order_id=self._intent_id("PARTIAL", stamp, position.position_id),
