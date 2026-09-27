@@ -14,7 +14,7 @@ const FRAMES=[["15m","M15"],["30m","M30"],["1h","H1"],["4h","H4"],["1d","D1"]];
 export function renderCandlestickShell(symbol="EURUSD",timeframe="1h",opened=false,trade=null){
  const symbolOptions=SYMBOLS.map(([value,label])=>`<option value="${value}" ${value===symbol?"selected":""}>${label}</option>`).join("");
  const frameOptions=FRAMES.map(([value,label])=>`<option value="${value}" ${value===timeframe?"selected":""}>${label}</option>`).join("");
- const side=trade?.side||trade?.direction==="UP"?"BUY":trade?.direction==="DOWN"?"SELL":null;
+ const side=trade?.side??(trade?.direction==="UP"?"BUY":trade?.direction==="DOWN"?"SELL":null);
  const status=trade?`<span class="chart-position ${side==="BUY"?"buy":"sell"}">${side||""} · Entry ${trade.entryPrice??"—"} · SL ${trade.stopPrice??"—"} · TP ${trade.takeProfit??"— chưa đặt"}</span>`:"<span class=\"chart-position neutral\">Chưa có vị thế cho market này</span>";
  return `<section class="section">
   <div class="card chart-card">
@@ -85,7 +85,8 @@ export async function mountCandlestick(candles=[],trade=null){
    crosshair:{mode:L.CrosshairMode?.Normal??0},
    handleScroll:{mouseWheel:true,pressedMouseMove:true,horzTouchDrag:true,vertTouchDrag:false},
    handleScale:{axisPressedMouseMove:true,mouseWheel:true,pinch:true},
-   kineticScroll:{mouse:true,touch:true}
+   kineticScroll:{mouse:true,touch:true},
+   attributionLogo:true
  });
 
  const cs=addSeriesCompat(L,"candles",{
