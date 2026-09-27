@@ -1,10 +1,10 @@
-# AI-TRADE — Business Model V1
+# CWS AI Trade — Business Model V1
 
 Status: Founder idea -> structured product direction. Not a final legal or pricing approval.
 
 ## Product identity
 
-AI-TRADE is not pure copy-trading.
+CWS AI Trade is not pure copy-trading.
 
 It is a hybrid:
 - autonomous AI trading bot;
@@ -68,7 +68,7 @@ This is a hypothesis to A/B test, not a final billing rule.
 
 ## Broker partnership model
 
-AI-TRADE may support:
+CWS AI Trade may support:
 - Connect Existing Broker; or
 - Open With Partner Broker.
 
@@ -90,7 +90,7 @@ trade result -> billing/partner accounting -> AI credit / revenue
 
 ## Trust model
 
-AI-TRADE should be unusually transparent for an automated bot.
+CWS AI Trade should be unusually transparent for an automated bot.
 
 Per position/trade expose:
 - strategy id;
