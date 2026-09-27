@@ -16,7 +16,9 @@ import{renderAdminStatus}from"./modules/admin-status.js";
 import{renderAdminPositions}from"./modules/admin-positions.js";
 import{getGoogleUser,signInWithGoogle,signOutGoogle}from"./auth.js";
 
-const token=new URLSearchParams(location.search).get("t")||"";
+const params=new URLSearchParams(location.search);
+const token=params.get("t")||"";
+const adminPreview=params.get("mode")==="admin-preview";
 const api=new DashboardApi(token);
 const store=new DashboardStore();
 const cacheKey="cws-ai-trade-cache-"+token.slice(0,12);
@@ -138,6 +140,16 @@ function hydrateCache(){
 
 async function reloadChart(){
   const s=store.get();
+  if(adminPreview){
+    const symbol=document.getElementById("chartSymbol")?.value||s.selectedSymbol||CONFIG.defaultSymbol;
+    const timeframe=document.getElementById("chartTimeframe")?.value||s.selectedTimeframe||CONFIG.defaultTimeframe;
+    store.set({selectedSymbol:symbol,selectedTimeframe:timeframe,chartOpened:true,candles:[]});
+    document.getElementById("chart").innerHTML=renderCandlestickShell(symbol,timeframe,true,null);
+    const holder=document.getElementById("candlestickChart");
+    if(holder)holder.innerHTML='<div class="empty-state">Admin Preview — dữ liệu runtime chỉ hiện sau khi Founder xác thực.</div>';
+    bindChartControls();
+    return;
+  }
   const symbol=document.getElementById("chartSymbol")?.value||s.selectedSymbol||CONFIG.defaultSymbol;
   const timeframe=document.getElementById("chartTimeframe")?.value||s.selectedTimeframe||CONFIG.defaultTimeframe;
   const holder=document.getElementById("candlestickChart");
@@ -229,6 +241,30 @@ async function load(){
   const error=document.getElementById("errorBox");
   if(error)error.style.display="none";
   try{
+    if(adminPreview){
+      const previewOverview={
+        preview:true,
+        viewer:{founder:true,accessRole:"FOUNDER",subjectLabel:"Founder Preview"},
+        evaluation:{state:"UNAVAILABLE"},
+        mt5:{connected:false},
+        gates:{liveMoneyLocked:true},
+        crons:[],
+        updatedAt:new Date().toISOString()
+      };
+      store.set({
+        overview:previewOverview,
+        testerAdmin:null,currentTrade:null,shadowPositions:[],
+        trades:[],journal:[],arena:{positions:[],trades:[],journal:[]},
+        selectedSymbol:CONFIG.defaultSymbol,selectedTimeframe:CONFIG.defaultTimeframe,
+        chartOpened:true
+      });
+      render();
+      const box=document.getElementById("errorBox");
+      if(box){box.textContent="ADMIN PREVIEW — giao diện Founder/Admin thật, dữ liệu runtime được ẩn cho đến khi xác thực Founder.";box.style.display="block"}
+      const holder=document.getElementById("candlestickChart");
+      if(holder)holder.innerHTML='<div class="empty-state">Admin Preview — chart runtime unavailable khi chưa xác thực Founder.</div>';
+      return;
+    }
     if(!token)throw new Error("Thiếu token dashboard trong link.");
 
     const googlePromise=getGoogleUser().catch(()=>null);
@@ -271,4 +307,4 @@ shell();
 hydrateCache();
 prewarmChartLibrary();
 load();
-setInterval(load,CONFIG.refreshMs);
+if(!adminPreview)setInterval(load,CONFIG.refreshMs);
