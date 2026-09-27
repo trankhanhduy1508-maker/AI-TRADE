@@ -161,16 +161,22 @@ Deno.serve(async(req)=>{
       const p=positions[0];
       const candles=await yahooCandles(String(p.symbol),20);
       const latest=candles.at(-1);
+      const entryPrice=Number(p.entry_price);
+      const currentPrice=latest?Number(latest.close):entryPrice;
+      const stopPrice=Number(p.stop_price);
+      const riskPrice=Math.abs(entryPrice-stopPrice);
+      const floatingR=riskPrice>0
+        ? (String(p.direction)==="UP"?(currentPrice-entryPrice):(entryPrice-currentPrice))/riskPrice
+        : null;
       currentTrade={
         symbol:String(p.symbol),
         direction:String(p.direction),
         side:String(p.direction)==="UP"?"BUY":"SELL",
         entryTs:new Date(p.entry_ts).toISOString(),
-        entryPrice:Number(p.entry_price),
-        currentPrice:latest?Number(latest.close):Number(p.entry_price),
-        stopPrice:Number(p.stop_price),
+        entryPrice,currentPrice,stopPrice,
         takeProfit:null,
         floatingPL:null,
+        floatingR,
         riskReward:null,
         volumeLabel:"Shadow "+Number(p.synthetic_volume).toFixed(1),
         mode:"SHADOW_ONLY"
