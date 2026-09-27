@@ -1,3 +1,38 @@
+## AI-TRADE cloud continuation checkpoint — 2026-09-27
+
+**PAPER ACTIVE / BOOTCAMP MONITOR ACTIVE / EXECUTION FAIL-CLOSED.**
+
+Verified cloud evidence in this continuation:
+- multi-asset paper request #34: HTTP 200, 13/13 NO_NEW_CLOSED_BAR, persistent state retained, no duplicate trade, brokerOrders=false, pyramiding=false;
+- daily paper cron remains active at 30 1 * * * UTC; no scheduled cron-run history existed yet because the job was created after the current day's 01:30 UTC slot;
+- Bootcamp guard v2 requests #35/#36 and #41: target/floor/progress/remaining-loss/projected-stop budget are exposed, and floor-breach projection is blocked;
+- ai-trade-tick v6 request #39: BLOCKED_APPROVAL before MetaApi/broker access;
+- ai-trade-demo-preflight v2 request #40: BLOCKED_APPROVAL before credential/MetaApi access; preflight no longer auto-deploys a MetaApi account;
+- durable ai_trade.compliance_intents unique reservation enforces one intent per strategy/symbol/closed bar;
+- all 6 current broker mutation call sites in tick v6 are structurally behind reserveComplianceIntent;
+- partial close and TP removal are no longer two mutations on the same bar; TP removal is deferred to the next closed bar;
+- official The5ers rules re-checked on 2026-09-27; written approval is still required by current Terms;
+- targeted Gmail search found no The5ers written automation approval evidence.
+
+Evidence-backed governance:
+- automation approval cannot be set true unless approval evidence + verification timestamp are present;
+- risk profile cannot be set true unless risk evidence + approval timestamp + MAX_TOTAL_VOLUME_DEMO are present;
+- MAX_TOTAL_VOLUME_DEMO remains NULL; no risk number was invented or promoted;
+- automation_approval_verified=false;
+- risk_profile_approved=false;
+- execution enabled=false;
+- demo_send_enabled=false;
+- readiness=BLOCKED_APPROVAL;
+- live/funded money remains hard locked.
+
+Source/runtime drift fixed:
+- the deployed tick already had a risk-profile gate while the GitHub mirror was stale;
+- GitHub is now synchronized forward to tick v6 rather than downgrading runtime safety.
+
+Security note:
+- ai_trade tables do not grant schema usage or table SELECT/INSERT/UPDATE to anon/authenticated roles;
+- RLS is not enabled on these private-schema tables, so this remains defense-in-depth debt rather than a demonstrated public-data exposure.
+
 ## The5ers Bootcamp Guard + Compliance Mode — 2026-09-27
 
 **GUARD ACTIVE / EXECUTION LOCKED.**
@@ -34,7 +69,7 @@ Source:
 - `execution/THE5ERS_BOOTCAMP_RULES_2026-09-27.md`
 - `execution/THE5ERS_BOOTCAMP_GUARD_IMPLEMENTATION.md`
 
-Bootcamp MT5 challenge execution remains locked until official rules are re-checked and written automation approval is verified. Funded/live-money path remains hard locked.
+Official rules were re-checked on 2026-09-27. Bootcamp MT5 challenge execution remains locked until real written automation approval and an evidence-backed risk profile are verified. Funded/live-money path remains hard locked.
 
 
 ## 13-market autonomous paper universe — 2026-09-27
@@ -54,7 +89,7 @@ Evidence:
 
 Execution safety:
 - `risk_profile_approved=false` is now a DB gate;
-- `ai-trade-tick` v4 refuses execution when risk profile is unapproved;
+- `ai-trade-tick` v6 enforces evidence-backed unified readiness before any MetaApi/broker path;
 - `ai-trade-demo-preflight` v1 can resolve broker symbol aliases read-only once DEMO credentials exist;
 - live money remains hard locked.
 
