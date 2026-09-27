@@ -1,5 +1,6 @@
 import postgres from "npm:postgres@3.4.9";
 import WebSocket from "npm:ws@8.18.0";
+import { Buffer } from "node:buffer";
 import {
   createCipheriv,
   createDecipheriv,
