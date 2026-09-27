@@ -500,6 +500,165 @@ function simulateCustom(
   return {metrics:summarize(rs),rs};
 }
 
+
+type PendingSignal = {
+  direction: Direction;
+  stop: number;
+};
+
+function simulateExecutionVariant(
+  bars:Bar[],
+  entryStartIndex:number,
+  entryEndIndex:number,
+  cost:Cost,
+  multiplier:number,
+  entryMode:"CLOSE"|"NEXT_OPEN",
+  gapAwareStop:boolean,
+):CustomSimulation{
+  let position:Position|null=null;
+  let pending:PendingSignal|null=null;
+  const rs:number[]=[];
+  const scaled:Cost={
+    spread:cost.spread*multiplier,
+    commission:cost.commission*multiplier,
+    slippage:cost.slippage*multiplier,
+    swapPerBar:cost.swapPerBar*multiplier,
+  };
+  const lookback=20, stopLookback=5, trailLookback=20;
+  const warmup=Math.max(lookback+1,stopLookback+1,trailLookback);
+
+  for(let index=warmup;index<bars.length;index++){
+    const bar=bars[index];
+    let exited=false;
+
+    if(position){
+      position.holdingBars+=1;
+      const priorChannel=bars.slice(index-trailLookback,index);
+      if(priorChannel.length===trailLookback){
+        const candidate=position.direction==="UP"
+          ? Math.min(...priorChannel.map(x=>x.low))
+          : Math.max(...priorChannel.map(x=>x.high));
+        position.stop=position.direction==="UP"
+          ? Math.max(position.stop,candidate)
+          : Math.min(position.stop,candidate);
+      }
+
+      const stopHit=position.direction==="UP"
+        ? bar.low<=position.stop
+        : bar.high>=position.stop;
+
+      if(stopHit){
+        let rawExit=position.stop;
+        if(gapAwareStop){
+          if(position.direction==="UP"&&bar.open<position.stop) rawExit=bar.open;
+          if(position.direction==="DOWN"&&bar.open>position.stop) rawExit=bar.open;
+        }
+        const exitPrice=position.direction==="UP"
+          ? rawExit-scaled.slippage
+          : rawExit+scaled.slippage;
+        const executed=position.direction==="UP"
+          ? exitPrice-position.entryPrice
+          : position.entryPrice-exitPrice;
+        const pnl=
+          executed-scaled.spread-scaled.commission-
+          scaled.swapPerBar*position.holdingBars;
+        const initialRisk=Math.abs(position.entryPrice-position.initialStop);
+        if(initialRisk>0&&Number.isFinite(initialRisk)) rs.push(pnl/initialRisk);
+        position=null;
+        exited=true;
+      }
+    }
+
+    if(!position&&!exited&&pending&&entryMode==="NEXT_OPEN"){
+      if(index>=entryStartIndex&&index<=entryEndIndex){
+        const entryPrice=pending.direction==="UP"
+          ? bar.open+scaled.slippage
+          : bar.open-scaled.slippage;
+        const valid=pending.direction==="UP"
+          ? pending.stop<entryPrice
+          : pending.stop>entryPrice;
+        if(valid){
+          position={
+            direction:pending.direction,
+            entryPrice,
+            stop:pending.stop,
+            initialStop:pending.stop,
+            holdingBars:0,
+          };
+        }
+      }
+      pending=null;
+    }
+
+    if(!position&&!exited&&index>=entryStartIndex&&index<entryEndIndex){
+      const reference=bars[index-lookback-1].close;
+      if(reference!==bar.close){
+        const direction:Direction=bar.close>reference?"UP":"DOWN";
+        const prior=bars.slice(index-stopLookback,index);
+        const stop=direction==="UP"
+          ? Math.min(...prior.map(x=>x.low))
+          : Math.max(...prior.map(x=>x.high));
+        const validAtClose=direction==="UP"?stop<bar.close:stop>bar.close;
+        if(validAtClose){
+          if(entryMode==="CLOSE"){
+            const entryPrice=direction==="UP"
+              ? bar.close+scaled.slippage
+              : bar.close-scaled.slippage;
+            position={direction,entryPrice,stop,initialStop:stop,holdingBars:0};
+          }else{
+            pending={direction,stop};
+          }
+        }
+      }
+    }
+
+    if(index>=entryEndIndex&&position===null&&pending===null) break;
+  }
+  return {metrics:summarize(rs),rs};
+}
+
+function walkForwardExecutionVariant(
+  bars:Bar[],
+  cost:Cost,
+  multiplier:number,
+  entryMode:"CLOSE"|"NEXT_OPEN",
+  gapAwareStop:boolean,
+){
+  const n=bars.length;
+  const train=Math.max(30,Math.floor(n*0.5));
+  const test=Math.max(1,Math.floor(n*0.1));
+  const rows=[];
+  for(let start=train;start<n;start+=test){
+    const end=Math.min(n,start+test);
+    if(end-start<5) break;
+    rows.push(simulateExecutionVariant(
+      bars,start,end,cost,multiplier,entryMode,gapAwareStop
+    ).metrics);
+  }
+  return {
+    positiveFolds:rows.filter(x=>x.netR>0).length,
+    foldCount:rows.length,
+    netRSum:round(rows.reduce((s,x)=>s+x.netR,0)),
+    worstDrawdownR:round(Math.max(0,...rows.map(x=>x.maxDrawdownR))),
+  };
+}
+
+function concentration(rs:number[]){
+  const sorted=[...rs].sort((a,b)=>b-a);
+  const total=round(rs.reduce((a,b)=>a+b,0));
+  const remove=(n:number)=>round(sorted.slice(n).reduce((a,b)=>a+b,0));
+  const capped=(cap:number)=>round(rs.reduce((a,b)=>a+Math.min(b,cap),0));
+  return {
+    trades:rs.length,
+    totalNetR:total,
+    bestTradeR:sorted.length?round(sorted[0]):null,
+    netWithoutBest1:remove(1),
+    netWithoutBest3:remove(3),
+    netWithWinnerCap10R:capped(10),
+    netWithWinnerCap5R:capped(5),
+  };
+}
+
 function walkForwardCustom(
   bars:Bar[],
   cost:Cost,
@@ -661,9 +820,10 @@ function robustnessAnalyze(instrument:Instrument,bars:Bar[]){
   const baselineFull=simulateCustom(
     bars,LOOKBACK+1,n,instrument.cost,1,20,5,20
   );
-  const baselineOos=simulateCustom(
+  const baselineOosSim=simulateCustom(
     bars,split,n,instrument.cost,1,20,5,20
-  ).metrics;
+  );
+  const baselineOos=baselineOosSim.metrics;
   const baselineWf=walkForwardCustom(
     bars,instrument.cost,1,20,5,20
   );
@@ -783,6 +943,33 @@ function robustnessAnalyze(instrument:Instrument,bars:Bar[]){
     };
   });
 
+  const executionRealism=[
+    {name:"CLOSE_STOP_LEVEL",entryMode:"CLOSE" as const,gapAwareStop:false},
+    {name:"CLOSE_GAP_AWARE",entryMode:"CLOSE" as const,gapAwareStop:true},
+    {name:"NEXT_OPEN_STOP_LEVEL",entryMode:"NEXT_OPEN" as const,gapAwareStop:false},
+    {name:"NEXT_OPEN_GAP_AWARE",entryMode:"NEXT_OPEN" as const,gapAwareStop:true},
+  ].map(v=>{
+    const oos=simulateExecutionVariant(
+      bars,split,n,instrument.cost,1,v.entryMode,v.gapAwareStop
+    ).metrics;
+    const wf=walkForwardExecutionVariant(
+      bars,instrument.cost,1,v.entryMode,v.gapAwareStop
+    );
+    return {
+      name:v.name,
+      oosNetR:oos.netR,
+      oosDrawdownR:oos.maxDrawdownR,
+      wfNetR:wf.netRSum,
+      wfPositiveFolds:wf.positiveFolds,
+      wfFoldCount:wf.foldCount,
+    };
+  });
+
+  const tradeConcentration={
+    fullSample:concentration(baselineFull.rs),
+    oos70_30:concentration(baselineOosSim.rs),
+  };
+
   return {
     symbol:instrument.key,
     label:instrument.label,
@@ -815,6 +1002,8 @@ function robustnessAnalyze(instrument:Instrument,bars:Bar[]){
       instrument.key+"|TF004|20|5|20|1x",
       2000
     ),
+    executionRealism,
+    tradeConcentration,
   };
 }
 
@@ -945,7 +1134,9 @@ Deno.serve(async(req)=>{
         chronologicalRegimes:6,
         startDateOffsetsYears:[0,2,5,10],
         timeAggregations:["1D","3D","5D"],
-        monteCarloBootstrapIterations:2000
+        monteCarloBootstrapIterations:2000,
+        executionStress:["close","next-open","gap-aware-stop"],
+        tradeConcentrationStress:["remove-best-1","remove-best-3","winner-cap-10R","winner-cap-5R"]
       },
       results,
       warnings:[
