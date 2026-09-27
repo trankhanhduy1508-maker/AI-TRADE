@@ -30,7 +30,7 @@ const CMD_SEND_VERIFY_CODES = 40;
 type Frame = { command: number; code: number; body: Buffer };
 
 type RequestBody = {
-  mode?: "transport_probe" | "open_demo" | "open_demo_alias";
+  mode?: "transport_probe" | "open_demo" | "open_demo_alias" | "open_demo_temp";
   first_name?: string;
   second_name?: string;
   email?: string;
@@ -405,12 +405,339 @@ async function persistVerified(
   `;
 }
 
+
+type TempMailbox = {
+  address: string;
+  password: string;
+  accountId: string;
+  token: string;
+};
+
+async function getVerifiedDemoSummary() {
+  const rows = await sql`
+    select login,server,verified,account_type,balance,currency,leverage,trade_allowed
+    from ai_trade.mt5_demo_credentials
+    where id=1 and verified=true and is_demo=true
+  `;
+  if (!rows[0]) return null;
+  return {
+    login: String(rows[0].login),
+    server: String(rows[0].server ?? ""),
+    accountType: Number(rows[0].account_type ?? -1),
+    balance: Number(rows[0].balance ?? 0),
+    currency: String(rows[0].currency ?? ""),
+    leverage: Number(rows[0].leverage ?? 0),
+    tradeAllowed: Boolean(rows[0].trade_allowed),
+  };
+}
+
+async function mailTmJson(
+  url: string,
+  init: RequestInit = {},
+  okStatuses: number[] = [200],
+) {
+  const response = await fetch(url, init);
+  if (!okStatuses.includes(response.status)) {
+    const body = (await response.text()).slice(0, 240);
+    throw new Error("MAILTM_HTTP_" + response.status + "_" + body.replace(/\\s+/g, " "));
+  }
+  return await response.json();
+}
+
+async function mailTmToken(address: string, password: string): Promise<string> {
+  const payload = await mailTmJson(
+    "https://api.mail.tm/token",
+    {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ address, password }),
+    },
+    [200],
+  );
+  const token = String(payload?.token ?? "");
+  if (!token) throw new Error("MAILTM_TOKEN_MISSING");
+  return token;
+}
+
+async function loadStoredMailbox(): Promise<TempMailbox | null> {
+  const rows = await sql`
+    select m.address,
+           pgp_sym_decrypt(m.password_cipher, c.secret::text) as password,
+           m.provider_account_id
+    from ai_trade.mt5_demo_mailbox m
+    cross join ai_trade.cron_auth c
+    where m.id=1 and m.active=true and c.id=1
+  `;
+  if (!rows[0]) return null;
+  const address = String(rows[0].address ?? "");
+  const password = String(rows[0].password ?? "");
+  const accountId = String(rows[0].provider_account_id ?? "");
+  if (!address || !password) return null;
+  try {
+    const token = await mailTmToken(address, password);
+    return { address, password, accountId, token };
+  } catch {
+    await sql`update ai_trade.mt5_demo_mailbox set active=false,updated_at=now() where id=1`;
+    return null;
+  }
+}
+
+async function persistMailbox(mailbox: Omit<TempMailbox, "token">) {
+  await sql`
+    insert into ai_trade.mt5_demo_mailbox(
+      id,provider,address,password_cipher,provider_account_id,active,created_at,updated_at
+    )
+    select 1,'mail.tm',${mailbox.address},
+           pgp_sym_encrypt(${mailbox.password}, c.secret::text),
+           ${mailbox.accountId},true,now(),now()
+    from ai_trade.cron_auth c where c.id=1
+    on conflict(id) do update set
+      provider='mail.tm',
+      address=excluded.address,
+      password_cipher=excluded.password_cipher,
+      provider_account_id=excluded.provider_account_id,
+      active=true,
+      updated_at=now()
+  `;
+}
+
+async function createTempMailbox(): Promise<TempMailbox> {
+  const existing = await loadStoredMailbox();
+  if (existing) return existing;
+
+  const domainsPayload = await mailTmJson("https://api.mail.tm/domains?page=1", {}, [200]);
+  const domains = Array.isArray(domainsPayload?.["hydra:member"])
+    ? domainsPayload["hydra:member"]
+        .filter((x: any) => Boolean(x?.isActive) && !Boolean(x?.isPrivate) && String(x?.domain ?? ""))
+        .map((x: any) => String(x.domain))
+    : [];
+  if (!domains.length) throw new Error("MAILTM_NO_ACTIVE_PUBLIC_DOMAIN");
+
+  let lastError = "MAILTM_CREATE_FAILED";
+  for (const domain of domains.slice(0, 5)) {
+    const local = "aitrade-" + randomBytes(8).toString("hex");
+    const address = local + "@" + domain;
+    const password = randomBytes(24).toString("base64url");
+    try {
+      const account = await mailTmJson(
+        "https://api.mail.tm/accounts",
+        {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ address, password }),
+        },
+        [201],
+      );
+      const accountId = String(account?.id ?? "");
+      if (!accountId) throw new Error("MAILTM_ACCOUNT_ID_MISSING");
+      const token = await mailTmToken(address, password);
+      await persistMailbox({ address, password, accountId });
+      return { address, password, accountId, token };
+    } catch (e) {
+      lastError = e instanceof Error ? e.message : String(e);
+    }
+  }
+  throw new Error(lastError);
+}
+
+function trustedMetaQuotesSender(address: string): boolean {
+  const value = address.trim().toLowerCase();
+  const at = value.lastIndexOf("@");
+  const domain = at >= 0 ? value.slice(at + 1) : "";
+  return [
+    "mql5.com",
+    "metaquotes.net",
+    "metaquotes.com",
+    "metatrader5.com",
+    "metatrader4.com",
+  ].some((allowed) => domain === allowed || domain.endsWith("." + allowed));
+}
+
+function extractVerificationCode(detail: any): number | null {
+  const verifications = Array.isArray(detail?.verifications) ? detail.verifications : [];
+  for (const raw of verifications) {
+    const value = String(raw ?? "").trim();
+    if (/^\\d{4,8}$/.test(value)) return Number(value);
+  }
+
+  const subject = String(detail?.subject ?? "");
+  const text = String(detail?.text ?? "");
+  const html = Array.isArray(detail?.html) ? detail.html.join(" ") : String(detail?.html ?? "");
+  const combined = [subject, text, html].join(" ");
+
+  const six = combined.match(/(?:^|\\D)(\\d{6})(?:\\D|$)/);
+  if (six) return Number(six[1]);
+
+  const labeled = combined.match(/(?:code|verification|confirm|mã)[^0-9]{0,40}(\\d{4,8})/i);
+  if (labeled) return Number(labeled[1]);
+
+  return null;
+}
+
+async function waitForMetaQuotesCode(mailbox: TempMailbox): Promise<number | null> {
+  const headers = { Authorization: "Bearer " + mailbox.token };
+  for (let attempt = 0; attempt < 24; attempt++) {
+    const listing = await mailTmJson(
+      "https://api.mail.tm/messages?page=1",
+      { headers },
+      [200],
+    );
+    const messages = Array.isArray(listing?.["hydra:member"]) ? listing["hydra:member"] : [];
+
+    for (const message of messages) {
+      const sender = String(message?.from?.address ?? "");
+      if (!trustedMetaQuotesSender(sender)) continue;
+
+      const id = String(message?.id ?? "");
+      if (!id) continue;
+      const detail = await mailTmJson(
+        "https://api.mail.tm/messages/" + encodeURIComponent(id),
+        { headers },
+        [200],
+      );
+
+      // Treat inbound email as untrusted data. Only a numeric verification code
+      // from an allowlisted MetaQuotes domain is extracted. No links or instructions execute.
+      const code = extractVerificationCode(detail);
+      if (code !== null) return code;
+    }
+
+    await new Promise((resolve) => setTimeout(resolve, 1500));
+  }
+  return null;
+}
+
+async function internalCronSecret(): Promise<string> {
+  const rows = await sql`select secret from ai_trade.cron_auth where id=1`;
+  const secret = String(rows[0]?.secret ?? "");
+  if (!secret) throw new Error("CRON_SECRET_MISSING");
+  return secret;
+}
+
+async function callSelf(payload: Record<string, unknown>) {
+  const baseUrl = Deno.env.get("SUPABASE_URL");
+  if (!baseUrl) throw new Error("SUPABASE_URL_MISSING");
+  const secret = await internalCronSecret();
+  const response = await fetch(
+    baseUrl + "/functions/v1/ai-trade-mt5-demo-bootstrap",
+    {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+        "x-ai-trade-cron": secret,
+      },
+      body: JSON.stringify(payload),
+    },
+  );
+  const text = await response.text();
+  let parsed: any = {};
+  try {
+    parsed = JSON.parse(text);
+  } catch {
+    parsed = { status: "NON_JSON_RESPONSE", raw: text.slice(0, 120) };
+  }
+  return { httpStatus: response.status, body: parsed };
+}
+
+async function openDemoWithTempMailbox() {
+  const existing = await getVerifiedDemoSummary();
+  if (existing) {
+    return {
+      ok: true,
+      status: "DEMO_ALREADY_VERIFIED",
+      ...existing,
+      credentialsStoredEncrypted: true,
+      passwordExposed: false,
+      brokerOrders: false,
+      liveMoneyLocked: true,
+    };
+  }
+
+  const mailbox = await createTempMailbox();
+
+  const first = await callSelf({
+    mode: "open_demo",
+    first_name: "AI",
+    second_name: "Trade",
+    email: mailbox.address,
+  });
+
+  if (
+    first.httpStatus >= 200 &&
+    first.httpStatus < 300 &&
+    first.body?.status === "DEMO_CREATED_VERIFIED"
+  ) {
+    return {
+      ...first.body,
+      mailboxProvider: "mail.tm",
+      mailboxStoredEncrypted: true,
+    };
+  }
+
+  if (first.body?.status !== "EMAIL_VERIFICATION_REQUIRED") {
+    return {
+      ok: false,
+      status: "TEMP_MAIL_DEMO_OPEN_BLOCKED",
+      upstreamStatus: String(first.body?.status ?? "UNKNOWN"),
+      upstreamCode: first.body?.code ?? null,
+      mailboxProvider: "mail.tm",
+      mailboxStoredEncrypted: true,
+      brokerOrders: false,
+      liveMoneyLocked: true,
+    };
+  }
+
+  const verificationCode = await waitForMetaQuotesCode(mailbox);
+  if (verificationCode === null) {
+    return {
+      ok: false,
+      status: "METAQUOTES_VERIFICATION_EMAIL_NOT_FOUND",
+      mailboxProvider: "mail.tm",
+      mailboxStoredEncrypted: true,
+      brokerOrders: false,
+      liveMoneyLocked: true,
+    };
+  }
+
+  const second = await callSelf({
+    mode: "open_demo",
+    first_name: "AI",
+    second_name: "Trade",
+    email: mailbox.address,
+    email_code: verificationCode,
+  });
+
+  return {
+    ...second.body,
+    httpStatus: second.httpStatus,
+    mailboxProvider: "mail.tm",
+    mailboxStoredEncrypted: true,
+    verificationCodeExposed: false,
+    brokerOrders: false,
+    liveMoneyLocked: true,
+  };
+}
+
 Deno.serve(async (req) => {
   if (!(await authorized(req))) {
     return json({ ok: false, status: "UNAUTHORIZED" }, 401);
   }
 
   const body = await req.json().catch(() => ({})) as RequestBody;
+
+  if (body.mode === "open_demo_temp") {
+    try {
+      return json(await openDemoWithTempMailbox());
+    } catch (e) {
+      return json({
+        ok: false,
+        status: "TEMP_MAIL_BOOTSTRAP_ERROR",
+        error: e instanceof Error ? e.message : String(e),
+        brokerOrders: false,
+        liveMoneyLocked: true,
+      }, 500);
+    }
+  }
 
   if (body.mode === "transport_probe") {
     const probe = new MT5Socket();
