@@ -115,7 +115,7 @@ async function accessContext(token:string){
 Deno.serve(async(req)=>{
   const url=new URL(req.url);
   if(url.searchParams.get("admin_preview")==="1"){
-    const target="https://raw.githack.com/trankhanhduy1508-maker/AI-TRADE/02d544d8b68aa41aec5b8f400a1aa939dc3cd84c/dashboard/index.html?mode=admin-preview";
+    const target="https://raw.githack.com/trankhanhduy1508-maker/AI-TRADE/e55956eed27c618d33f741a75e5985b788bfb650/dashboard/index.html?mode=admin-preview";
     return new Response(null,{status:302,headers:{
       "location":target,
       "cache-control":"no-store, max-age=0",
