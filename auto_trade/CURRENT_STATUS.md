@@ -1,3 +1,26 @@
+## Autonomous shadow broker — 2026-09-27
+
+Current autonomous flow:
+1. `03:15 UTC` — `ai-trade-forward-shadow-daily` processes new closed bars.
+2. `03:20 UTC` — `ai-trade-shadow-broker-reconcile-daily` converts new TF-013A entry/exit evidence into an MT5-compatible shadow order lifecycle.
+
+Shadow broker invariants:
+- brokerOrders=false;
+- liveMoneyLocked=true;
+- visible stop required on every entry;
+- stable client_order_id / duplicate-safe;
+- no pyramiding;
+- normalized synthetic volume only, not approved account risk;
+- same-bar multiple broker mutations are FLAGGED, not promoted.
+
+Runtime request #120: PASS as reconciler runtime, with 0 orders because TF-013A has not generated a new forward trade yet.
+Idempotency probe: first insert=1, duplicate=0, cleanup rows=0.
+Private access: anon/authenticated SELECT=false.
+
+This does not change The5ers gates:
+- readiness remains BLOCKED_APPROVAL;
+- direct broker execution is not promoted.
+
 ## Canonical MT5 DEMO recovered — 2026-09-27
 
 Do not create a duplicate account.
