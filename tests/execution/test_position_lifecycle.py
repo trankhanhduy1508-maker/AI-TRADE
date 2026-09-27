@@ -162,3 +162,21 @@ def test_lifecycle_allows_pyramiding_only_on_winner_and_after_risk_gate():
     assert allowed.allowed
     assert not losing.allowed and losing.reason == "NOT_A_WINNER"
     assert not risk_blocked.allowed and risk_blocked.reason == "RISK_GATE_BLOCKED"
+
+
+def test_partial_fraction_is_normalized_to_broker_volume_step():
+    terminal = FakeTerminal()
+    terminal.position.volume = 0.03
+    with _db_path() as path:
+        adapter = _adapter(terminal, path)
+        position = adapter.positions()[0]
+        manager = PositionLifecycleManager(adapter)
+        result = manager.partial_close(
+            position,
+            client_order_id="partial-normalized",
+            fraction=.5,
+        )
+        adapter.close()
+
+    assert result.status == "FILLED"
+    assert terminal.sent[0]["volume"] == 0.01
