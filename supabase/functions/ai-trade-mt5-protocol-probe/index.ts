@@ -1,6 +1,3 @@
-import postgres from "npm:postgres@3.4.9";
-
-const sql=postgres(Deno.env.get("SUPABASE_DB_URL")!,{prepare:false,max:1,connect_timeout:10,idle_timeout:20});
 const json=(b:unknown,s=200)=>new Response(JSON.stringify(b),{status:s,headers:{"content-type":"application/json; charset=utf-8"}});
 
 function contexts(text:string,needle:string,radius=500,max=20){
