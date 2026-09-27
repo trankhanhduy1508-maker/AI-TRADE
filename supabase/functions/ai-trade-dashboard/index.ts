@@ -173,6 +173,71 @@ Deno.serve(async(req)=>{
       (select automation_approval_verified from ai_trade.prop_program_config where provider='THE5ERS') as automation_approval_verified
   `;
 
+  if(format==="arena"){
+    const positions=await sql`
+      select symbol,asset_class,direction,entry_ts,entry_price::float8 as entry_price,
+             stop_price::float8 as stop_price,risk_price::float8 as risk_price,
+             last_mark_ts,last_mark_price::float8 as last_mark_price,
+             unrealized_r::float8 as unrealized_r,opened_reason,updated_at
+      from ai_trade.training_arena_positions
+      where strategy_id='TF-013A-ARENA-ALL-MARKETS'
+      order by asset_class,symbol
+    `;
+    const trades=await sql`
+      select id,symbol,asset_class,direction,entry_ts,exit_ts,
+             entry_price::float8 as entry_price,exit_price::float8 as exit_price,
+             initial_stop::float8 as initial_stop,r_10bps::float8 as r_10bps,
+             r_20bps::float8 as r_20bps,exit_reason
+      from ai_trade.training_arena_trades
+      where strategy_id='TF-013A-ARENA-ALL-MARKETS'
+      order by exit_ts desc,id desc
+      limit 40
+    `;
+    const journal=await sql`
+      select id,symbol,event_type,event_ts,direction,price::float8 as price,
+             stop_price::float8 as stop_price,realized_r::float8 as realized_r,
+             unrealized_r::float8 as unrealized_r,setup,reason,lesson,metadata
+      from ai_trade.training_arena_journal
+      where strategy_id='TF-013A-ARENA-ALL-MARKETS'
+      order by event_ts desc,id desc
+      limit 80
+    `;
+    return new Response(JSON.stringify({
+      ok:true,
+      mode:"PAPER_TRAINING_ARENA",
+      brokerOrders:false,liveMoneyLocked:true,contaminatesForward:false,
+      positions:positions.map((p:any)=>({
+        symbol:String(p.symbol),assetClass:String(p.asset_class),direction:String(p.direction),
+        side:String(p.direction)==="UP"?"BUY":"SELL",
+        entryTs:new Date(p.entry_ts).toISOString(),entryPrice:Number(p.entry_price),
+        stopPrice:Number(p.stop_price),riskPrice:Number(p.risk_price),
+        lastMarkTs:new Date(p.last_mark_ts).toISOString(),
+        lastMarkPrice:Number(p.last_mark_price),unrealizedR:Number(p.unrealized_r),
+        openedReason:String(p.opened_reason)
+      })),
+      trades:trades.map((t:any)=>({
+        id:Number(t.id),symbol:String(t.symbol),assetClass:String(t.asset_class),
+        direction:String(t.direction),side:String(t.direction)==="UP"?"BUY":"SELL",
+        entryTs:new Date(t.entry_ts).toISOString(),exitTs:new Date(t.exit_ts).toISOString(),
+        entryPrice:Number(t.entry_price),exitPrice:Number(t.exit_price),
+        stopPrice:Number(t.initial_stop),r10bps:Number(t.r_10bps),
+        r20bps:Number(t.r_20bps),exitReason:String(t.exit_reason)
+      })),
+      journal:journal.map((j:any)=>({
+        id:Number(j.id),symbol:String(j.symbol),eventType:String(j.event_type),
+        eventTs:new Date(j.event_ts).toISOString(),direction:j.direction?String(j.direction):null,
+        side:String(j.direction)==="UP"?"BUY":String(j.direction)==="DOWN"?"SELL":null,
+        price:j.price==null?null:Number(j.price),stopPrice:j.stop_price==null?null:Number(j.stop_price),
+        realizedR:j.realized_r==null?null:Number(j.realized_r),
+        unrealizedR:j.unrealized_r==null?null:Number(j.unrealized_r),
+        setup:String(j.setup),reason:String(j.reason),lesson:String(j.lesson),metadata:j.metadata??{}
+      }))
+    }),{status:200,headers:{
+      "content-type":"application/json; charset=utf-8","cache-control":"no-store",
+      "access-control-allow-origin":"*","referrer-policy":"no-referrer"
+    }});
+  }
+
   if(format==="current"){
     const positions=await sql`
       select symbol,direction,entry_ts,entry_price::float8 as entry_price,
