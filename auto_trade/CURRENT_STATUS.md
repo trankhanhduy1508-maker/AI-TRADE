@@ -1,3 +1,24 @@
+## Dashboard rendering fix — 2026-09-27
+
+Root cause:
+- Supabase Edge gateway forced the direct HTML response to `content-type: text/plain`, so mobile browsers displayed raw HTML source.
+- jsDelivr also served the repository HTML as `text/plain`.
+- Supabase SVG response was served with `content-disposition: attachment`, so it was not a reliable inline dashboard route.
+
+Final fix:
+- Supabase dashboard Edge Function v4 now keeps token validation + live JSON API.
+- The normal dashboard URL redirects to a static GitHub-backed renderer hosted through raw.githack.
+- raw.githack runtime check returned HTTP 200 with `content-type: text/html; charset=utf-8`.
+- Original Supabase dashboard URL was re-tested after v4 deploy and resolved to the real-rendering HTML frontend.
+- The frontend fetches the live Supabase JSON API every 30 seconds.
+- No MT5 credential is embedded in the frontend or GitHub.
+- Dashboard remains read-only.
+
+Runtime evidence:
+- JSON API request #123: HTTP 200 / application/json.
+- raw.githack render probe #127: HTTP 200 / text/html.
+- original dashboard URL after redirect fix #128: HTTP 200 with redirect location to the real HTML frontend.
+
 ## Mobile live dashboard — 2026-09-27
 
 A founder-facing live dashboard is deployed:
