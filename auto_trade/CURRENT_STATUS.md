@@ -1,3 +1,27 @@
+## TF-004 Cloud Risk Lab — 2026-09-27
+
+**FAIL_CLOSED — không có hard risk number nào được promote.**
+
+Cloud research endpoint đã chạy trên Yahoo daily proxy 2016-01-01 → last completed UTC bar, OOS 70/30 + walk-forward 50/10 + cost stress 0x/1x/1.5x/2x.
+
+Baseline 1x:
+- EURUSD: OOS +8.361R nhưng WF -3.766R, 2/6 folds dương.
+- GBPUSD: OOS -0.042R, WF -14.224R, 1/6 folds dương.
+- USDJPY: OOS -1.029R, WF -1.262R, 3/6 folds dương.
+
+Ngay cả 0x cost, ba pair không đồng thời robust.
+
+Do đó vẫn chưa chốt:
+- MAX_SPREAD_POINTS
+- MAX_DAILY_LOSS_DEMO
+- MAX_PYRAMID_ADDS
+- MAX_TOTAL_VOLUME_DEMO
+
+Không bind broker DEMO credentials từ evidence này. Live vẫn khóa.
+
+Evidence: `reports/TF004_CLOUD_RISK_LAB_2026-09-27.md`.
+
+
 
 ## Cloud-native production runtime — 2026-09-27
 
