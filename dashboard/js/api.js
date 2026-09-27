@@ -1,16 +1,20 @@
 import{CONFIG}from"./config.js";
+const GOOGLE_AUTH_KEY="cws-ai-trade-google-token";
 export class DashboardApi{
   constructor(token){this.token=token;this.timings={}}
   async _fetch(name,u,options={}){
     const start=performance.now();
-    const r=await fetch(u,{cache:"no-store",...options});
+    const googleToken=localStorage.getItem(GOOGLE_AUTH_KEY)||"";
+    const headers={...(options.headers||{})};
+    if(googleToken)headers.Authorization="Bearer "+googleToken;
+    const r=await fetch(u,{cache:"no-store",...options,headers});
     this.timings[name]=Math.round(performance.now()-start);
     if(!r.ok)throw new Error(name+" API HTTP "+r.status);
     return r.json();
   }
   getTimings(){return{...this.timings}}
   async getOverview(){
-    const u=new URL(CONFIG.apiBase);u.searchParams.set("format","json");u.searchParams.set("t",this.token);
+    const u=new URL(CONFIG.apiBase);u.searchParams.set("format","json");if(this.token)if(this.token)if(this.token)u.searchParams.set("t",this.token);
     return this._fetch("overview",u);
   }
   async getFeature(feature,params={}){
