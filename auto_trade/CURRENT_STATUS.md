@@ -1,3 +1,18 @@
+## Winner pyramiding cloud lab — 2026-09-27
+
+**NO_PYRAMID_PROMOTION.**
+
+Historical cloud comparison of base TF-004 vs one winner-only add:
+
+- EURUSD: WF -3.766R -> -11.613R; WF DD 11.541R -> 13.782R.
+- GBPUSD: OOS -0.042R -> -12.197R; WF -14.224R -> -28.777R.
+- USDJPY: OOS -1.029R -> -7.592R; OOS DD 6.384R -> 12.372R.
+
+One-add pyramiding worsened net-R and/or drawdown on all three pairs. Therefore no evidence supports promoting `max_pyramid_adds=1`. Keep pyramiding disabled as a safety/research default until a new preregistered hypothesis passes validation.
+
+Evidence: `reports/TF004_PYRAMID_CLOUD_LAB_2026-09-27.md`.
+
+
 ## TF-004 Cloud Risk Lab — 2026-09-27
 
 **FAIL_CLOSED — không có hard risk number nào được promote.**
