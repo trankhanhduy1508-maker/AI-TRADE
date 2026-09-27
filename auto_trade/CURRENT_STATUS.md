@@ -1,3 +1,68 @@
+## Founder/Admin authenticated E2E — 2026-09-28
+
+Status: **PASS / runtime thật / read-only**.
+
+### Evidence
+TinyFish run:
+`d7dfd16b-a885-466e-88fe-bbba552fc955`
+
+Authenticated bằng **Founder access token tạm thời có hạn** chỉ để E2E:
+- role runtime: `FOUNDER`;
+- không có banner `ADMIN PREVIEW`;
+- không thực hiện Google Login;
+- không gửi broker order;
+- không click tester/account mutations;
+- không thay live-money gate;
+- token test đã **REVOKED ngay sau test**;
+- DB evidence: token row id `3`, label `FOUNDER_E2E_TEMP_2026-09-28`, `revoked_at=2026-09-27T20:56:33.672943Z`.
+
+### Runtime results
+System status thật:
+- Engine: `ONLINE`;
+- Forward: `COLLECTING`;
+- Open positions: `0`;
+- MT5 DEMO: `UNAVAILABLE` trong Founder dashboard context hiện tại;
+- Live money: `LOCKED`.
+
+Open positions:
+- không có shadow position đang mở;
+- UI hiển thị empty state thật, không tạo dữ liệu giả.
+
+Chart:
+- 14 markets vẫn đủ;
+- 5 timeframe: M15 / M30 / H1 / H4 / D1;
+- market/timeframe switch không full page reload;
+- EURUSD H1: candles runtime PASS;
+- BTCUSD H1: candles runtime PASS;
+- XAUUSD M15: candles runtime PASS;
+- NAS100 H4: candles runtime PASS;
+- mobile không horizontal overflow.
+
+Data integrity:
+- TP không fake;
+- lot không fake;
+- exact USD P/L chỉ bật khi có lot thật + symbol/account metadata đủ;
+- paper/arena data được nhận diện là paper, không giả thành broker position;
+- live-money vẫn LOCKED.
+
+Observed API latency trong browser run:
+- overview ~4444 ms;
+- trades ~5106 ms;
+- current ~4964 ms;
+- arena ~5212 ms;
+- admin-testers ~3715 ms;
+- journal ~5155 ms;
+- symbol-spec ~3536 ms;
+- candles ~4805 ms.
+
+Các latency này là evidence để tối ưu tiếp; không được mô tả là nhanh.
+
+### Admin preview route
+Stable preview URL đi qua Supabase backend:
+`https://oziktadfeenydvgobudr.supabase.co/functions/v1/ai-trade-dashboard?admin_preview=1`
+
+Preview không cần token và cố ý không expose runtime Founder data. Authenticated Founder data vẫn yêu cầu credential thật.
+
 ## CWS AI Trade Admin UI — verified symbol specs + exact USD P/L gate — 2026-09-28
 
 Status: **DONE / runtime evidence thật** cho task symbol specification → horizontal price/P&L helper.
