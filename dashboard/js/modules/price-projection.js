@@ -24,25 +24,28 @@ function estimatePl(trade,target){
   if(!spec?.supported)return{value:null,reason:"SYMBOL_SPEC_UNAVAILABLE"};
 
   const direction=(trade.side==="SELL"||trade.direction==="DOWN")?-1:1;
-  const tickSize=Number(spec.tickSize);
-  const tickValue=Number(spec.tickValue);
-  if(Number.isFinite(tickSize)&&tickSize>0&&Number.isFinite(tickValue)&&tickValue>0){
-    return{value:((targetPrice-entry)/tickSize)*tickValue*lot*direction,reason:null};
-  }
-
   const contractSize=Number(spec.contractSize);
   const accountCurrency=String(spec.accountCurrency||"").toUpperCase();
   const profitCurrency=String(spec.currencyProfit||"").toUpperCase();
   const baseCurrency=String(spec.currencyBase||"").toUpperCase();
-  if(!Number.isFinite(contractSize)||contractSize<=0||!accountCurrency||!profitCurrency){
-    return{value:null,reason:"CONTRACT_METADATA_UNAVAILABLE"};
+  const calcMode=Number(spec.calcMode);
+
+  if(Number.isFinite(contractSize)&&contractSize>0&&accountCurrency&&profitCurrency&&[0,2,4].includes(calcMode)){
+    const profit=(targetPrice-entry)*contractSize*lot*direction;
+    if(profitCurrency===accountCurrency)return{value:profit,reason:null};
+    if(accountCurrency==="USD"&&baseCurrency==="USD"&&profitCurrency!=="USD"&&targetPrice>0){
+      return{value:profit/targetPrice,reason:null};
+    }
   }
 
-  const profit=(targetPrice-entry)*contractSize*lot*direction;
-  if(profitCurrency===accountCurrency)return{value:profit,reason:null};
+  const tickSize=Number(spec.tickSize);
+  const tickValue=Number(spec.tickValue);
+  if(Number.isFinite(tickSize)&&tickSize>0&&Number.isFinite(tickValue)&&tickValue>0&&accountCurrency){
+    return{value:((targetPrice-entry)/tickSize)*tickValue*lot*direction,reason:null};
+  }
 
-  if(accountCurrency==="USD"&&baseCurrency==="USD"&&profitCurrency!=="USD"&&targetPrice>0){
-    return{value:profit/targetPrice,reason:null};
+  if(!Number.isFinite(contractSize)||contractSize<=0||!accountCurrency||!profitCurrency){
+    return{value:null,reason:"CONTRACT_METADATA_UNAVAILABLE"};
   }
   return{value:null,reason:"CURRENCY_CONVERSION_UNAVAILABLE"};
 }
