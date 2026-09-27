@@ -1,41 +1,69 @@
-from pathlib import Path
-from contextlib import contextmanager
-import tempfile
+import asyncio
+from datetime import datetime, timezone
 
-from src.execution.metaapi_cloud import MetaApiCloudAdapter, MetaApiCloudConfig
-from src.execution.metaapi_runtime import collect_metaapi_market_state
-from tests.execution.test_metaapi_cloud import FakeTransport
+from src.execution.metaapi_runtime import closed_bars, daily_pnl
 
 
-@contextmanager
-def ledger_path():
-    handle = tempfile.NamedTemporaryFile(suffix=".sqlite", delete=False)
-    path = Path(handle.name)
-    handle.close()
-    path.unlink(missing_ok=True)
-    try:
-        yield path
-    finally:
-        path.unlink(missing_ok=True)
+class Account:
+    async def get_historical_candles(self, **kwargs):
+        return [
+            {
+                "time": "2026-09-27T00:30:00+00:00",
+                "open": 1.0,
+                "high": 1.2,
+                "low": .9,
+                "close": 1.1,
+                "tickVolume": 10,
+            },
+            {
+                "time": "2026-09-27T00:45:00+00:00",
+                "open": 1.1,
+                "high": 1.3,
+                "low": 1.0,
+                "close": 1.2,
+                "tickVolume": 12,
+            },
+            {
+                "time": "2026-09-27T01:00:00+00:00",
+                "open": 1.2,
+                "high": 1.4,
+                "low": 1.1,
+                "close": 1.3,
+                "tickVolume": 8,
+            },
+        ]
 
 
-def test_metaapi_runtime_builds_common_market_state():
-    transport = FakeTransport()
-    with ledger_path() as path:
-        adapter = MetaApiCloudAdapter(
-            MetaApiCloudConfig("account-1", "secret"),
-            ledger_path=path,
-            transport=transport,
-        )
-        market = collect_metaapi_market_state(
-            adapter,
+class Storage:
+    def get_deals_by_time_range(self, start, end):
+        return [
+            {"magic": 260927, "profit": -4, "commission": -1, "swap": 0, "fee": 0},
+            {"magic": 999, "profit": 100, "commission": 0, "swap": 0, "fee": 0},
+        ]
+
+
+class Connection:
+    history_storage = Storage()
+
+
+def test_metaapi_closed_bars_exclude_current_forming_candle():
+    result = asyncio.run(
+        closed_bars(
+            Account(),
             symbol="EURUSD",
             timeframe="15m",
-            count=10,
-            magic=260926,
+            count=3,
+            now=datetime(2026, 9, 27, 1, 10, tzinfo=timezone.utc),
         )
-        assert len(market.bars) == 1
-        assert market.bid == 1.105
-        assert round(market.spread_points, 6) == 2.0
-        assert market.daily_pnl == -5.0
-        adapter.close()
+    )
+    assert len(result) == 2
+    assert result[-1].timestamp.startswith("2026-09-27T00:45:00")
+
+
+def test_metaapi_daily_pnl_only_counts_bot_magic():
+    pnl = daily_pnl(
+        Connection(),
+        magic=260927,
+        now=datetime(2026, 9, 27, 2, 0, tzinfo=timezone.utc),
+    )
+    assert pnl == -5
