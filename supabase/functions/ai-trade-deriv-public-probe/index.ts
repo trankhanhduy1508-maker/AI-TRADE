@@ -3,12 +3,6 @@ import postgres from "npm:postgres@3.4.9";
 const sql=postgres(Deno.env.get("SUPABASE_DB_URL")!,{prepare:false,max:1,connect_timeout:10,idle_timeout:20});
 const json=(b:unknown,s=200)=>new Response(JSON.stringify(b),{status:s,headers:{"content-type":"application/json; charset=utf-8","cache-control":"no-store"}});
 
-async function authorized(req:Request){
-  const rows=await sql`select secret from ai_trade.cron_auth where id=1`;
-  const expected=String(rows[0]?.secret??"");
-  return Boolean(expected)&&(req.headers.get("x-ai-trade-cron")??"")===expected;
-}
-
 async function wsCall(message:Record<string,unknown>,timeoutMs=15000):Promise<any>{
   return await new Promise((resolve,reject)=>{
     const ws=new WebSocket("wss://ws.derivws.com/websockets/v3?app_id=1089");
@@ -31,7 +25,6 @@ async function wsCall(message:Record<string,unknown>,timeoutMs=15000):Promise<an
 
 Deno.serve(async(req)=>{
   try{
-    if(!(await authorized(req))) return json({ok:false,status:"UNAUTHORIZED"},401);
     const response=await wsCall({residence_list:1});
     if(response?.error){
       return json({ok:false,status:"DERIV_ERROR",code:response.error.code,message:response.error.message,brokerOrders:false,liveMoneyLocked:true},502);
