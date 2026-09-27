@@ -1,8 +1,8 @@
-# AI-TRADE — Public / Private Security Boundary
+# CWS AI Trade — Public / Private Security Boundary
 
 ## Critical current fact
 
-As of 2026-09-27, GitHub repository `trankhanhduy1508-maker/AI-TRADE` is PUBLIC.
+As of 2026-09-27, GitHub repository `trankhanhduy1508-maker/CWS AI Trade` is PUBLIC.
 
 Therefore:
 - every committed file is readable by anyone;
@@ -37,7 +37,7 @@ Do not place in a public repository:
 
 ## Recommended target architecture
 
-### Repo A — AI-TRADE-App
+### Repo A — CWS AI Trade-App
 Can be shared with UI/product collaborators.
 Contains:
 - dashboard;
@@ -46,7 +46,7 @@ Contains:
 - sanitized API contracts;
 - tests with synthetic fixtures.
 
-### Repo B — AI-TRADE-Core-Private
+### Repo B — CWS AI Trade-Core-Private
 Founder-only or very small trusted team.
 Contains:
 - proprietary strategy/runtime;
