@@ -18,12 +18,15 @@ class LifecyclePlan:
     exit_mode: ExitMode
     partial_fraction: float = 0.5
     max_pyramid_adds: int = 0
+    trailing_lookback: int = 20
 
     def __post_init__(self) -> None:
         if not 0 < self.partial_fraction < 1:
             raise ValueError("partial_fraction must be between 0 and 1")
         if self.max_pyramid_adds < 0:
             raise ValueError("max_pyramid_adds must be non-negative")
+        if self.trailing_lookback < 1:
+            raise ValueError("trailing_lookback must be positive")
 
 
 @dataclass(frozen=True)
