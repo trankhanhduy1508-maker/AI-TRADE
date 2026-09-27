@@ -1,93 +1,159 @@
+import asyncio
 import json
-import re
+import os
 import urllib.parse
 import urllib.request
 
-ROOT="https://web.metatrader.app/terminal"
-UA="AI-TRADE-build6230-form-inspector/1.0"
-MARKERS=[
-    "mt_group","mt_agreements","mt_deposit","mt_leverage",
-    "default_deposit","account_type","leverages",
-    "demo.open","demo.controller","btnOpenDemo","#web_group_74"
-]
+from pymt5 import MT5WebClient, DemoAccountRequest
+from pymt5.constants import CMD_OPEN_DEMO
+from pymt5._parsers import _parse_open_account_result
 
-def fetch(url):
-    req=urllib.request.Request(url,headers={"User-Agent":UA,"Accept":"*/*"})
-    with urllib.request.urlopen(req,timeout=25) as r:
-        return r.geturl(),r.read()
+WS_URI = "wss://web.metatrader.app/terminal"
+INGEST_URL = "https://oziktadfeenydvgobudr.supabase.co/functions/v1/ai-trade-mt5-vault-ingest"
+OIDC_AUD = "ai-trade-mt5-vault"
 
-def refs(base,text):
-    out=set()
-    for m in re.finditer(r'["\']([^"\']+\.js(?:\?[^"\']*)?)["\']',text):
-        v=m.group(1)
-        if "/" in v or v.startswith(".") or v.endswith(".js"):
-            out.add(urllib.parse.urljoin(base,v))
-    return out
 
-def main():
-    final,raw=fetch(ROOT)
-    html=raw.decode("utf-8","replace")
-    queue=list(refs(final,html))
-    seen=set()
-    hits=[]
-    # Include HTML because group config lives there.
-    sources=[(final,html)]
-    idx=0
-    while idx<len(queue) and len(seen)<180:
-        url=queue[idx];idx+=1
-        if url in seen: continue
-        seen.add(url)
-        try:
-            fu,rr=fetch(url);tt=rr.decode("utf-8","replace")
-            sources.append((fu,tt))
-            for x in refs(fu,tt):
-                if x not in seen and len(queue)<500: queue.append(x)
-        except Exception:
-            pass
+def emit(event, **fields):
+    safe = {"event": event, **fields}
+    print(json.dumps(safe, separators=(",", ":"), ensure_ascii=False), flush=True)
 
-    for source,text in sources:
-        compact=re.sub(r"\s+"," ",text)
-        for marker in MARKERS:
-            start=0
-            for _ in range(15):
-                pos=compact.find(marker,start)
-                if pos<0: break
-                hits.append({
-                    "source":source,
-                    "marker":marker,
-                    "snippet":compact[max(0,pos-1700):min(len(compact),pos+3500)]
-                })
-                start=pos+len(marker)
 
-    # Score likely business-logic snippets above translations/config repeats.
-    def score(x):
-        s=x["snippet"]
-        return (
-            5*("mt_group" in s)
-            +5*("mt_agreements" in s)
-            +4*("mt_deposit" in s)
-            +4*("mt_leverage" in s)
-            +3*("demo.open" in s)
-            +2*("default_deposit" in s)
-            -2*("translation" in x["source"].lower())
-        )
-    hits.sort(key=score,reverse=True)
+def get_oidc_token():
+    base = os.environ["ACTIONS_ID_TOKEN_REQUEST_URL"]
+    req_token = os.environ["ACTIONS_ID_TOKEN_REQUEST_TOKEN"]
+    sep = "&" if "?" in base else "?"
+    url = base + sep + urllib.parse.urlencode({"audience": OIDC_AUD})
+    req = urllib.request.Request(url, headers={"Authorization": f"Bearer {req_token}"})
+    with urllib.request.urlopen(req, timeout=15) as res:
+        payload = json.loads(res.read().decode("utf-8"))
+    token = str(payload.get("value") or "")
+    if not token:
+        raise RuntimeError("OIDC_TOKEN_MISSING")
+    return token
 
-    unique=[];seen_key=set()
-    for h in hits:
-        k=(h["source"],h["snippet"])
-        if k not in seen_key:
-            seen_key.add(k);unique.append(h)
 
-    print(json.dumps({
-        "status":"FORM_VALUE_INSPECTION_COMPLETE",
-        "sources_scanned":len(sources),
-        "hit_count":len(unique),
-        "broker_orders":False,
-        "demo_created":False
-    },separators=(",",":")))
-    for h in unique[:70]:
-        print("FORMVALUE",json.dumps(h,separators=(",",":"),ensure_ascii=False))
+def store_in_vault(token, *, login, server, password, investor_password):
+    body = json.dumps({
+        "login": int(login),
+        "server": server,
+        "password": password,
+        "investorPassword": investor_password,
+        "accountType": "DEMO",
+        "runId": os.environ["GITHUB_RUN_ID"],
+    }).encode("utf-8")
+    req = urllib.request.Request(
+        INGEST_URL,
+        data=body,
+        method="POST",
+        headers={
+            "Authorization": f"Bearer {token}",
+            "Content-Type": "application/json",
+        },
+    )
+    with urllib.request.urlopen(req, timeout=20) as res:
+        result = json.loads(res.read().decode("utf-8"))
+    if result.get("status") != "MT5_DEMO_CREDENTIALS_STORED":
+        raise RuntimeError("VAULT_INGEST_NOT_CONFIRMED")
+    return result
 
-if __name__=="__main__":
-    main()
+
+async def main():
+    emit("CREATE_START", mode="METAQUOTES_DEMO_ONLY", group="#web_group_74", broker_orders=False, live_money=False)
+
+    request = DemoAccountRequest(
+        first_name="AITrade",
+        second_name="Demo",
+        email="",
+        phone="",
+        group="#web_group_74",
+        deposit=100000.0,
+        leverage=100,
+        agreements=1,
+        country="VN",
+        domain="web.metatrader.app",
+        utm_source="ai-trade-cloud",
+        utm_campaign="generic-demo-forward-validation",
+    )
+
+    async with MT5WebClient(uri=WS_URI, timeout=25) as client:
+        await client.init_session()
+        payload = client._build_opening_base_payload(request)
+        raw = await client.transport.send_command(CMD_OPEN_DEMO, payload)
+        body_len = len(raw.body or b"")
+        diagnostic = {
+            "event": "OPEN_DEMO_RAW",
+            "command_code": int(raw.code),
+            "body_len": body_len,
+            "credential_shape": body_len >= 76,
+        }
+        if raw.code != 0 or body_len < 76:
+            diagnostic["body_prefix_hex"] = (raw.body or b"")[:32].hex()
+        print(json.dumps(diagnostic, separators=(",", ":")), flush=True)
+        result = _parse_open_account_result(raw.body)
+
+    emit(
+        "OPEN_DEMO_RESULT",
+        success=bool(result.success),
+        code=int(result.code),
+        login=int(result.login or 0),
+        password_exposed=False,
+        investor_password_exposed=False,
+    )
+    if raw.code != 0:
+        raise RuntimeError(f"DEMO_COMMAND_REJECTED_HEADER_{raw.code}")
+    if not result.success or int(result.login or 0) <= 0 or not result.password:
+        raise RuntimeError(f"DEMO_CREATE_REJECTED_CODE_{result.code}_BODY_{body_len}")
+
+    login = int(result.login)
+    password = str(result.password)
+    investor = str(result.investor_password or "")
+
+    async with MT5WebClient(uri=WS_URI, timeout=25) as client:
+        await client.login(login=login, password=password)
+        account = await client.get_account()
+
+    server = str(account.get("server") or account.get("server_name") or "")
+    is_demo = bool(account.get("is_demo", False))
+    is_real = bool(account.get("is_real", False))
+    trade_allowed = bool(account.get("trade_allowed", False))
+    balance = float(account.get("balance") or 0.0)
+    leverage = int(account.get("leverage") or 0)
+
+    emit(
+        "DEMO_VERIFY",
+        login=login,
+        server=server,
+        is_demo=is_demo,
+        is_real=is_real,
+        trade_allowed=trade_allowed,
+        balance=balance,
+        leverage=leverage,
+        broker_orders=False,
+        live_money=False,
+    )
+
+    if not is_demo or is_real or "demo" not in server.lower():
+        raise RuntimeError("ACCOUNT_NOT_CONFIRMED_DEMO")
+
+    oidc = get_oidc_token()
+    stored = store_in_vault(
+        oidc,
+        login=login,
+        server=server,
+        password=password,
+        investor_password=investor,
+    )
+
+    emit(
+        "DEMO_STORED",
+        login=login,
+        server=server,
+        password_stored_in_vault=bool(stored.get("passwordStoredInVault")),
+        password_exposed=False,
+        broker_orders=False,
+        live_money=False,
+    )
+
+
+if __name__ == "__main__":
+    asyncio.run(main())
