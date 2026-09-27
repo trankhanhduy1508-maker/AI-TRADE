@@ -93,10 +93,11 @@ class PositionLifecycleManager:
     ) -> MT5OrderResult:
         if not math.isfinite(fraction) or not 0 < fraction < 1:
             raise ValueError("fraction must be between 0 and 1")
+        volume = self._adapter.normalize_partial_volume(position, fraction)
         return self._adapter.close_position(
             position.position_id,
             client_order_id=client_order_id,
-            volume=position.volume * fraction,
+            volume=volume,
         )
 
     def full_close(self, position: MT5Position, *, client_order_id: str) -> MT5OrderResult:
