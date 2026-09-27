@@ -19,6 +19,7 @@ import{getGoogleUser,signInWithGoogle,signOutGoogle}from"./auth.js";
 const params=new URLSearchParams(location.search);
 const token=params.get("t")||"";
 const adminPreview=params.get("mode")==="admin-preview";
+const adminMode=params.get("mode")==="admin";
 const api=new DashboardApi(token);
 const store=new DashboardStore();
 const cacheKey="cws-ai-trade-cache-"+token.slice(0,12);
@@ -31,7 +32,7 @@ function skeletonCard(title){
 
 function shell(){
   document.getElementById("app").innerHTML=`
-    ${renderHeader()}
+    ${renderHeader(adminMode?{loginMode:"FOUNDER"}:{})}
     <div id="errors">${renderError("")}</div>
     <div id="adminStatus">${skeletonCard("System status")}</div>
     <div id="adminPositions"></div>
@@ -47,6 +48,29 @@ function shell(){
     <div id="testerAdmin"></div>
     <div class="footer"><span id="updated">Đang đồng bộ dữ liệu…</span><span id="latency"></span></div>`;
   bindChartControls();
+  bindGoogleControls();
+}
+
+function showAdminLogin(googleUser=null,unauthorized=false){
+  document.body.classList.add("founder-console");
+  document.querySelector(".topbar")?.remove();
+  document.getElementById("app").insertAdjacentHTML("afterbegin",renderHeader({loginMode:"FOUNDER"},googleUser));
+  const errors=document.getElementById("errors");
+  if(errors)errors.innerHTML=`<section class="section admin-priority">
+    <div class="card card-pad" style="text-align:center;padding:28px 18px">
+      <h2 style="margin:0 0 10px">${unauthorized?"Tài khoản chưa được cấp quyền Founder":"Đăng nhập Founder"}</h2>
+      <p class="muted" style="margin:0 auto 18px;max-width:560px">${unauthorized
+        ?"Google account này đăng nhập được nhưng chưa nằm trong Founder allowlist."
+        :"Dùng tài khoản Google Founder đã đăng ký để mở dữ liệu runtime thật. Không cần token thủ công."}</p>
+      ${unauthorized
+        ?'<button id="googleAccountBtn" class="google-login connected" type="button"><span class="google-dot">G</span><span>Đăng xuất / đổi tài khoản</span></button>'
+        :'<button id="googleLoginGateBtn" class="google-login" type="button"><span class="google-dot">G</span><span>Đăng nhập Google để vào Admin</span></button>'}
+    </div>
+  </section>`;
+  ["adminStatus","adminPositions","currentTrade","chart","progress","safety","pipeline","trainingArena","performance","recentTrades","journal","testerAdmin"].forEach(id=>{
+    const el=document.getElementById(id); if(el)el.innerHTML="";
+  });
+  document.getElementById("googleLoginGateBtn")?.addEventListener("click",signInWithGoogle);
   bindGoogleControls();
 }
 
@@ -302,9 +326,13 @@ async function load(){
       requestAnimationFrame(()=>reloadChart());
       return;
     }
-    if(!token)throw new Error("Thiếu token dashboard trong link.");
+    const googleUser=await getGoogleUser().catch(()=>null);
+    if(!token&&!googleUser){
+      if(adminMode){showAdminLogin(null,false);return}
+      throw new Error("Thiếu quyền truy cập dashboard.");
+    }
 
-    const googlePromise=getGoogleUser().catch(()=>null);
+    const googlePromise=Promise.resolve(googleUser);
     const overviewPromise=api.getOverview();
     const currentPromise=api.getFeature("current").catch(()=>({currentTrade:null,openPositions:[]}));
     const tradesPromise=api.getFeature("trades",{limit:12}).catch(()=>({trades:[]}));
@@ -335,6 +363,11 @@ async function load(){
       requestAnimationFrame(()=>reloadChart());
     }
   }catch(e){
+    const googleUser=await getGoogleUser().catch(()=>null);
+    if(adminMode&&googleUser&&String(e?.message||"").includes("HTTP 403")){
+      showAdminLogin(googleUser,true);
+      return;
+    }
     const box=document.getElementById("errorBox");
     if(box){box.textContent="Không tải được dashboard: "+e.message;box.style.display="block"}
   }
