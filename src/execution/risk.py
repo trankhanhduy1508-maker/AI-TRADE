@@ -1,9 +1,4 @@
-"""Independent, conservative order-risk policy.
-
-This module is deliberately independent from strategy signals and broker
-adapters. It rejects malformed or over-limit orders before an execution
-coordinator is allowed to call an adapter.
-"""
+"""Independent, conservative order-risk policy."""
 
 from dataclasses import dataclass
 import math
@@ -52,16 +47,9 @@ class IndependentRiskEngine:
     def __init__(self, limits: RiskLimits):
         self._limits = limits
 
-    def evaluate(
-        self, order: MT5OrderRequest, context: RiskContext
-    ) -> RiskDecision:
+    def evaluate(self, order: MT5OrderRequest, context: RiskContext) -> RiskDecision:
         reasons: list[str] = []
-        numeric_values = [
-            order.volume,
-            order.price,
-            context.spread_points,
-            context.daily_loss,
-        ]
+        numeric_values = [order.volume, order.price, context.spread_points, context.daily_loss]
         if not all(math.isfinite(value) for value in numeric_values):
             reasons.append("INVALID_CONTEXT")
 
@@ -75,19 +63,23 @@ class IndependentRiskEngine:
             reasons.append("MAX_DAILY_LOSS")
 
         direction = order.direction.upper()
-        if order.stop_loss is None or order.take_profit is None:
+        if order.stop_loss is None:
             reasons.append("MISSING_STOPS")
-        elif not math.isfinite(order.stop_loss) or not math.isfinite(order.take_profit):
+        elif not math.isfinite(order.stop_loss):
             reasons.append("INVALID_CONTEXT")
-        elif direction == "UP":
-            if order.stop_loss >= order.price:
-                reasons.append("INVALID_STOPS")
-            if order.take_profit <= order.price:
+        elif direction == "UP" and order.stop_loss >= order.price:
+            reasons.append("INVALID_STOPS")
+        elif direction == "DOWN" and order.stop_loss <= order.price:
+            reasons.append("INVALID_STOPS")
+
+        # Fixed TP is optional because TRAILING_ONLY and PARTIAL_THEN_TRAIL are
+        # first-class. Capital protection still requires a broker-side SL.
+        if order.take_profit is not None:
+            if not math.isfinite(order.take_profit):
+                reasons.append("INVALID_CONTEXT")
+            elif direction == "UP" and order.take_profit <= order.price:
                 reasons.append("INVALID_TARGET")
-        elif direction == "DOWN":
-            if order.stop_loss <= order.price:
-                reasons.append("INVALID_STOPS")
-            if order.take_profit >= order.price:
+            elif direction == "DOWN" and order.take_profit >= order.price:
                 reasons.append("INVALID_TARGET")
 
         return RiskDecision(allowed=not reasons, reasons=tuple(reasons))
