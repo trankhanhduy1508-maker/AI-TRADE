@@ -40,11 +40,11 @@ function render(){
   document.getElementById("recentTrades").innerHTML=renderRecentTrades(s.trades);
   document.getElementById("trainingArena").innerHTML=renderTrainingArena(s.arena??{});
   document.getElementById("journal").innerHTML=renderJournal(s.journal);
-  document.getElementById("chart").innerHTML=renderCandlestickShell(s.selectedSymbol,s.selectedTimeframe);
+  document.getElementById("chart").innerHTML=renderCandlestickShell(s.selectedSymbol,s.selectedTimeframe,Boolean(s.chartOpened));
   document.getElementById("performance").innerHTML=renderPerformance(o.evaluation);
   document.getElementById("safety").innerHTML=renderSafety(o.mt5,o.gates);
   document.getElementById("updated").textContent="Cập nhật: "+new Date(o.updatedAt).toLocaleString("vi-VN")+" · refresh 30 giây";
-  mountCandlestick(s.candles,s.currentTrade);
+  if(s.chartOpened)mountCandlestick(s.candles,s.currentTrade);
   bindChartControls();
 }
 
@@ -54,9 +54,9 @@ async function reloadChart(){
   const timeframe=document.getElementById("chartTimeframe")?.value||s.selectedTimeframe||CONFIG.defaultTimeframe;
   try{
     const candles=await api.getFeature("candles",{symbol,timeframe,limit:160});
-    store.set({candles:candles.candles??[],selectedSymbol:symbol,selectedTimeframe:timeframe});
+    store.set({candles:candles.candles??[],selectedSymbol:symbol,selectedTimeframe:timeframe,chartOpened:true});
     const current=store.get();
-    document.getElementById("chart").innerHTML=renderCandlestickShell(symbol,timeframe);
+    document.getElementById("chart").innerHTML=renderCandlestickShell(symbol,timeframe,true);
     mountCandlestick(current.candles,current.currentTrade);
     bindChartControls();
   }catch(e){
@@ -69,12 +69,33 @@ function bindChartControls(){
   const tf=document.getElementById("chartTimeframe");
   if(tf&&!tf.dataset.bound){
     tf.dataset.bound="1";
-    tf.addEventListener("change",reloadChart);
+    tf.addEventListener("change",()=>{
+      if(store.get().chartOpened)reloadChart();
+      else store.set({selectedTimeframe:tf.value});
+    });
   }
   const symbol=document.getElementById("chartSymbol");
   if(symbol&&!symbol.dataset.bound){
     symbol.dataset.bound="1";
-    symbol.addEventListener("change",reloadChart);
+    symbol.addEventListener("change",()=>{
+      if(store.get().chartOpened)reloadChart();
+      else store.set({selectedSymbol:symbol.value});
+    });
+  }
+  const toggle=document.getElementById("chartToggle");
+  if(toggle&&!toggle.dataset.bound){
+    toggle.dataset.bound="1";
+    toggle.addEventListener("click",async()=>{
+      const s=store.get();
+      if(s.chartOpened){
+        store.set({chartOpened:false});
+        const current=store.get();
+        document.getElementById("chart").innerHTML=renderCandlestickShell(current.selectedSymbol,current.selectedTimeframe,false);
+        bindChartControls();
+      }else{
+        await reloadChart();
+      }
+    });
   }
 }
 
@@ -89,8 +110,7 @@ async function load(){
     const journal=await api.getFeature("journal",{limit:12}).catch(()=>({journal:[]}));
     const arena=await api.getFeature("arena").catch(()=>({positions:[],trades:[],journal:[]}));
     const symbol=current.currentTrade?.symbol||trades.trades?.[0]?.symbol||store.get().selectedSymbol||CONFIG.defaultSymbol;
-    const candles=await api.getFeature("candles",{symbol,timeframe:store.get().selectedTimeframe,limit:160}).catch(()=>({candles:[]}));
-    store.set({overview,currentTrade:current.currentTrade??null,trades:trades.trades??[],journal:journal.journal??[],arena,candles:candles.candles??[],selectedSymbol:symbol});
+    store.set({overview,currentTrade:current.currentTrade??null,trades:trades.trades??[],journal:journal.journal??[],arena,selectedSymbol:symbol});
     render();
   }catch(e){
     const box=document.getElementById("errorBox");if(box){box.textContent="Không tải được dashboard: "+e.message;box.style.display="block"}
