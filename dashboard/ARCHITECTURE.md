@@ -1,4 +1,4 @@
-# AI-TRADE Dashboard — Modular Architecture
+# CWS AI Trade Dashboard — Modular Architecture
 
 ## Founder intent
 
