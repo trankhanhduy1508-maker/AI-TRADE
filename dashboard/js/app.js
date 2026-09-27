@@ -143,8 +143,19 @@ async function reloadChart(){
   const holder=document.getElementById("candlestickChart");
   if(holder)holder.innerHTML='<div class="chart-loading">Đang tải '+symbol+' · '+timeframe.toUpperCase()+'…</div>';
   try{
-    const candles=await api.getFeature("candles",{symbol,timeframe,limit:220});
-    store.set({candles:candles.candles??[],selectedSymbol:symbol,selectedTimeframe:timeframe,chartOpened:true});
+    const [candles,specResult]=await Promise.all([
+      api.getFeature("candles",{symbol,timeframe,limit:220}),
+      api.getFeature("symbol-spec",{symbol}).catch(()=>({supported:false,spec:null,unavailableReason:"SPEC_REQUEST_FAILED"}))
+    ]);
+    const prior=store.get();
+    const symbolSpec=specResult?.spec
+      ?{...specResult.spec,supported:true}
+      :{supported:false,reason:specResult?.unavailableReason??"SPEC_UNAVAILABLE"};
+    store.set({
+      candles:candles.candles??[],
+      symbolSpecs:{...(prior.symbolSpecs??{}),[symbol]:symbolSpec},
+      selectedSymbol:symbol,selectedTimeframe:timeframe,chartOpened:true
+    });
     const current=store.get();
     const trade=selectedTrade(current);
     document.getElementById("chart").innerHTML=renderCandlestickShell(symbol,timeframe,true,trade);
