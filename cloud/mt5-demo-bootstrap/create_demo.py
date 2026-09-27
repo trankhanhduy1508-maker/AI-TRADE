@@ -1,184 +1,181 @@
-import asyncio
+# TEMPORARY BUILD-6230 INSPECTION MODE.
+# Account creation is deliberately disabled until the current public frontend
+# onboarding schema is verified.
 import json
-import os
+import re
 import urllib.parse
 import urllib.request
 
-from pymt5 import MT5WebClient, DemoAccountRequest
-from pymt5.constants import CMD_OPEN_DEMO, CMD_VERIFY_CODE
-from pymt5._parsers import _parse_open_account_result, _parse_verification_status
-from pymt5.helpers import build_client_id
+PAGES = [
+    "https://web.metatrader.app/",
+    "https://web.metatrader.app/terminal",
+]
 
-WS_URI = "wss://web.metatrader.app/terminal"
-INGEST_URL = "https://oziktadfeenydvgobudr.supabase.co/functions/v1/ai-trade-mt5-vault-ingest"
-OIDC_AUD = "ai-trade-mt5-vault"
+PATTERNS = [
+    r"sendCommand\s*\(\s*27\b",
+    r"sendCommand\s*\(\s*30\b",
+    r"sendCommand\s*\(\s*40\b",
+    r"email[_A-Za-z]*confirm",
+    r"phone[_A-Za-z]*confirm",
+    r"agreements",
+    r"open[_A-Za-z]*demo",
+    r"demo[_A-Za-z]*account",
+    r"verification",
+    r"first[_A-Za-z]*name",
+    r"second[_A-Za-z]*name",
+]
 
-
-def emit(event, **fields):
-    safe = {"event": event, **fields}
-    print(json.dumps(safe, separators=(",", ":"), ensure_ascii=False), flush=True)
-
-
-def get_oidc_token():
-    base = os.environ["ACTIONS_ID_TOKEN_REQUEST_URL"]
-    req_token = os.environ["ACTIONS_ID_TOKEN_REQUEST_TOKEN"]
-    sep = "&" if "?" in base else "?"
-    url = base + sep + urllib.parse.urlencode({"audience": OIDC_AUD})
-    req = urllib.request.Request(url, headers={"Authorization": f"Bearer {req_token}"})
-    with urllib.request.urlopen(req, timeout=15) as res:
-        payload = json.loads(res.read().decode("utf-8"))
-    token = str(payload.get("value") or "")
-    if not token:
-        raise RuntimeError("OIDC_TOKEN_MISSING")
-    return token
+UA = "AI-TRADE-build6230-public-bundle-inspector/1.0"
 
 
-def store_in_vault(token, *, login, server, password, investor_password):
-    body = json.dumps({
-        "login": int(login),
-        "server": server,
-        "password": password,
-        "investorPassword": investor_password,
-        "accountType": "DEMO",
-        "runId": os.environ["GITHUB_RUN_ID"],
-    }).encode("utf-8")
+def fetch(url):
     req = urllib.request.Request(
-        INGEST_URL,
-        data=body,
-        method="POST",
+        url,
         headers={
-            "Authorization": f"Bearer {token}",
-            "Content-Type": "application/json",
+            "User-Agent": UA,
+            "Accept": "*/*",
         },
     )
-    with urllib.request.urlopen(req, timeout=20) as res:
-        result = json.loads(res.read().decode("utf-8"))
-    if result.get("status") != "MT5_DEMO_CREDENTIALS_STORED":
-        raise RuntimeError("VAULT_INGEST_NOT_CONFIRMED")
-    return result
+    with urllib.request.urlopen(req, timeout=25) as res:
+        return res.geturl(), res.read()
 
 
-async def main():
-    emit("CREATE_START", mode="METAQUOTES_DEMO_ONLY", broker_orders=False, live_money=False)
+def js_refs(base_url, text):
+    refs = set()
+    for attr in ("src", "href"):
+        for m in re.finditer(
+            rf'{attr}\s*=\s*["\']([^"\']+\.js(?:\?[^"\']*)?)["\']',
+            text,
+            re.I,
+        ):
+            refs.add(urllib.parse.urljoin(base_url, m.group(1)))
+    # Vite/module chunks referenced inside JS.
+    for m in re.finditer(r'["\']([^"\']+\.js(?:\?[^"\']*)?)["\']', text):
+        value = m.group(1)
+        if "/" in value or value.startswith("."):
+            refs.add(urllib.parse.urljoin(base_url, value))
+    return refs
 
-    request = DemoAccountRequest(
-        first_name="AITrade",
-        second_name="Demo",
-        email="",
-        phone="",
-        group="",
-        deposit=100000.0,
-        leverage=100,
-        agreements=1,
-        country="VN",
-        domain="web.metatrader.app",
-        utm_source="ai-trade-cloud",
-        utm_campaign="generic-demo-forward-validation",
-    )
 
-    async with MT5WebClient(uri=WS_URI, timeout=25) as client:
-        cid = build_client_id(platform="github-actions", language="en-US")
-        await client.init_session(cid=cid)
+def compact(s):
+    return re.sub(r"\s+", " ", s)
 
-        verify_payload = client._build_opening_verification_payload(
-            request=request,
-            build=int(client.transport.server_build or 0),
-            cid=cid,
+
+def snippets(text, source):
+    out = []
+    normalized = compact(text)
+    for pattern in PATTERNS:
+        rx = re.compile(pattern, re.I)
+        for m in list(rx.finditer(normalized))[:12]:
+            lo = max(0, m.start() - 650)
+            hi = min(len(normalized), m.end() + 1100)
+            out.append(
+                {
+                    "source": source,
+                    "pattern": pattern,
+                    "snippet": normalized[lo:hi],
+                }
+            )
+    return out
+
+
+def main():
+    queue = []
+    seen = set()
+    matches = []
+    page_meta = []
+
+    for page in PAGES:
+        try:
+            final, raw = fetch(page)
+            text = raw.decode("utf-8", "replace")
+            page_meta.append(
+                {"requested": page, "final": final, "bytes": len(raw)}
+            )
+            matches.extend(snippets(text, final))
+            queue.extend(sorted(js_refs(final, text)))
+        except Exception as exc:
+            page_meta.append(
+                {
+                    "requested": page,
+                    "error": type(exc).__name__,
+                    "detail": str(exc)[:200],
+                }
+            )
+
+    # Crawl public JS chunks only, bounded to prevent runaway.
+    idx = 0
+    bundle_meta = []
+    while idx < len(queue) and len(seen) < 160:
+        url = queue[idx]
+        idx += 1
+        if url in seen:
+            continue
+        seen.add(url)
+        try:
+            final, raw = fetch(url)
+            text = raw.decode("utf-8", "replace")
+            bundle_meta.append({"url": final, "bytes": len(raw)})
+            found = snippets(text, final)
+            if found:
+                matches.extend(found)
+            # One level of imported chunks is useful for split frontend bundles.
+            for ref in js_refs(final, text):
+                if ref not in seen and len(queue) < 400:
+                    queue.append(ref)
+        except Exception as exc:
+            bundle_meta.append(
+                {
+                    "url": url,
+                    "error": type(exc).__name__,
+                    "detail": str(exc)[:160],
+                }
+            )
+
+    # Deduplicate snippets by source+pattern+content.
+    unique = []
+    keys = set()
+    for item in matches:
+        key = (item["source"], item["pattern"], item["snippet"])
+        if key not in keys:
+            keys.add(key)
+            unique.append(item)
+
+    result = {
+        "status": "BUNDLE_INSPECTION_COMPLETE",
+        "pages": page_meta,
+        "bundles_scanned": len(seen),
+        "bundle_meta": bundle_meta[:200],
+        "match_count": len(unique),
+        "matches": unique[:120],
+        "broker_orders": False,
+        "demo_created": False,
+        "live_money_locked": True,
+    }
+
+    with open("mt5_bundle_inspection.json", "w", encoding="utf-8") as f:
+        json.dump(result, f, ensure_ascii=False, indent=2)
+
+    print(
+        json.dumps(
+            {
+                "status": result["status"],
+                "pages": page_meta,
+                "bundles_scanned": len(seen),
+                "match_count": len(unique),
+                "matched_sources": sorted({x["source"] for x in unique}),
+                "broker_orders": False,
+                "demo_created": False,
+            },
+            separators=(",", ":"),
+            ensure_ascii=False,
         )
-        verify_raw = await client.transport.send_command(CMD_VERIFY_CODE, verify_payload)
-        verify_status = _parse_verification_status(verify_raw.body)
-        emit(
-            "OPENING_VERIFICATION",
-            command_code=int(verify_raw.code),
-            body_len=len(verify_raw.body or b""),
-            email_required=bool(verify_status.email),
-            phone_required=bool(verify_status.phone),
-            server_build=int(client.transport.server_build or 0),
-        )
-        if verify_raw.code != 0:
-            raise RuntimeError(f"VERIFICATION_COMMAND_REJECTED_{verify_raw.code}")
-        if verify_status.email and not request.email:
-            raise RuntimeError("EMAIL_VERIFICATION_REQUIRED")
-        if verify_status.phone and not request.phone:
-            raise RuntimeError("PHONE_VERIFICATION_REQUIRED")
-
-        payload = client._build_opening_base_payload(request)
-        raw = await client.transport.send_command(CMD_OPEN_DEMO, payload)
-        body_len = len(raw.body or b"")
-        diagnostic = {
-            "event": "OPEN_DEMO_RAW",
-            "command_code": int(raw.code),
-            "body_len": body_len,
-            "credential_shape": body_len >= 76,
-        }
-        if raw.code != 0 or body_len < 76:
-            diagnostic["body_prefix_hex"] = (raw.body or b"")[:32].hex()
-        print(json.dumps(diagnostic, separators=(",", ":")), flush=True)
-        result = _parse_open_account_result(raw.body)
-
-    emit(
-        "OPEN_DEMO_RESULT",
-        success=bool(result.success),
-        code=int(result.code),
-        login=int(result.login or 0),
-        password_exposed=False,
-        investor_password_exposed=False,
-    )
-    if raw.code != 0:
-        raise RuntimeError(f"DEMO_COMMAND_REJECTED_HEADER_{raw.code}")
-    if not result.success or int(result.login or 0) <= 0 or not result.password:
-        raise RuntimeError(f"DEMO_CREATE_REJECTED_CODE_{result.code}_BODY_{body_len}")
-
-    login = int(result.login)
-    password = str(result.password)
-    investor = str(result.investor_password or "")
-
-    async with MT5WebClient(uri=WS_URI, timeout=25) as client:
-        await client.login(login=login, password=password)
-        account = await client.get_account()
-
-    server = str(account.get("server") or account.get("server_name") or "")
-    is_demo = bool(account.get("is_demo", False))
-    is_real = bool(account.get("is_real", False))
-    trade_allowed = bool(account.get("trade_allowed", False))
-    balance = float(account.get("balance") or 0.0)
-    leverage = int(account.get("leverage") or 0)
-
-    emit(
-        "DEMO_VERIFY",
-        login=login,
-        server=server,
-        is_demo=is_demo,
-        is_real=is_real,
-        trade_allowed=trade_allowed,
-        balance=balance,
-        leverage=leverage,
-        broker_orders=False,
-        live_money=False,
     )
 
-    if not is_demo or is_real or "demo" not in server.lower():
-        raise RuntimeError("ACCOUNT_NOT_CONFIRMED_DEMO")
-
-    oidc = get_oidc_token()
-    stored = store_in_vault(
-        oidc,
-        login=login,
-        server=server,
-        password=password,
-        investor_password=investor,
-    )
-
-    emit(
-        "DEMO_STORED",
-        login=login,
-        server=server,
-        password_stored_in_vault=bool(stored.get("passwordStoredInVault")),
-        password_exposed=False,
-        broker_orders=False,
-        live_money=False,
-    )
+    for item in unique[:40]:
+        print("MATCH", json.dumps(item, ensure_ascii=False, separators=(",", ":")))
 
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    main()
+
