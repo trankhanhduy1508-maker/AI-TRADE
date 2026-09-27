@@ -1,3 +1,40 @@
+## Founder product knowledge + light dashboard + collaboration boundary — 2026-09-27
+
+Canonical product/security docs added:
+- `product/AI_TRADE_BUSINESS_MODEL_V1_2026-09-27.md`
+- `product/AI_TRADE_IDENTITY_GOOGLE_MT5_V1_2026-09-27.md`
+- `product/AI_TRADE_DATA_FLYWHEEL_PRIVACY_V1_2026-09-27.md`
+- `security/AI_TRADE_COLLABORATION_SECRET_PROTECTION_V1_2026-09-27.md`
+- `security/AI_TRADE_PUBLIC_PRIVATE_BOUNDARY.md`
+- `.github/CODEOWNERS`
+- `CONTRIBUTING.md`
+
+Dashboard changes:
+- refresh reduced from 30s to 60s;
+- current-trade UI exposes Lot/Volume, MT5 account metadata and richer P/L/R presentation;
+- Training Arena UI exposes symbol, side, Lot/Volume placeholder, Entry, Stop and P/L;
+- candlestick chart remains available but is now optional/lazy;
+- chart library and candle data are not loaded until user presses “Mở biểu đồ”;
+- timeframe selector remains M15/M30/H1/H4/D1;
+- Supabase dashboard Edge Function v11 ACTIVE;
+- overview runtime #155 HTTP 200 includes MT5 login metadata;
+- live dashboard runtime #156 HTTP 200;
+- raw frontend app.js runtime #157 HTTP 200 application/javascript.
+
+Security discovery:
+- GitHub repository `trankhanhduy1508-maker/AI-TRADE` is currently PUBLIC.
+- PUBLIC visibility conflicts with Founder requirement to protect proprietary research/know-how.
+- CODEOWNERS/branch review can protect changes but cannot protect reads.
+- Do not invite untrusted collaborators to proprietary Core material until a private boundary exists.
+- Preferred target: shareable App repository + private Founder-controlled Core/research repository/service.
+- No new secrets were added to GitHub.
+
+Next product step after repository security boundary:
+- Google Sign-In customer identity;
+- bind entitlement to normalized MT5 identity (server + login), not Google email alone;
+- build MT5 connection UX without exposing/storing plaintext credentials;
+- keep execution-capable financial-account access behind a dedicated secure connector and existing live-money gates.
+
 ## All-market paper training arena — 2026-09-27
 
 Founder requested accelerated learning across all major tracked markets.
