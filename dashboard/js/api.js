@@ -10,4 +10,10 @@ export class DashboardApi{
     Object.entries(params).forEach(([k,v])=>u.searchParams.set(k,String(v)));
     const r=await fetch(u,{cache:"no-store"});if(!r.ok)throw new Error(`${feature} API HTTP ${r.status}`);return r.json();
   }
+  async founderAction(tokenId,action){
+    const u=new URL(CONFIG.apiBase);u.searchParams.set("format","admin-testers");u.searchParams.set("t",this.token);
+    const r=await fetch(u,{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({tokenId,action}),cache:"no-store"});
+    if(!r.ok)throw new Error("Founder action HTTP "+r.status);
+    return r.json();
+  }
 }
