@@ -25,6 +25,7 @@ def _parser() -> argparse.ArgumentParser:
         choices=["TRAILING_ONLY", "FIXED_TP", "PARTIAL_THEN_TRAIL"],
         default="TRAILING_ONLY",
     )
+    parser.add_argument("--max-pyramid-adds", type=int, default=0)
     parser.add_argument("--enable-demo-send", action="store_true")
     parser.add_argument("--once", action="store_true")
     return parser
@@ -88,6 +89,7 @@ def main() -> int:
             max_open_positions=1,
             max_spread_points=args.max_spread_points,
             max_daily_loss=args.max_daily_loss_demo,
+            max_total_volume_per_symbol=0.01 * (1 + max(0, args.max_pyramid_adds)),
         )
     )
     entry = ExecutionCoordinator(adapter, SafetyGate(kill), risk_engine=risk)
@@ -100,6 +102,7 @@ def main() -> int:
         exit_mode=ExitMode(args.exit_mode),
         reward_risk=spec.reward_risk,
         trailing_lookback=spec.exit_lookback_bars,
+        max_pyramid_adds=max(0, args.max_pyramid_adds),
     )
     engine = DemoAutoTradeEngine(
         config=config,
@@ -133,6 +136,7 @@ def main() -> int:
                 context = runtime_risk_context(
                     own_open_positions=len(owned),
                     market=market,
+                    current_symbol_volume=sum(position.volume for position in owned),
                 )
                 outcome = engine.on_closed_bar(
                     market.bars,
