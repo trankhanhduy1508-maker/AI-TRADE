@@ -236,3 +236,27 @@ Founder yêu cầu refine AI Trade theo hướng:
 - Pyramiding chỉ được thêm vào winner khi Risk Engine cho phép.
 - Martingale, DCA ngược xu hướng để gỡ lỗ, nới SL để tránh cắt lỗ: cấm.
 - Live-money vẫn khóa; DEMO evidence bắt buộc trước live-ready.
+
+
+---
+
+## Decision 2026-09-27 — Multi-asset + The5ers Bootcamp + Prop Compliance
+
+Founder yêu cầu thực hiện theo đúng thứ tự:
+1. mở rộng autonomous research/paper sang các FX major + Gold + Bitcoin + Oil + US30 + Nasdaq 100 + S&P 500;
+2. sau đó xây The5ers Bootcamp challenge guard/integration;
+3. sau đó xử lý yêu cầu hành vi không quá nhanh.
+
+Đã chốt implementation policy:
+- Multi-asset paper universe = 13 markets, cloud autonomous, không broker orders.
+- The5ers Bootcamp challenge tách thành profile riêng, không dùng generic hard-risk numbers.
+- Bootcamp Step 1/2/3 = $5k/$10k/$15k, target 6%, max loss 5%.
+- Current Terms/FAQ phải được re-check trước activation.
+- Automation/EA path fail-closed nếu chưa có written approval của The5ers.
+- Visible broker-side SL bắt buộc.
+- Không HFT, tick scalping, prohibited arbitrage, emulator, third-party copied EA/signals.
+- Yêu cầu "giống con người để quỹ không quét" KHÔNG triển khai dưới dạng stealth/evasion.
+- Thay bằng Prop Firm Compliance Mode: closed-bar only, one intent/bar, deterministic cooldown, bounded retry, full audit.
+- Không random human-like delay, fake mouse/keyboard, fingerprint spoofing hoặc bypass anti-abuse.
+- Bootcamp challenge demo execution chưa được unlock.
+- Funded/live-money execution vẫn hard locked và là gate riêng.
