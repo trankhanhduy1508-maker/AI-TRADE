@@ -1,3 +1,27 @@
+## 13-market autonomous paper universe — 2026-09-27
+
+**ACTIVE.**
+
+Supabase now autonomously tracks and paper-trades 13 daily markets:
+EURUSD, GBPUSD, USDJPY, AUDUSD, USDCAD, USDCHF, NZDUSD, XAUUSD, BTCUSD, USOIL, US30, NAS100 and US500.
+
+Evidence:
+- initialization request #30: 13/13 `WARMED`;
+- repeat request #31: 13/13 `NO_NEW_CLOSED_BAR`;
+- no duplicate paper trades;
+- daily cron job id 4 active;
+- broker orders false;
+- pyramiding false.
+
+Execution safety:
+- `risk_profile_approved=false` is now a DB gate;
+- `ai-trade-tick` v4 refuses execution when risk profile is unapproved;
+- `ai-trade-demo-preflight` v1 can resolve broker symbol aliases read-only once DEMO credentials exist;
+- live money remains hard locked.
+
+Evidence: `reports/MULTIASSET_PAPER_UNIVERSE_2026-09-27.md`.
+
+
 ## Paper-forward cloud — 2026-09-27
 
 **ACTIVE / INITIALIZED — chưa phải performance PASS.**
