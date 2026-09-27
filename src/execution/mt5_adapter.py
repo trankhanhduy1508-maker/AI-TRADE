@@ -1,10 +1,9 @@
-"""Safety boundary for optional MetaTrader 5 order submission.
+"""Fail-closed MetaTrader 5 adapter for DEMO execution and position lifecycle.
 
 The adapter deliberately uses dependency injection instead of importing the
-optional MetaTrader5 package. This keeps research/test environments offline and
-allows the terminal API to be verified with a fake. It is disabled by default,
-locks LIVE mode, checks every request before sending, and persists client order
-intent IDs so a restart cannot silently resend an ambiguous request.
+optional MetaTrader5 package. LIVE mode is hard locked. Every mutating action
+uses a persistent client intent id so restart/retry cannot silently duplicate
+broker risk.
 """
 
 from dataclasses import dataclass
@@ -23,7 +22,7 @@ class ExecutionMode(StrEnum):
 
 
 class TradingDisabledError(RuntimeError):
-    """Raised when an order path is not explicitly enabled and safe."""
+    """Raised when an execution path is not explicitly enabled and safe."""
 
 
 DEMO_ACCOUNT_TRADE_MODE = 0
@@ -46,10 +45,10 @@ class MT5OrderRequest:
             raise ValueError("symbol is required")
         if self.direction.upper() not in {"UP", "DOWN"}:
             raise ValueError("direction must be UP or DOWN")
-        if self.volume <= 0:
-            raise ValueError("volume must be positive")
-        if self.price <= 0:
-            raise ValueError("price must be positive")
+        if not math.isfinite(self.volume) or self.volume <= 0:
+            raise ValueError("volume must be finite and positive")
+        if not math.isfinite(self.price) or self.price <= 0:
+            raise ValueError("price must be finite and positive")
 
 
 @dataclass(frozen=True)
@@ -59,6 +58,17 @@ class MT5OrderResult:
     broker_order_id: str | None = None
     retcode: int | None = None
     message: str = ""
+
+
+@dataclass(frozen=True)
+class MT5Position:
+    position_id: str
+    symbol: str
+    direction: str
+    volume: float
+    entry_price: float
+    stop_loss: float | None
+    take_profit: float | None
 
 
 @dataclass(frozen=True)
@@ -150,9 +160,15 @@ class MT5SymbolContract:
                 return "TARGET_DISTANCE_INVALID"
         return None
 
+    def valid_volume(self, volume: float) -> bool:
+        if not math.isfinite(volume) or volume < self.volume_min or volume > self.volume_max:
+            return False
+        steps = (volume - self.volume_min) / self.volume_step
+        return math.isclose(steps, round(steps), rel_tol=0.0, abs_tol=1e-9)
+
 
 class OrderIntentLedger:
-    """Small persistent ledger used to fail closed on ambiguous retries."""
+    """Persistent ledger used to fail closed on ambiguous retries."""
 
     def __init__(self, path: str | Path):
         self._connection = sqlite3.connect(str(path))
@@ -210,7 +226,7 @@ class OrderIntentLedger:
 
 
 class MT5BrokerAdapter:
-    """Minimal, fail-closed MT5 Python integration boundary."""
+    """Fail-closed MT5 Python integration boundary, DEMO only."""
 
     def __init__(
         self,
@@ -261,76 +277,224 @@ class MT5BrokerAdapter:
         self._ledger.close()
 
     def submit(self, order: MT5OrderRequest) -> MT5OrderResult:
-        existing = self._ledger.get(order.client_order_id)
-        if existing is not None:
-            status, broker_order_id, retcode = existing
-            return MT5OrderResult(
-                client_order_id=order.client_order_id,
-                status="DUPLICATE_SUPPRESSED",
-                broker_order_id=broker_order_id,
-                retcode=retcode,
-                message=f"existing intent status={status}; reconcile before retry",
-            )
+        duplicate = self._duplicate_result(order.client_order_id)
+        if duplicate is not None:
+            return duplicate
+        self._ensure_mutation_allowed()
+        if not self._connected and not self.connect():
+            raise ConnectionError("MT5 terminal initialization failed")
 
+        contract_result = self._validate_contract(order)
+        if contract_result is not None:
+            return contract_result
+
+        self._ledger.record(order.client_order_id, "SUBMITTING")
+        return self._checked_send(order.client_order_id, self._request_dict(order))
+
+    def positions(self, symbol: str | None = None) -> tuple[MT5Position, ...]:
+        self._ensure_mutation_allowed()
+        if not self._connected and not self.connect():
+            raise ConnectionError("MT5 terminal initialization failed")
+        getter = getattr(self._terminal, "positions_get", None)
+        if not callable(getter):
+            raise RuntimeError("positions_get is unavailable")
+        records = getter(symbol=symbol) if symbol is not None else getter()
+        if records is None:
+            raise RuntimeError("positions_get failed")
+        return tuple(self._position_from_record(record) for record in records)
+
+    def broker_position_ids(self) -> set[str]:
+        return {position.position_id for position in self.positions()}
+
+    def modify_position(
+        self,
+        position_id: str,
+        *,
+        client_order_id: str,
+        stop_loss: float,
+        take_profit: float | None = None,
+    ) -> MT5OrderResult:
+        """Ratchet protective levels without ever increasing risk."""
+        if not client_order_id.strip():
+            raise ValueError("client_order_id is required")
+        duplicate = self._duplicate_result(client_order_id)
+        if duplicate is not None:
+            return duplicate
+        position = self._require_position(position_id)
+        tick = self._require_tick(position.symbol)
+        contract = self._require_contract(position.symbol)
+        market_price = float(tick.bid if position.direction == "UP" else tick.ask)
+        validation = MT5OrderRequest(
+            client_order_id=client_order_id,
+            symbol=position.symbol,
+            direction=position.direction,
+            volume=position.volume,
+            price=market_price,
+            stop_loss=stop_loss,
+            take_profit=take_profit,
+        )
+        rejection = contract.rejection_reason(validation)
+        if rejection is not None:
+            return MT5OrderResult(client_order_id, "CONTRACT_REJECTED", message=rejection)
+
+        if position.stop_loss is not None:
+            if position.direction == "UP" and stop_loss < position.stop_loss:
+                return MT5OrderResult(client_order_id, "RISK_REJECTED", message="STOP_WOULD_INCREASE_RISK")
+            if position.direction == "DOWN" and stop_loss > position.stop_loss:
+                return MT5OrderResult(client_order_id, "RISK_REJECTED", message="STOP_WOULD_INCREASE_RISK")
+
+        self._ledger.record(client_order_id, "SUBMITTING")
+        request: dict[str, object] = {
+            "action": getattr(self._terminal, "TRADE_ACTION_SLTP"),
+            "position": int(position.position_id),
+            "symbol": position.symbol,
+            "sl": stop_loss,
+            "tp": take_profit or 0.0,
+            "comment": client_order_id,
+        }
+        return self._checked_send(client_order_id, request, broker_order_id=position.position_id)
+
+    def close_position(
+        self,
+        position_id: str,
+        *,
+        client_order_id: str,
+        volume: float | None = None,
+    ) -> MT5OrderResult:
+        """Close all or part of a DEMO position with duplicate suppression."""
+        if not client_order_id.strip():
+            raise ValueError("client_order_id is required")
+        duplicate = self._duplicate_result(client_order_id)
+        if duplicate is not None:
+            return duplicate
+        position = self._require_position(position_id)
+        close_volume = position.volume if volume is None else float(volume)
+        if close_volume <= 0 or close_volume > position.volume:
+            return MT5OrderResult(client_order_id, "CONTRACT_REJECTED", message="CLOSE_VOLUME_INVALID")
+        contract = self._require_contract(position.symbol)
+        if not math.isclose(close_volume, position.volume, rel_tol=0.0, abs_tol=1e-12) and not contract.valid_volume(close_volume):
+            return MT5OrderResult(client_order_id, "CONTRACT_REJECTED", message="CLOSE_VOLUME_STEP_INVALID")
+        tick = self._require_tick(position.symbol)
+        if position.direction == "UP":
+            order_type = getattr(self._terminal, "ORDER_TYPE_SELL")
+            price = float(tick.bid)
+        else:
+            order_type = getattr(self._terminal, "ORDER_TYPE_BUY")
+            price = float(tick.ask)
+
+        self._ledger.record(client_order_id, "SUBMITTING")
+        request = {
+            "action": getattr(self._terminal, "TRADE_ACTION_DEAL"),
+            "position": int(position.position_id),
+            "symbol": position.symbol,
+            "volume": close_volume,
+            "type": order_type,
+            "price": price,
+            "deviation": 0,
+            "comment": client_order_id,
+        }
+        return self._checked_send(client_order_id, request, broker_order_id=position.position_id)
+
+    def _ensure_mutation_allowed(self) -> None:
         if self._mode == ExecutionMode.DISABLED or not self._allow_order_send:
             raise TradingDisabledError("order submission is disabled")
         if self._mode == ExecutionMode.LIVE:
             raise TradingDisabledError("LIVE execution is locked")
-        if not self._connected and not self.connect():
-            raise ConnectionError("MT5 terminal initialization failed")
 
-        symbol_info = getattr(self._terminal, "symbol_info", None)
-        if not callable(symbol_info):
-            return MT5OrderResult(
-                client_order_id=order.client_order_id,
-                status="CONTRACT_REJECTED",
-                message="SYMBOL_INFO_MISSING",
-            )
+    def _duplicate_result(self, client_order_id: str) -> MT5OrderResult | None:
+        existing = self._ledger.get(client_order_id)
+        if existing is None:
+            return None
+        status, broker_order_id, retcode = existing
+        return MT5OrderResult(
+            client_order_id=client_order_id,
+            status="DUPLICATE_SUPPRESSED",
+            broker_order_id=broker_order_id,
+            retcode=retcode,
+            message=f"existing intent status={status}; reconcile before retry",
+        )
+
+    def _validate_contract(self, order: MT5OrderRequest) -> MT5OrderResult | None:
         try:
-            contract = MT5SymbolContract.from_info(symbol_info(order.symbol))
+            contract = self._require_contract(order.symbol)
         except (AttributeError, TypeError, ValueError, OverflowError) as exc:
-            return MT5OrderResult(
-                client_order_id=order.client_order_id,
-                status="CONTRACT_REJECTED",
-                message=str(exc),
-            )
-        rejection_reason = contract.rejection_reason(order)
-        if rejection_reason is not None:
-            return MT5OrderResult(
-                client_order_id=order.client_order_id,
-                status="CONTRACT_REJECTED",
-                message=rejection_reason,
-            )
+            return MT5OrderResult(order.client_order_id, "CONTRACT_REJECTED", message=str(exc))
+        rejection = contract.rejection_reason(order)
+        if rejection is None:
+            return None
+        return MT5OrderResult(order.client_order_id, "CONTRACT_REJECTED", message=rejection)
 
-        # Record before any terminal call. If the process dies after this point,
-        # a restart suppresses the same client ID until reconciliation occurs.
-        self._ledger.record(order.client_order_id, "SUBMITTING")
-        request = self._request_dict(order)
+    def _require_contract(self, symbol: str) -> MT5SymbolContract:
+        getter = getattr(self._terminal, "symbol_info", None)
+        if not callable(getter):
+            raise ValueError("SYMBOL_INFO_MISSING")
+        return MT5SymbolContract.from_info(getter(symbol))
+
+    def _require_tick(self, symbol: str) -> Any:
+        getter = getattr(self._terminal, "symbol_info_tick", None)
+        if not callable(getter):
+            raise RuntimeError("symbol_info_tick is unavailable")
+        tick = getter(symbol)
+        if tick is None:
+            raise RuntimeError("symbol_info_tick failed")
+        bid = float(getattr(tick, "bid", 0.0))
+        ask = float(getattr(tick, "ask", 0.0))
+        if not math.isfinite(bid) or not math.isfinite(ask) or bid <= 0 or ask <= 0 or bid > ask:
+            raise RuntimeError("invalid tick")
+        return tick
+
+    def _require_position(self, position_id: str) -> MT5Position:
+        for position in self.positions():
+            if position.position_id == str(position_id):
+                return position
+        raise LookupError(f"position {position_id} not found")
+
+    def _position_from_record(self, record: Any) -> MT5Position:
+        ticket = self._optional_id(getattr(record, "ticket", None))
+        if ticket is None:
+            raise RuntimeError("position has no ticket")
+        position_type = getattr(record, "type", None)
+        buy_type = getattr(self._terminal, "POSITION_TYPE_BUY", 0)
+        sell_type = getattr(self._terminal, "POSITION_TYPE_SELL", 1)
+        if position_type == buy_type:
+            direction = "UP"
+        elif position_type == sell_type:
+            direction = "DOWN"
+        else:
+            raise RuntimeError("unknown position type")
+        stop = float(getattr(record, "sl", 0.0) or 0.0)
+        target = float(getattr(record, "tp", 0.0) or 0.0)
+        return MT5Position(
+            position_id=ticket,
+            symbol=str(record.symbol),
+            direction=direction,
+            volume=float(record.volume),
+            entry_price=float(record.price_open),
+            stop_loss=stop if stop > 0 else None,
+            take_profit=target if target > 0 else None,
+        )
+
+    def _checked_send(
+        self,
+        client_order_id: str,
+        request: dict[str, object],
+        *,
+        broker_order_id: str | None = None,
+    ) -> MT5OrderResult:
         check = self._terminal.order_check(request)
         check_retcode = self._retcode(check)
         if check_retcode != 0:
             message = str(getattr(check, "comment", "order_check rejected"))
-            self._ledger.record(order.client_order_id, "CHECK_REJECTED", retcode=check_retcode)
-            return MT5OrderResult(
-                client_order_id=order.client_order_id,
-                status="CHECK_REJECTED",
-                retcode=check_retcode,
-                message=message,
-            )
+            self._ledger.record(client_order_id, "CHECK_REJECTED", broker_order_id, check_retcode)
+            return MT5OrderResult(client_order_id, "CHECK_REJECTED", broker_order_id, check_retcode, message)
 
         response = self._terminal.order_send(request)
         retcode = self._retcode(response)
-        broker_order_id = self._optional_id(getattr(response, "order", None))
+        returned_order_id = self._optional_id(getattr(response, "order", None)) or broker_order_id
         status = "FILLED" if retcode == 10009 else "PARTIAL" if retcode == 10010 else "REJECTED"
         message = str(getattr(response, "comment", ""))
-        self._ledger.record(order.client_order_id, status, broker_order_id, retcode)
-        return MT5OrderResult(
-            client_order_id=order.client_order_id,
-            status=status,
-            broker_order_id=broker_order_id,
-            retcode=retcode,
-            message=message,
-        )
+        self._ledger.record(client_order_id, status, returned_order_id, retcode)
+        return MT5OrderResult(client_order_id, status, returned_order_id, retcode, message)
 
     def _request_dict(self, order: MT5OrderRequest) -> dict[str, object]:
         direction = order.direction.upper()
@@ -338,10 +502,7 @@ class MT5BrokerAdapter:
             "action": getattr(self._terminal, "TRADE_ACTION_DEAL"),
             "symbol": order.symbol,
             "volume": order.volume,
-            "type": getattr(
-                self._terminal,
-                "ORDER_TYPE_BUY" if direction == "UP" else "ORDER_TYPE_SELL",
-            ),
+            "type": getattr(self._terminal, "ORDER_TYPE_BUY" if direction == "UP" else "ORDER_TYPE_SELL"),
             "price": order.price,
             "deviation": 0,
             "comment": order.client_order_id,
