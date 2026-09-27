@@ -7,7 +7,7 @@ from collections.abc import Callable, Sequence
 from src.execution.coordinator import ExecutionCoordinator, ExecutionOutcome
 from src.execution.mt5_adapter import MT5BrokerAdapter, MT5OrderRequest, MT5Position
 from src.execution.position_controller import PositionActionCoordinator
-from src.execution.position_lifecycle import ExitMode, LifecyclePlan
+from src.execution.position_lifecycle import ExitMode, LifecyclePlan, PositionLifecycleManager
 from src.execution.position_policy import PositionAction, evaluate_position
 from src.execution.position_state import PositionStateStore
 from src.execution.risk import RiskContext
@@ -88,7 +88,7 @@ class DemoAutoTradeEngine:
         if len(ours) > 1:
             return AutoTradeOutcome("NO_ACTION", "MULTIPLE_OWN_POSITIONS")
         if ours:
-            return self._manage(ours[0], bars, snapshot)
+            return self._manage(ours[0], bars, snapshot, risk_context, bid, ask)
 
         signal = self.signal_evaluator(bars)
         if signal is None:
@@ -138,6 +138,11 @@ class DemoAutoTradeEngine:
         action = instruction.action
         stamp = bars[-1].timestamp
         if action == PositionAction.HOLD:
+            pyramid = self._maybe_pyramid(
+                position, bars, snapshot, risk_context, bid, ask, state
+            )
+            if pyramid is not None:
+                return pyramid
             return AutoTradeOutcome("HOLD", instruction.reason)
         if action == PositionAction.TRAIL_STOP:
             result = self.positions.trail(
@@ -168,6 +173,58 @@ class DemoAutoTradeEngine:
             client_order_id=self._intent_id("CLOSE", stamp, position.position_id),
         )
         return AutoTradeOutcome(result.status, instruction.reason)
+
+    def _maybe_pyramid(
+        self,
+        position: MT5Position,
+        bars: Sequence[Bar],
+        snapshot: SafetySnapshot,
+        risk_context: RiskContext,
+        bid: float,
+        ask: float,
+        state,
+    ) -> AutoTradeOutcome | None:
+        if self.config.max_pyramid_adds <= 0:
+            return None
+        signal = self.signal_evaluator(bars)
+        if signal is None or str(getattr(signal, "direction")).upper() != position.direction:
+            return None
+        market_price = bid if position.direction == "UP" else ask
+        decision = PositionLifecycleManager.pyramid_decision(
+            position,
+            market_price=market_price,
+            current_adds=state.pyramid_adds,
+            max_adds=self.config.max_pyramid_adds,
+            independent_risk_allowed=snapshot.risk_allowed,
+        )
+        if not decision.allowed:
+            return None
+        stop = float(getattr(signal, "stop_price"))
+        target = self._target(position.direction, market_price, stop)
+        client_id = self._intent_id(
+            "PYRAMID", bars[-1].timestamp, str(state.pyramid_adds + 1)
+        )
+        context = RiskContext(
+            open_positions=risk_context.open_positions,
+            spread_points=risk_context.spread_points,
+            daily_loss=risk_context.daily_loss,
+            current_symbol_volume=position.volume,
+            increases_existing_position=True,
+        )
+        order = MT5OrderRequest(
+            client_id,
+            self.config.symbol,
+            position.direction,
+            self.config.demo_volume,
+            market_price,
+            stop_loss=stop,
+            take_profit=target,
+            magic=self.config.magic,
+        )
+        result = self.entry.submit(order, snapshot, context)
+        if result.status in {"FILLED", "PARTIAL"}:
+            self.state.record_pyramid_add(position.position_id)
+        return AutoTradeOutcome(result.status, decision.reason)
 
     def _target(self, direction: str, entry: float, stop: float) -> float | None:
         if self.config.exit_mode == ExitMode.TRAILING_ONLY:
