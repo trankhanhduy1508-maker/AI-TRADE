@@ -14,7 +14,7 @@ export function renderCurrentTrade(trade){
         <div class="field"><label>Entry</label><strong>${fmtPrice(trade.entryPrice)}</strong></div>
         <div class="field"><label>Giá hiện tại</label><strong>${fmtPrice(trade.currentPrice??trade.entryPrice)}</strong></div>
         <div class="field"><label>Stop loss</label><strong style="color:var(--red)">${fmtPrice(trade.stopPrice)}</strong></div>
-        <div class="field"><label>Take profit</label><strong style="color:var(--green)">${trade.takeProfit?fmtPrice(trade.takeProfit):"—"}</strong></div>
+        <div class="field"><label>Take profit</label><strong style="color:var(--green)">${trade.takeProfit?fmtPrice(trade.takeProfit):"TP — chưa đặt"}</strong></div>
         <div class="field"><label>Lot / Volume</label><strong>${lotLabel}</strong></div>
         <div class="field"><label>MT5 account</label><strong>${accountLabel}</strong></div>
       </div>
