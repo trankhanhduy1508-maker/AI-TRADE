@@ -56,7 +56,7 @@ async function yahooCandles(symbol:string,timeframe:string,limit:number){
   const raw:any[]=[];
   for(let i=0;i<ts.length;i++){
     const open=Number(q.open?.[i]),high=Number(q.high?.[i]),low=Number(q.low?.[i]),close=Number(q.close?.[i]);
-    if(![open,high,low,close].every(Number.isFinite))continue;
+    if(![open,high,low,close].every(Number.isFinite)||[open,high,low,close].some(v=>v<=0))continue;
     raw.push({time:Number(ts[i]),open,high,low,close});
   }
   let out=raw;
