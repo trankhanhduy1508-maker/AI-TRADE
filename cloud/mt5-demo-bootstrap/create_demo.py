@@ -1,4 +1,4 @@
-# TEMPORARY BUILD-6230 FORM VALUE INSPECTION MODE.\n# No account creation commands are sent.\nimport json
+import json
 import re
 import urllib.parse
 import urllib.request
