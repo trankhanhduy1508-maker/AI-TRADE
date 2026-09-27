@@ -37,6 +37,7 @@ class MT5OrderRequest:
     price: float
     stop_loss: float | None = None
     take_profit: float | None = None
+    magic: int = 260926
 
     def __post_init__(self) -> None:
         if not self.client_order_id.strip():
@@ -49,6 +50,8 @@ class MT5OrderRequest:
             raise ValueError("volume must be finite and positive")
         if not math.isfinite(self.price) or self.price <= 0:
             raise ValueError("price must be finite and positive")
+        if self.magic < 0:
+            raise ValueError("magic must be non-negative")
 
 
 @dataclass(frozen=True)
@@ -69,6 +72,8 @@ class MT5Position:
     entry_price: float
     stop_loss: float | None
     take_profit: float | None
+    magic: int = 0
+    comment: str = ""
 
 
 @dataclass(frozen=True)
@@ -303,8 +308,11 @@ class MT5BrokerAdapter:
             raise RuntimeError("positions_get failed")
         return tuple(self._position_from_record(record) for record in records)
 
-    def broker_position_ids(self) -> set[str]:
-        return {position.position_id for position in self.positions()}
+    def broker_position_ids(self, *, magic: int | None = None) -> set[str]:
+        positions = self.positions()
+        if magic is not None:
+            positions = tuple(position for position in positions if position.magic == magic)
+        return {position.position_id for position in positions}
 
     def modify_position(
         self,
@@ -480,6 +488,8 @@ class MT5BrokerAdapter:
             entry_price=float(record.price_open),
             stop_loss=stop if stop > 0 else None,
             take_profit=target if target > 0 else None,
+            magic=int(getattr(record, "magic", 0) or 0),
+            comment=str(getattr(record, "comment", "") or ""),
         )
 
     def _checked_send(
@@ -514,6 +524,7 @@ class MT5BrokerAdapter:
             "price": order.price,
             "deviation": 0,
             "comment": order.client_order_id,
+            "magic": order.magic,
         }
         if order.stop_loss is not None:
             request["sl"] = order.stop_loss
