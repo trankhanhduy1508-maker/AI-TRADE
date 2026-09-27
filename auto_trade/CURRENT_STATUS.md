@@ -1,3 +1,50 @@
+## CWS AI Trade Founder + Tester split — 2026-09-27
+
+Implemented two server-side access modes using one codebase:
+
+### Founder
+- access_role=FOUNDER
+- can view internal pipeline/research controls
+- can manage tester entitlement immediately
+- founder actions: CUSTOMER_FREE / CUSTOMER_PAID / SUSPEND / REVOKE / RESTORE_TESTER
+- all entitlement mutations are server-side and audited
+
+### Tester
+- access_role=TESTER
+- entitlement_state=ACTIVE_TESTER
+- default tester expiry: 30 days
+- Founder may downgrade/suspend/revoke before expiry at any time
+- DEMO/PAPER only
+- live money remains locked
+- internal cron/gate/admin details hidden
+- proprietary journal/research lessons hidden
+- no GitHub/Core access
+
+Runtime evidence:
+- dashboard Edge Function v14 ACTIVE
+- founder overview #160 HTTP 200, role=FOUNDER
+- founder tester list #161 HTTP 200
+- tester overview #162 HTTP 200, role=TESTER
+- tester journal #163 HTTP 200, restricted=true
+- tester live page #164 HTTP 200
+- founder downgrade action #165 HTTP 200 -> CUSTOMER_FREE
+- founder restore action #166 -> ACTIVE_TESTER
+- post-split tester overview #167 HTTP 200 with mt5.connected=false
+- founder admin #168 HTTP 200 with tester ACTIVE_TESTER
+
+MT5 isolation:
+- new `ai_trade.account_mt5_bindings` scopes MT5 metadata by user/access account
+- Founder binding retains the canonical MetaQuotes DEMO metadata
+- Tester has no MT5 binding yet and cannot see/use Founder MT5 metadata
+- no MT5 password is stored in the tester entitlement tables
+- no broker order was enabled
+
+Security:
+- tester access token is stored hashed
+- token value is not committed to GitHub
+- anon/authenticated database roles have no table access
+- entitlement audit table: `ai_trade.account_entitlement_audit`
+
 ## CWS AI Trade brand rename — 2026-09-27
 
 Canonical customer-facing product name is now **CWS AI Trade**.
