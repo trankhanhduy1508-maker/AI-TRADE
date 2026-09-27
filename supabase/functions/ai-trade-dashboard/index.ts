@@ -30,12 +30,22 @@ const YAHOO_SYMBOLS:Record<string,string>={
   BTCUSD:"BTC-USD",ETHUSD:"ETH-USD",US30:"^DJI",NAS100:"^NDX",US500:"^GSPC"
 };
 
-async function yahooCandles(symbol:string,limit:number){
+async function yahooCandles(symbol:string,timeframe:string,limit:number){
   const yahoo=YAHOO_SYMBOLS[symbol]??YAHOO_SYMBOLS.EURUSD;
+  const tf=String(timeframe||"1h").toLowerCase();
+  const spec:Record<string,{interval:string,lookbackDays:number,aggregateHours?:number}>={
+    "15m":{interval:"15m",lookbackDays:55},
+    "30m":{interval:"30m",lookbackDays:55},
+    "1h":{interval:"60m",lookbackDays:300},
+    "4h":{interval:"60m",lookbackDays:300,aggregateHours:4},
+    "1d":{interval:"1d",lookbackDays:1200}
+  };
+  const selected=spec[tf]??spec["1h"];
   const now=Math.floor(Date.now()/1000);
-  const start=now-45*86400;
+  const start=now-selected.lookbackDays*86400;
   const url="https://query1.finance.yahoo.com/v8/finance/chart/"+encodeURIComponent(yahoo)+
-    "?period1="+start+"&period2="+now+"&interval=1h&events=history&includeAdjustedClose=true";
+    "?period1="+start+"&period2="+now+"&interval="+selected.interval+
+    "&events=history&includeAdjustedClose=true";
   const res=await fetch(url,{headers:{"user-agent":"AI-TRADE-dashboard/1.0"}});
   if(!res.ok)return [];
   const payload=await res.json();
@@ -43,11 +53,27 @@ async function yahooCandles(symbol:string,limit:number){
   const q=result?.indicators?.quote?.[0];
   const ts:number[]=result?.timestamp??[];
   if(!q)return [];
-  const out=[];
+  const raw:any[]=[];
   for(let i=0;i<ts.length;i++){
     const open=Number(q.open?.[i]),high=Number(q.high?.[i]),low=Number(q.low?.[i]),close=Number(q.close?.[i]);
     if(![open,high,low,close].every(Number.isFinite))continue;
-    out.push({time:Number(ts[i]),open,high,low,close});
+    raw.push({time:Number(ts[i]),open,high,low,close});
+  }
+  let out=raw;
+  if(selected.aggregateHours){
+    const bucketSec=selected.aggregateHours*3600;
+    const grouped=new Map<number,any>();
+    for(const b of raw){
+      const bucket=Math.floor(Number(b.time)/bucketSec)*bucketSec;
+      const prev=grouped.get(bucket);
+      if(!prev)grouped.set(bucket,{time:bucket,open:b.open,high:b.high,low:b.low,close:b.close});
+      else{
+        prev.high=Math.max(prev.high,b.high);
+        prev.low=Math.min(prev.low,b.low);
+        prev.close=b.close;
+      }
+    }
+    out=[...grouped.values()].sort((a,b)=>a.time-b.time);
   }
   return out.slice(-Math.max(20,Math.min(limit,300)));
 }
@@ -159,7 +185,7 @@ Deno.serve(async(req)=>{
     let currentTrade=null;
     if(positions[0]){
       const p=positions[0];
-      const candles=await yahooCandles(String(p.symbol),20);
+      const candles=await yahooCandles(String(p.symbol),"1h",20);
       const latest=candles.at(-1);
       const entryPrice=Number(p.entry_price);
       const currentPrice=latest?Number(latest.close):entryPrice;
@@ -253,10 +279,13 @@ Deno.serve(async(req)=>{
 
   if(format==="candles"){
     const symbol=String(url.searchParams.get("symbol")??"EURUSD").toUpperCase();
+    const requestedTf=String(url.searchParams.get("timeframe")??"1h").toLowerCase();
+    const allowed=new Set(["15m","30m","1h","4h","1d"]);
+    const timeframe=allowed.has(requestedTf)?requestedTf:"1h";
     const limit=Math.max(20,Math.min(Number(url.searchParams.get("limit")??160)||160,300));
-    const candles=await yahooCandles(symbol,limit);
+    const candles=await yahooCandles(symbol,timeframe,limit);
     return new Response(JSON.stringify({
-      ok:true,symbol,timeframe:"1h",candles
+      ok:true,symbol,timeframe,candles
     }),{status:200,headers:{
       "content-type":"application/json; charset=utf-8",
       "cache-control":"no-store","access-control-allow-origin":"*","referrer-policy":"no-referrer"
