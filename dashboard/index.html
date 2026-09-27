@@ -1,0 +1,147 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0b0d12">
+<title>AI-TRADE Forward Monitor</title>
+<style>
+:root{color-scheme:dark;--bg:#0b0d12;--card:#151922;--line:#262d3a;--text:#f4f6fb;--sub:#939cad;--green:#53d18b;--yellow:#f1c75b;--red:#ff6b6b}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font-family:Inter,ui-sans-serif,system-ui,-apple-system,Segoe UI,sans-serif}
+main{max-width:860px;margin:auto;padding:20px 14px 60px}.top{display:flex;justify-content:space-between;gap:12px;align-items:center;margin:8px 2px 18px}
+h1{font-size:23px;line-height:1.1;margin:0 0 6px}.sub{font-size:13px;color:var(--sub)}.live{font-size:12px;color:var(--green);display:flex;align-items:center;gap:7px}.dot{width:9px;height:9px;background:var(--green);border-radius:50%;box-shadow:0 0 12px var(--green)}
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:15px}.hero{display:flex;align-items:center;justify-content:space-between}.hero strong{font-size:19px}
+.pill{display:inline-flex;padding:5px 9px;border-radius:999px;font-size:11px}.good{background:rgba(83,209,139,.12);color:var(--green)}.warn{background:rgba(241,199,91,.12);color:var(--yellow)}.bad{background:rgba(255,107,107,.12);color:var(--red)}
+.section{margin-top:16px}.section h2{font-size:15px;margin:0 0 10px}.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}.metric small{color:var(--sub)}.metric strong{display:block;font-size:24px;margin:4px 0}.bar{height:9px;background:#252b36;border-radius:99px;overflow:hidden;margin-top:10px}.fill{height:100%;background:linear-gradient(90deg,#547cff,#7ca9ff);border-radius:99px}
+.step{display:flex;justify-content:space-between;align-items:center;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:13px 14px;margin-bottom:8px}.step div{display:flex;flex-direction:column;gap:3px}.step span{font-size:12px;color:var(--sub)}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:10px}.row{display:flex;justify-content:space-between;gap:12px;padding:9px 0;border-bottom:1px solid var(--line)}.row:last-child{border:0}.row span{color:var(--sub)}.row b{text-align:right}
+.err{border:1px solid rgba(255,107,107,.45);background:rgba(255,107,107,.08);padding:13px;border-radius:12px;color:#ffc0c0;display:none}.footer{font-size:12px;color:var(--sub);margin-top:16px;line-height:1.5}.refresh{margin-top:8px;padding:8px 10px;border:1px solid var(--line);border-radius:10px;background:transparent;color:#dce6ff}
+@media(max-width:640px){main{padding-top:14px}.grid,.two{grid-template-columns:1fr}.metric{display:grid;grid-template-columns:1fr auto;align-items:end}.metric .bar{grid-column:1/-1}}
+</style>
+</head>
+<body>
+<main>
+  <div class="top">
+    <div><h1>AI-TRADE Forward Monitor</h1><div class="sub">TF-013A · dữ liệu live từ Supabase</div></div>
+    <div class="live"><i class="dot"></i> LIVE</div>
+  </div>
+
+  <div id="err" class="err"></div>
+
+  <div class="card hero">
+    <div><div class="sub">Trạng thái kiểm chứng</div><strong id="state">Đang tải…</strong></div>
+    <b id="stateBadge" class="pill good">...</b>
+  </div>
+
+  <div class="section"><h2>Tiến độ đủ mẫu</h2>
+    <div class="grid">
+      <div class="card metric"><small>Closed trades</small><strong id="trades">0/50</strong><div class="bar"><div id="tradesBar" class="fill" style="width:0%"></div></div></div>
+      <div class="card metric"><small>Số ngày</small><strong id="days">0/120</strong><div class="bar"><div id="daysBar" class="fill" style="width:0%"></div></div></div>
+      <div class="card metric"><small>Market có trade</small><strong id="markets">0/8</strong><div class="bar"><div id="marketsBar" class="fill" style="width:0%"></div></div></div>
+    </div>
+  </div>
+
+  <div class="section"><h2>Pipeline tự động mỗi ngày</h2><div id="pipeline"></div></div>
+
+  <div class="section two">
+    <div class="card">
+      <h2>Forward performance</h2>
+      <div class="row"><span>Net R @ 10bps</span><b id="net10">—</b></div>
+      <div class="row"><span>Expectancy</span><b id="expectancy">—</b></div>
+      <div class="row"><span>Profit factor</span><b id="pf">—</b></div>
+      <div class="row"><span>Max drawdown</span><b id="dd">—</b></div>
+      <div class="row"><span>Net R @ 20bps</span><b id="net20">—</b></div>
+    </div>
+    <div class="card">
+      <h2>Execution</h2>
+      <div class="row"><span>Forward states</span><b id="forwardStates">—</b></div>
+      <div class="row"><span>Closed forward trades</span><b id="forwardTrades">—</b></div>
+      <div class="row"><span>Shadow orders</span><b id="shadowOrders">—</b></div>
+      <div class="row"><span>Open shadow positions</span><b id="shadowPositions">—</b></div>
+      <div class="row"><span>Flagged bars</span><b id="flagged">—</b></div>
+    </div>
+  </div>
+
+  <div class="section two">
+    <div class="card">
+      <h2>MT5 DEMO</h2>
+      <div class="row"><span>Kết nối</span><b id="mt5Connected">—</b></div>
+      <div class="row"><span>Server</span><b id="mt5Server">—</b></div>
+      <div class="row"><span>Loại</span><b id="mt5Type">—</b></div>
+      <div class="row"><span>Verify gần nhất</span><b id="mt5Verified">—</b></div>
+    </div>
+    <div class="card">
+      <h2>Safety gates</h2>
+      <div class="row"><span>The5ers</span><b id="the5ers">—</b></div>
+      <div class="row"><span>Written approval</span><b id="approval">—</b></div>
+      <div class="row"><span>Risk profile</span><b id="risk">—</b></div>
+      <div class="row"><span>DEMO send</span><b id="demoSend">—</b></div>
+      <div class="row"><span>Live money</span><b class="pill warn">LOCKED</b></div>
+    </div>
+  </div>
+
+  <div class="footer">
+    <span id="updated">Đang tải…</span><br>
+    <button class="refresh" onclick="loadData()">Làm mới ngay</button>
+  </div>
+</main>
+<script>
+const API='https://oziktadfeenydvgobudr.supabase.co/functions/v1/ai-trade-dashboard';
+const qs=new URLSearchParams(location.search);
+const token=qs.get('t')||'';
+
+const pct=(v,t)=>Math.max(0,Math.min(100,Math.round((Number(v)||0)/t*100)));
+const r=v=>{const n=Number(v||0);return (n>0?'+':'')+n.toFixed(2)+'R'};
+const txt=(id,v)=>document.getElementById(id).textContent=v;
+const setBar=(id,v)=>document.getElementById(id).style.width=v+'%';
+const badge=(value)=>{
+  if(['ACTIVE','COLLECTING','CONNECTED'].includes(value)) return '<span class="pill good">'+value+'</span>';
+  if(['BLOCKED_APPROVAL','LOCKED','CHƯA CÓ','CHƯA DUYỆT','OFF'].includes(value)) return '<span class="pill warn">'+value+'</span>';
+  return '<span class="pill bad">'+value+'</span>';
+};
+const timeLabel=s=>s.startsWith('15 3')?'10:15 VN':s.startsWith('20 3')?'10:20 VN':s.startsWith('25 3')?'10:25 VN':s;
+const stepLabel=j=>j.includes('forward-shadow')?'1. Tín hiệu forward':j.includes('shadow-broker')?'2. Shadow Broker':'3. Chấm điểm';
+
+async function loadData(){
+  const err=document.getElementById('err');
+  err.style.display='none';
+  try{
+    if(!token) throw new Error('Thiếu token dashboard trong link.');
+    const res=await fetch(API+'?format=json&t='+encodeURIComponent(token),{cache:'no-store'});
+    if(!res.ok) throw new Error('API trả HTTP '+res.status);
+    const d=await res.json();
+    const e=d.evaluation,c=d.counts,m=d.mt5,g=d.gates;
+
+    txt('state',e.state);txt('stateBadge',e.state);
+    txt('trades',e.closedTrades+'/50');setBar('tradesBar',pct(e.closedTrades,50));
+    txt('days',e.elapsedDays+'/120');setBar('daysBar',pct(e.elapsedDays,120));
+    txt('markets',e.marketsWithTrades+'/8');setBar('marketsBar',pct(e.marketsWithTrades,8));
+
+    document.getElementById('pipeline').innerHTML=d.crons.map(x=>'<div class="step"><div><strong>'+stepLabel(x.jobname)+'</strong><span>'+timeLabel(x.schedule)+'</span></div>'+badge(x.active?'ACTIVE':'OFF')+'</div>').join('');
+
+    txt('net10',r(e.netR10bps));txt('expectancy',r(e.expectancyR10bps));
+    txt('pf',e.profitFactorR10bps==null?'—':Number(e.profitFactorR10bps).toFixed(2));
+    txt('dd',r(e.maxDrawdownR10bps));txt('net20',r(e.netR20bps));
+
+    txt('forwardStates',c.forwardStates);txt('forwardTrades',c.forwardTrades);
+    txt('shadowOrders',c.shadowOrders);txt('shadowPositions',c.shadowPositions);txt('flagged',e.flaggedBars);
+
+    document.getElementById('mt5Connected').innerHTML=badge(m.connected?'CONNECTED':'OFF');
+    txt('mt5Server',m.server||'—');txt('mt5Type',m.accountType||'—');
+    txt('mt5Verified',m.lastVerifiedAt?new Date(m.lastVerifiedAt).toLocaleString('vi-VN'):'—');
+
+    document.getElementById('the5ers').innerHTML=badge(g.the5ersReadiness||'—');
+    txt('approval',g.automationApprovalVerified?'VERIFIED':'CHƯA CÓ');
+    txt('risk',g.riskProfileApproved?'APPROVED':'CHƯA DUYỆT');
+    txt('demoSend',g.demoSendEnabled?'ON':'OFF');
+    txt('updated','Cập nhật: '+new Date(d.updatedAt).toLocaleString('vi-VN'));
+  }catch(e){
+    err.textContent='Không tải được dashboard: '+e.message;
+    err.style.display='block';
+  }
+}
+loadData();
+setInterval(loadData,30000);
+</script>
+</body>
+</html>
