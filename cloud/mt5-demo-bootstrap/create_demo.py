@@ -5,8 +5,9 @@ import urllib.parse
 import urllib.request
 
 from pymt5 import MT5WebClient, DemoAccountRequest
-from pymt5.constants import CMD_OPEN_DEMO
-from pymt5._parsers import _parse_open_account_result
+from pymt5.constants import CMD_OPEN_DEMO, CMD_VERIFY_CODE
+from pymt5._parsers import _parse_open_account_result, _parse_verification_status
+from pymt5.helpers import build_client_id
 
 WS_URI = "wss://web.metatrader.app/terminal"
 INGEST_URL = "https://oziktadfeenydvgobudr.supabase.co/functions/v1/ai-trade-mt5-vault-ingest"
@@ -76,7 +77,31 @@ async def main():
     )
 
     async with MT5WebClient(uri=WS_URI, timeout=25) as client:
-        await client.init_session()
+        cid = build_client_id(platform="github-actions", language="en-US")
+        await client.init_session(cid=cid)
+
+        verify_payload = client._build_opening_verification_payload(
+            request=request,
+            build=int(client.transport.server_build or 0),
+            cid=cid,
+        )
+        verify_raw = await client.transport.send_command(CMD_VERIFY_CODE, verify_payload)
+        verify_status = _parse_verification_status(verify_raw.body)
+        emit(
+            "OPENING_VERIFICATION",
+            command_code=int(verify_raw.code),
+            body_len=len(verify_raw.body or b""),
+            email_required=bool(verify_status.email),
+            phone_required=bool(verify_status.phone),
+            server_build=int(client.transport.server_build or 0),
+        )
+        if verify_raw.code != 0:
+            raise RuntimeError(f"VERIFICATION_COMMAND_REJECTED_{verify_raw.code}")
+        if verify_status.email and not request.email:
+            raise RuntimeError("EMAIL_VERIFICATION_REQUIRED")
+        if verify_status.phone and not request.phone:
+            raise RuntimeError("PHONE_VERIFICATION_REQUIRED")
+
         payload = client._build_opening_base_payload(request)
         raw = await client.transport.send_command(CMD_OPEN_DEMO, payload)
         body_len = len(raw.body or b"")
