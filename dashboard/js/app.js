@@ -42,6 +42,37 @@ function render(){
   document.getElementById("safety").innerHTML=renderSafety(o.mt5,o.gates);
   document.getElementById("updated").textContent="Cập nhật: "+new Date(o.updatedAt).toLocaleString("vi-VN")+" · refresh 30 giây";
   mountCandlestick(s.candles,s.currentTrade);
+  bindChartControls();
+}
+
+async function reloadChart(){
+  const s=store.get();
+  const symbol=document.getElementById("chartSymbol")?.value||s.selectedSymbol||CONFIG.defaultSymbol;
+  const timeframe=document.getElementById("chartTimeframe")?.value||s.selectedTimeframe||CONFIG.defaultTimeframe;
+  try{
+    const candles=await api.getFeature("candles",{symbol,timeframe,limit:160});
+    store.set({candles:candles.candles??[],selectedSymbol:symbol,selectedTimeframe:timeframe});
+    const current=store.get();
+    document.getElementById("chart").innerHTML=renderCandlestickShell(symbol,timeframe);
+    mountCandlestick(current.candles,current.currentTrade);
+    bindChartControls();
+  }catch(e){
+    const chart=document.getElementById("candlestickChart");
+    if(chart)chart.innerHTML='<div class="empty-state">Không tải được dữ liệu cho khung thời gian này.</div>';
+  }
+}
+
+function bindChartControls(){
+  const tf=document.getElementById("chartTimeframe");
+  if(tf&&!tf.dataset.bound){
+    tf.dataset.bound="1";
+    tf.addEventListener("change",reloadChart);
+  }
+  const symbol=document.getElementById("chartSymbol");
+  if(symbol&&!symbol.dataset.bound){
+    symbol.dataset.bound="1";
+    symbol.addEventListener("change",reloadChart);
+  }
 }
 
 async function load(){
