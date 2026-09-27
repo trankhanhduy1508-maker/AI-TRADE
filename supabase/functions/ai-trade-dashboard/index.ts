@@ -165,7 +165,7 @@ Deno.serve(async(req)=>{
   }
 
   if(!format){
-    const target="https://raw.githack.com/trankhanhduy1508-maker/AI-TRADE/2cec43f65cbbc4809ecdda47ad57cb521c2d744e/dashboard/index.html?t="+encodeURIComponent(token);
+    const target="https://raw.githack.com/trankhanhduy1508-maker/AI-TRADE/50739eeb59d15a0621ad4503d1f63d1e4aa17660/dashboard/index.html?t="+encodeURIComponent(token);
     return new Response(null,{
       status:302,
       headers:{
