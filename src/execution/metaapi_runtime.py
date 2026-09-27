@@ -1,53 +1,142 @@
-"""Runtime conversion helpers for MetaApi cloud market data."""
+"""MetaApi cloud market/runtime helpers."""
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 import math
 from typing import Any
 
-from src.execution.metaapi_cloud import MetaApiCloudAdapter
-from src.execution.mt5_runtime import RuntimeMarketState
+from src.execution.metaapi_cloud import MetaApiCloudAdapter, _get
+from src.execution.risk import RiskContext
+from src.execution.safety import SafetySnapshot
 from src.rule_engine.types import Bar
 
 
-def _parse_time(value: str) -> datetime:
-    parsed = datetime.fromisoformat(value.replace("Z", "+00:00"))
-    if parsed.tzinfo is None:
-        parsed = parsed.replace(tzinfo=timezone.utc)
-    return parsed.astimezone(timezone.utc)
+_TIMEFRAME_SECONDS = {
+    "1m": 60, "2m": 120, "3m": 180, "4m": 240, "5m": 300, "6m": 360,
+    "10m": 600, "12m": 720, "15m": 900, "20m": 1200, "30m": 1800,
+    "1h": 3600, "2h": 7200, "3h": 10800, "4h": 14400, "6h": 21600,
+    "8h": 28800, "12h": 43200, "1d": 86400, "1w": 604800,
+}
 
 
-def collect_metaapi_market_state(
-    adapter: MetaApiCloudAdapter,
+def _as_datetime(value: Any) -> datetime:
+    if isinstance(value, datetime):
+        return value if value.tzinfo is not None else value.replace(tzinfo=timezone.utc)
+    text = str(value).replace("Z", "+00:00")
+    parsed = datetime.fromisoformat(text)
+    return parsed if parsed.tzinfo is not None else parsed.replace(tzinfo=timezone.utc)
+
+
+async def closed_bars(
+    account: Any,
     *,
     symbol: str,
     timeframe: str,
     count: int,
-    magic: int,
-) -> RuntimeMarketState:
-    rows = adapter.historical_candles(symbol, timeframe, limit=count)
-    if not rows:
-        raise RuntimeError("MetaApi returned no historical candles")
-    bars = tuple(
-        Bar(
-            timestamp=str(row["time"]),
-            open=float(row["open"]),
-            high=float(row["high"]),
-            low=float(row["low"]),
-            close=float(row["close"]),
-            volume=float(row.get("tickVolume", row.get("volume", 0.0)) or 0.0),
-            closed=True,
-        )
-        for row in sorted(rows, key=lambda item: str(item["time"]))
+    now: datetime | None = None,
+) -> tuple[Bar, ...]:
+    if timeframe not in _TIMEFRAME_SECONDS:
+        raise ValueError(f"unsupported timeframe: {timeframe}")
+    if count < 2:
+        raise ValueError("count must be at least 2")
+    records = await account.get_historical_candles(
+        symbol=symbol,
+        timeframe=timeframe,
+        start_time=None,
+        limit=min(1000, count + 1),
     )
-    price = adapter.current_price(symbol)
-    bid = float(price["bid"])
-    ask = float(price["ask"])
-    tick_time = _parse_time(str(price["time"]))
-    contract = adapter.symbol_contract(symbol)
-    spread_points = (ask - bid) / contract.tick_size
-    if not math.isfinite(spread_points) or spread_points < 0:
-        raise RuntimeError("invalid MetaApi spread")
-    pnl = adapter.daily_pnl(magic=magic)
-    return RuntimeMarketState(bars, bid, ask, spread_points, pnl, tick_time)
+    if not records:
+        raise RuntimeError("MetaApi historical candles unavailable")
+    current = now or datetime.now(timezone.utc)
+    seconds = _TIMEFRAME_SECONDS[timeframe]
+    parsed: list[Bar] = []
+    for record in records:
+        opened = _as_datetime(_get(record, "time"))
+        # Historical endpoint may include the currently forming candle. Exclude it.
+        if opened + timedelta(seconds=seconds) > current:
+            continue
+        parsed.append(
+            Bar(
+                timestamp=opened.astimezone(timezone.utc).isoformat(),
+                open=float(_get(record, "open")),
+                high=float(_get(record, "high")),
+                low=float(_get(record, "low")),
+                close=float(_get(record, "close")),
+                volume=float(_get(record, "tickVolume", _get(record, "volume", 0.0)) or 0.0),
+                closed=True,
+            )
+        )
+    parsed.sort(key=lambda bar: bar.timestamp)
+    return tuple(parsed[-count:])
+
+
+def daily_pnl(connection: Any, *, magic: int, now: datetime | None = None) -> float:
+    current = now or datetime.now(timezone.utc)
+    start = current.astimezone(timezone.utc).replace(hour=0, minute=0, second=0, microsecond=0)
+    storage = connection.history_storage
+    deals = storage.get_deals_by_time_range(start, current) or ()
+    total = 0.0
+    for deal in deals:
+        if int(_get(deal, "magic", 0) or 0) != magic:
+            continue
+        for field in ("profit", "commission", "swap", "fee"):
+            total += float(_get(deal, field, 0.0) or 0.0)
+    return total
+
+
+async def runtime_inputs(
+    adapter: MetaApiCloudAdapter,
+    *,
+    own_open_positions: int,
+    current_symbol_volume: float,
+    daily_loss: float,
+    max_tick_age_seconds: float,
+    now: datetime | None = None,
+) -> tuple[float, float, SafetySnapshot, RiskContext]:
+    current = now or datetime.now(timezone.utc)
+    bid, ask, tick_time = await adapter.quote(
+        next(
+            p.symbol for p in await adapter.positions()
+            if p.magic >= 0
+        )
+    ) if False else (None, None, None)
+    raise RuntimeError("use runtime_inputs_for_symbol")
+
+
+async def runtime_inputs_for_symbol(
+    adapter: MetaApiCloudAdapter,
+    *,
+    symbol: str,
+    own_open_positions: int,
+    current_symbol_volume: float,
+    daily_loss_value: float,
+    max_tick_age_seconds: float,
+    manual_pause: bool = False,
+    now: datetime | None = None,
+) -> tuple[float, float, SafetySnapshot, RiskContext]:
+    current = now or datetime.now(timezone.utc)
+    bid, ask, tick_time = await adapter.quote(symbol)
+    contract = await adapter.symbol_contract(symbol)
+    spread_points = (ask - bid) / contract.point
+    if tick_time is None:
+        fresh = False
+    else:
+        tick_dt = _as_datetime(tick_time)
+        age = (current - tick_dt).total_seconds()
+        fresh = math.isfinite(age) and 0 <= age <= max_tick_age_seconds
+    snapshot = SafetySnapshot(
+        connected=True,
+        data_fresh=fresh,
+        state_known=True,
+        reconciled=True,
+        risk_allowed=True,
+        manual_pause=manual_pause,
+    )
+    context = RiskContext(
+        open_positions=own_open_positions,
+        spread_points=spread_points,
+        daily_loss=daily_loss_value,
+        current_symbol_volume=current_symbol_volume,
+    )
+    return bid, ask, snapshot, context
