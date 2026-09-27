@@ -1,3 +1,29 @@
+## Autonomous forward evaluation — 2026-09-27
+
+Daily cloud pipeline is now fully chained:
+
+1. `03:15 UTC` — `ai-trade-forward-shadow-daily`
+2. `03:20 UTC` — `ai-trade-shadow-broker-reconcile-daily`
+3. `03:25 UTC` — `ai-trade-forward-evaluate-daily`
+
+Current canonical state:
+- strategy: `TF-013A-FORWARD-DIVERSIFIED-TREND`
+- evaluation: `COLLECTING`
+- closed forward trades: 0
+- markets with trades: 0
+- shadow integrity: PASS
+- brokerOrders=false
+- liveMoneyLocked=true
+- accountRiskApproved=false
+
+Forward promotion gate was frozen before any closed forward trade.
+No performance decision is permitted until >=50 closed trades, >=120 elapsed days, and >=8 traded markets.
+
+Canonical view:
+`ai_trade.forward_validation_readiness`
+
+Evaluator never auto-enables The5ers, DEMO send, risk profile, or live/funded money.
+
 ## Autonomous shadow broker — 2026-09-27
 
 Current autonomous flow:
