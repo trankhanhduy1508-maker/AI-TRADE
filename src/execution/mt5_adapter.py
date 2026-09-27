@@ -363,6 +363,22 @@ class MT5BrokerAdapter:
         }
         return self._checked_send(client_order_id, request, broker_order_id=position.position_id)
 
+    def normalize_partial_volume(self, position: MT5Position, fraction: float) -> float:
+        if not math.isfinite(fraction) or not 0 < fraction < 1:
+            raise ValueError("fraction must be between 0 and 1")
+        contract = self._require_contract(position.symbol)
+        raw = position.volume * fraction
+        steps = math.floor((raw + 1e-12) / contract.volume_step)
+        volume = round(steps * contract.volume_step, contract.digits)
+        if volume < contract.volume_min:
+            volume = contract.volume_min
+        remaining = position.volume - volume
+        if remaining > 1e-12 and remaining < contract.volume_min:
+            volume = position.volume - contract.volume_min
+        if volume <= 0 or volume >= position.volume or not contract.valid_volume(volume):
+            raise ValueError("PARTIAL_VOLUME_NOT_REPRESENTABLE")
+        return volume
+
     def close_position(
         self,
         position_id: str,
