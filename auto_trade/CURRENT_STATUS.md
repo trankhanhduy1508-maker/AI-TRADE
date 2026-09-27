@@ -1,3 +1,59 @@
+## Founder Google Login — 2026-09-28
+
+Status: **PASS tới Google OAuth / cổng Admin thật đã thay Admin Preview**.
+
+### Stable Admin Login
+`https://oziktadfeenydvgobudr.supabase.co/functions/v1/ai-trade-dashboard?admin=1`
+
+Luồng:
+1. stable Supabase Admin URL;
+2. redirect tới `dashboard/admin.html`;
+3. hiển thị `Founder Login` + `ADMIN LOGIN`;
+4. nút `Đăng nhập Google để vào Admin`;
+5. OAuth qua Supabase Auth → Google;
+6. callback lưu Supabase access token trong browser localStorage;
+7. chuyển sang `dashboard/index.html?mode=admin`;
+8. dashboard API gửi bearer token lên Edge Function;
+9. backend verify token bằng Supabase Auth `/auth/v1/user`;
+10. backend map `auth.users.id` qua `ai_trade.dashboard_google_access` tới Founder access row;
+11. chỉ account Founder đã allowlist mới nhận runtime Founder data.
+
+Không dùng tên/email do client gửi để quyết định quyền. Mapping dùng stable Supabase Auth user UUID.
+
+### DB hardening
+Tạo `ai_trade.dashboard_google_access`:
+- FK tới `auth.users(id)`;
+- FK tới `dashboard_access_tokens(id)`;
+- RLS enabled;
+- revoke ALL cho `anon` / `authenticated`;
+- deny policy cho Data API;
+- Founder Google account đã đăng ký được map tới Founder access id 1.
+
+### Browser evidence
+TinyFish run:
+`300b225a-2a0f-440c-9283-7e1546401d8b`
+
+PASS:
+- stable Admin URL redirect đúng tới `dashboard/admin.html`;
+- thấy rõ `Founder Login`;
+- thấy rõ `ADMIN LOGIN`;
+- thấy nút `Đăng nhập Google để vào Admin`;
+- không có `ADMIN PREVIEW`;
+- chưa auth thì không expose runtime data;
+- click Google mở thật `accounts.google.com`;
+- Supabase OAuth callback được dùng;
+- Google Authorization Code Flow khởi động;
+- không thấy redirect/callback configuration error;
+- test dừng trước bước chọn tài khoản, không nhập credential.
+
+### Deploy
+- Edge Function `ai-trade-dashboard` v27 ACTIVE;
+- dedicated login page commit: `31c65a7e12626cf8100a052cc94699710c2b10c0`;
+- backend route commit: `377db5f0edef2a88e299e5991d0a489c227444be`;
+- Google bearer backend auth implemented in branch;
+- live money vẫn LOCKED;
+- không thay broker execution/risk/The5ers gates.
+
 ## AI-TRADE Supabase RLS hardening — 2026-09-28
 
 Status: **PASS / runtime verified**.
