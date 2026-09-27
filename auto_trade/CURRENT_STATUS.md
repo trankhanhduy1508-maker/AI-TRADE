@@ -1,3 +1,19 @@
+## 14-market 10-year historical backtest — 2026-09-27
+
+Historical coverage is now complete for the requested popular universe:
+EURUSD, GBPUSD, USDJPY, AUDUSD, USDCAD, USDCHF, NZDUSD, BTCUSD, ETHUSD, XAUUSD, USOIL, US30, NAS100, US500.
+
+- EURUSD/GBPUSD/USDJPY reused prior verified 10-year evidence; not rerun.
+- Supabase request #42 backtested the 11 previously missing markets: COMPLETE 11/11.
+- ETH Yahoo history was only 8.88 years, so it was not accepted as a 10-year result.
+- CryptoCompare fallback request #43 failed HTTP 401 and was not counted.
+- Coinbase public daily fallback request #45 completed ETH from 2016-05-18 to 2026-09-27: 10.36 years.
+- no broker orders.
+- research only.
+- report: `reports/MULTIASSET_10Y_BACKTEST_2026-09-27.md`.
+
+Historical research remains insufficient to approve live/DEMO risk or claim broker-net profitability. GROSS_ONLY markets must remain labelled gross-only.
+
 ## The5ers approval request + risk packet — 2026-09-27
 
 - Written approval request sent to The5ers Support at help@the5ers.com.
