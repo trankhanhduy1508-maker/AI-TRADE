@@ -105,6 +105,61 @@ Deno.serve(async(req)=>{
       (select automation_approval_verified from ai_trade.prop_program_config where provider='THE5ERS') as automation_approval_verified
   `;
 
+  if(url.searchParams.get("format")==="json"){
+    const payload={
+      ok:true,
+      evaluation:{
+        state:String(readiness?.evaluation_state??"COLLECTING"),
+        closedTrades:Number(readiness?.closed_trades??0),
+        elapsedDays:Number(readiness?.elapsed_days??0),
+        marketsWithTrades:Number(readiness?.markets_with_trades??0),
+        positiveMarkets:Number(readiness?.positive_markets??0),
+        netR10bps:Number(readiness?.net_r_10bps??0),
+        expectancyR10bps:Number(readiness?.expectancy_r_10bps??0),
+        profitFactorR10bps:readiness?.profit_factor_r_10bps==null?null:Number(readiness.profit_factor_r_10bps),
+        maxDrawdownR10bps:Number(readiness?.max_drawdown_r_10bps??0),
+        netR20bps:Number(readiness?.net_r_20bps??0),
+        flaggedBars:Number(readiness?.flagged_bars??0),
+        entryWithoutVisibleStop:Number(readiness?.entry_without_visible_stop??0)
+      },
+      counts:{
+        forwardStates:Number(counts?.forward_states??0),
+        forwardTrades:Number(counts?.forward_trades??0),
+        shadowOrders:Number(counts?.shadow_orders??0),
+        shadowPositions:Number(counts?.shadow_positions??0),
+        shadowRuns:Number(counts?.shadow_runs??0)
+      },
+      crons:crons.map((c:any)=>({
+        jobname:String(c.jobname),
+        schedule:String(c.schedule),
+        active:Boolean(c.active)
+      })),
+      mt5:{
+        connected:Boolean(demo?.is_active),
+        server:String(demo?.server??""),
+        accountType:String(demo?.account_type??""),
+        lastVerifiedAt:demo?.last_verified_at?new Date(demo.last_verified_at).toISOString():null
+      },
+      gates:{
+        the5ersReadiness:String(gates?.the5ers_readiness??""),
+        automationApprovalVerified:Boolean(gates?.automation_approval_verified),
+        riskProfileApproved:Boolean(gates?.risk_profile_approved),
+        demoSendEnabled:Boolean(gates?.demo_send_enabled),
+        liveMoneyLocked:true
+      },
+      updatedAt:new Date().toISOString()
+    };
+    return new Response(JSON.stringify(payload),{
+      status:200,
+      headers:{
+        "content-type":"application/json; charset=utf-8",
+        "cache-control":"no-store, max-age=0",
+        "access-control-allow-origin":"*",
+        "referrer-policy":"no-referrer"
+      }
+    });
+  }
+
   const closed=Number(readiness?.closed_trades??0);
   const days=Number(readiness?.elapsed_days??0);
   const markets=Number(readiness?.markets_with_trades??0);
