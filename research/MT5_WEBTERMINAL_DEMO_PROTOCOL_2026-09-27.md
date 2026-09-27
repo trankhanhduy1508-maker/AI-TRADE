@@ -283,3 +283,38 @@ Once an accepted egress or real demo credential exists, the next implementation 
 6. only then enable protective-stop DEMO order tests under separate approval gates.
 
 No live-money path is implied by this protocol work.
+
+
+## Alternate direct API route: Deriv legacy MT5
+
+A second route was investigated to avoid WebTerminal entirely.
+
+Official Deriv sources still expose the legacy account flow:
+
+- `verify_email`
+- `new_account_virtual`
+- `mt5_new_account`
+
+Evidence from official Deriv repositories:
+
+- `verify_email` is public (`auth_required: 0`);
+- valid purpose includes `account_opening`;
+- `new_account_virtual` accepts an email verification code from `verify_email`;
+- `mt5_new_account` creates either demo or real MT5 accounts and supports `dry_run=1`;
+- the official legacy examples use `wss://ws.derivws.com/websockets/v3?app_id=1089` and explicitly state app ID 1089 can be left in place for testing.
+
+AI-TRADE deployed a capability probe using that official test endpoint.
+
+Runtime result:
+- Supabase Edge Function could not establish the legacy Deriv WebSocket;
+- result: `DERIV_WS_ERROR`;
+- no verification email was sent;
+- no Deriv account was created;
+- no password was generated;
+- no MT5 request was submitted.
+
+Therefore this path is currently blocked at network/WebSocket transport from the existing Edge runtime, before identity or account creation.
+
+A live cloud-browser connector (TinyFish) was subsequently discovered in the ChatGPT plugin directory. It is suited to the remaining signup/browser step but is not currently connected.
+
+Do not substitute Deriv Options demo for this requirement: the Founder requested an MT5 demo account specifically.
