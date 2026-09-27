@@ -1,3 +1,41 @@
+## AI-TRADE Supabase RLS hardening — 2026-09-28
+
+Status: **PASS / runtime verified**.
+
+### Scope
+Chỉ schema `ai_trade`.
+Không đụng schema `public` của các phần CWS khác.
+Không thay broker execution, live-money gate, risk gate, The5ers gate hoặc Google Login.
+
+### Before
+- 35 AI-TRADE tables;
+- phần lớn `relrowsecurity=false`;
+- tất cả `anon` / `authenticated` table privileges đã là false;
+- mỗi table đã có policy `deny_api_access` cho `anon,authenticated` với `USING false / WITH CHECK false`.
+
+### Change
+Bật Row Level Security cho toàn bộ **35/35** table trong schema `ai_trade`.
+
+Kết quả:
+- `total_tables=35`;
+- `rls_enabled=35`.
+
+### Post-change authenticated smoke
+Dùng Founder token tạm thời riêng cho smoke test, sau đó revoke ngay.
+Token không được ghi vào repo/docs.
+
+PASS:
+- dashboard overview vẫn đọc được;
+- `format=current` → `ok=true`, `openPositions=[]`, `brokerOrders=false`, `liveMoneyLocked=true`;
+- `format=trades` → `ok=true`;
+- `format=arena` → `ok=true`, paper positions vẫn đọc được;
+- `format=symbol-spec&symbol=EURUSD` → `ok=true`, broker spec thật vẫn đọc được;
+- temporary token id `4` đã revoked tại `2026-09-27T20:58:21.141842Z`.
+
+### Supabase security advisor after change
+Không còn finding RLS nào thuộc schema `ai_trade`.
+Advisor còn findings thuộc schema `public` và project-level Auth/extension; các finding đó **ngoài phạm vi AI-TRADE Admin task này** và không được sửa để tránh ảnh hưởng CWS Render/portal.
+
 ## Founder/Admin authenticated E2E — 2026-09-28
 
 Status: **PASS / runtime thật / read-only**.
