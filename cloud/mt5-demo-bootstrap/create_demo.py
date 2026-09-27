@@ -1,181 +1,133 @@
-# TEMPORARY BUILD-6230 INSPECTION MODE.
-# Account creation is deliberately disabled until the current public frontend
-# onboarding schema is verified.
+# TEMPORARY BUILD-6230 ONBOARDING INSPECTION MODE.
+# No account creation commands are sent in this revision.
 import json
 import re
 import urllib.parse
 import urllib.request
 
-PAGES = [
-    "https://web.metatrader.app/",
-    "https://web.metatrader.app/terminal",
+ROOT="https://web.metatrader.app/terminal"
+UA="AI-TRADE-build6230-onboarding-inspector/1.1"
+
+CALL_PATTERNS=[
+    r"\.\w+\(\s*27\s*,",
+    r"\.\w+\(\s*30\s*,",
+    r"\.\w+\(\s*40\s*,",
+    r"\(\s*27\s*,",
+    r"\(\s*30\s*,",
+    r"\(\s*40\s*,",
 ]
-
-PATTERNS = [
-    r"sendCommand\s*\(\s*27\b",
-    r"sendCommand\s*\(\s*30\b",
-    r"sendCommand\s*\(\s*40\b",
-    r"email[_A-Za-z]*confirm",
-    r"phone[_A-Za-z]*confirm",
-    r"agreements",
-    r"open[_A-Za-z]*demo",
-    r"demo[_A-Za-z]*account",
-    r"verification",
-    r"first[_A-Za-z]*name",
-    r"second[_A-Za-z]*name",
+SEMANTIC=[
+    "openDemo","btnOpenDemo","accountOpening","verificationCodes",
+    "emailConfirm","phoneConfirm","firstName","secondName",
+    "#web_group_74","Forex Hedged USD"
 ]
-
-UA = "AI-TRADE-build6230-public-bundle-inspector/1.0"
-
 
 def fetch(url):
-    req = urllib.request.Request(
-        url,
-        headers={
-            "User-Agent": UA,
-            "Accept": "*/*",
-        },
-    )
-    with urllib.request.urlopen(req, timeout=25) as res:
-        return res.geturl(), res.read()
+    req=urllib.request.Request(url,headers={"User-Agent":UA,"Accept":"*/*"})
+    with urllib.request.urlopen(req,timeout=25) as r:
+        return r.geturl(),r.read()
 
-
-def js_refs(base_url, text):
-    refs = set()
-    for attr in ("src", "href"):
-        for m in re.finditer(
-            rf'{attr}\s*=\s*["\']([^"\']+\.js(?:\?[^"\']*)?)["\']',
-            text,
-            re.I,
-        ):
-            refs.add(urllib.parse.urljoin(base_url, m.group(1)))
-    # Vite/module chunks referenced inside JS.
-    for m in re.finditer(r'["\']([^"\']+\.js(?:\?[^"\']*)?)["\']', text):
-        value = m.group(1)
-        if "/" in value or value.startswith("."):
-            refs.add(urllib.parse.urljoin(base_url, value))
-    return refs
-
-
-def compact(s):
-    return re.sub(r"\s+", " ", s)
-
-
-def snippets(text, source):
-    out = []
-    normalized = compact(text)
-    for pattern in PATTERNS:
-        rx = re.compile(pattern, re.I)
-        for m in list(rx.finditer(normalized))[:12]:
-            lo = max(0, m.start() - 650)
-            hi = min(len(normalized), m.end() + 1100)
-            out.append(
-                {
-                    "source": source,
-                    "pattern": pattern,
-                    "snippet": normalized[lo:hi],
-                }
-            )
+def refs(base,text):
+    out=set()
+    for m in re.finditer(r'["\']([^"\']+\.js(?:\?[^"\']*)?)["\']',text):
+        v=m.group(1)
+        if "/" in v or v.startswith(".") or v.endswith(".js"):
+            out.add(urllib.parse.urljoin(base,v))
     return out
 
+def compact(s):
+    return re.sub(r"\s+"," ",s)
+
+def scan_text(source,text,kind="js"):
+    t=compact(text)
+    hits=[]
+    for pat in CALL_PATTERNS:
+        for m in list(re.finditer(pat,t))[:80]:
+            hits.append({
+                "source":source,"kind":kind,"type":"numeric_call","pattern":pat,
+                "snippet":t[max(0,m.start()-1400):min(len(t),m.end()+2200)]
+            })
+    for marker in SEMANTIC:
+        start=0
+        count=0
+        while count<12:
+            i=t.find(marker,start)
+            if i<0: break
+            hits.append({
+                "source":source,"kind":kind,"type":"semantic","marker":marker,
+                "snippet":t[max(0,i-900):min(len(t),i+2200)]
+            })
+            start=i+len(marker); count+=1
+    return hits
 
 def main():
-    queue = []
-    seen = set()
-    matches = []
-    page_meta = []
+    final,raw=fetch(ROOT)
+    html=raw.decode("utf-8","replace")
+    queue=sorted(refs(final,html))
+    seen=set()
+    all_hits=scan_text(final,html,"html")
+    maps_checked=0
+    source_map_hits=[]
 
-    for page in PAGES:
-        try:
-            final, raw = fetch(page)
-            text = raw.decode("utf-8", "replace")
-            page_meta.append(
-                {"requested": page, "final": final, "bytes": len(raw)}
-            )
-            matches.extend(snippets(text, final))
-            queue.extend(sorted(js_refs(final, text)))
-        except Exception as exc:
-            page_meta.append(
-                {
-                    "requested": page,
-                    "error": type(exc).__name__,
-                    "detail": str(exc)[:200],
-                }
-            )
-
-    # Crawl public JS chunks only, bounded to prevent runaway.
-    idx = 0
-    bundle_meta = []
-    while idx < len(queue) and len(seen) < 160:
-        url = queue[idx]
-        idx += 1
-        if url in seen:
-            continue
+    idx=0
+    while idx<len(queue) and len(seen)<180:
+        url=queue[idx]; idx+=1
+        if url in seen: continue
         seen.add(url)
         try:
-            final, raw = fetch(url)
-            text = raw.decode("utf-8", "replace")
-            bundle_meta.append({"url": final, "bytes": len(raw)})
-            found = snippets(text, final)
-            if found:
-                matches.extend(found)
-            # One level of imported chunks is useful for split frontend bundles.
-            for ref in js_refs(final, text):
-                if ref not in seen and len(queue) < 400:
-                    queue.append(ref)
-        except Exception as exc:
-            bundle_meta.append(
-                {
-                    "url": url,
-                    "error": type(exc).__name__,
-                    "detail": str(exc)[:160],
-                }
-            )
+            final_js,raw_js=fetch(url)
+            text=raw_js.decode("utf-8","replace")
+            all_hits.extend(scan_text(final_js,text,"js"))
+            for x in refs(final_js,text):
+                if x not in seen and len(queue)<500: queue.append(x)
 
-    # Deduplicate snippets by source+pattern+content.
-    unique = []
-    keys = set()
-    for item in matches:
-        key = (item["source"], item["pattern"], item["snippet"])
-        if key not in keys:
-            keys.add(key)
-            unique.append(item)
+            map_urls=[]
+            for m in re.finditer(r"sourceMappingURL=([^\s*]+)",text):
+                map_urls.append(urllib.parse.urljoin(final_js,m.group(1).strip()))
+            map_urls.append(final_js.split("?")[0]+".map")
+            for map_url in dict.fromkeys(map_urls):
+                if maps_checked>=120: break
+                maps_checked+=1
+                try:
+                    _,map_raw=fetch(map_url)
+                    data=json.loads(map_raw.decode("utf-8","replace"))
+                    sources=data.get("sources") or []
+                    contents=data.get("sourcesContent") or []
+                    for i,src_content in enumerate(contents):
+                        if not isinstance(src_content,str): continue
+                        src_name=sources[i] if i<len(sources) else f"source-{i}"
+                        found=scan_text(f"{map_url}::{src_name}",src_content,"sourcemap")
+                        if found: source_map_hits.extend(found)
+                except Exception:
+                    pass
+        except Exception:
+            pass
 
-    result = {
-        "status": "BUNDLE_INSPECTION_COMPLETE",
-        "pages": page_meta,
-        "bundles_scanned": len(seen),
-        "bundle_meta": bundle_meta[:200],
-        "match_count": len(unique),
-        "matches": unique[:120],
-        "broker_orders": False,
-        "demo_created": False,
-        "live_money_locked": True,
+    # Prioritize numeric calls and sourcemap hits, then semantic JS hits.
+    combined=source_map_hits+[x for x in all_hits if x["type"]=="numeric_call"]+[x for x in all_hits if x["type"]=="semantic"]
+    unique=[]; keys=set()
+    for x in combined:
+        k=(x["source"],x.get("pattern"),x.get("marker"),x["snippet"])
+        if k not in keys:
+            keys.add(k);unique.append(x)
+
+    result={
+        "status":"ONBOARDING_CALL_INSPECTION_COMPLETE",
+        "bundles_scanned":len(seen),
+        "maps_checked":maps_checked,
+        "sourcemap_hit_count":len(source_map_hits),
+        "numeric_hit_count":sum(1 for x in unique if x["type"]=="numeric_call"),
+        "total_hit_count":len(unique),
+        "hits":unique[:500],
+        "broker_orders":False,"demo_created":False
     }
+    with open("mt5_onboarding_calls.json","w",encoding="utf-8") as f:
+        json.dump(result,f,ensure_ascii=False,indent=2)
 
-    with open("mt5_bundle_inspection.json", "w", encoding="utf-8") as f:
-        json.dump(result, f, ensure_ascii=False, indent=2)
+    print(json.dumps({k:v for k,v in result.items() if k!="hits"},separators=(",",":")))
+    for x in unique[:100]:
+        if x["type"]=="numeric_call" or x["kind"]=="sourcemap":
+            print("ONBOARDING",json.dumps(x,ensure_ascii=False,separators=(",",":")))
 
-    print(
-        json.dumps(
-            {
-                "status": result["status"],
-                "pages": page_meta,
-                "bundles_scanned": len(seen),
-                "match_count": len(unique),
-                "matched_sources": sorted({x["source"] for x in unique}),
-                "broker_orders": False,
-                "demo_created": False,
-            },
-            separators=(",", ":"),
-            ensure_ascii=False,
-        )
-    )
-
-    for item in unique[:40]:
-        print("MATCH", json.dumps(item, ensure_ascii=False, separators=(",", ":")))
-
-
-if __name__ == "__main__":
+if __name__=="__main__":
     main()
-
