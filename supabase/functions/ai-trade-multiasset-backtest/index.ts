@@ -223,6 +223,54 @@ async function cryptoCompareBars(
   return bars;
 }
 
+async function coinbaseBars(
+  product:string,
+  start:string,
+  endExclusive:string,
+):Promise<Bar[]>{
+  const startMs=new Date(start+"T00:00:00Z").getTime();
+  const endMs=new Date(endExclusive+"T00:00:00Z").getTime();
+  const chunkMs=280*86400*1000;
+  const byTs=new Map<number,Bar>();
+
+  for(let chunkStart=startMs;chunkStart<endMs;chunkStart+=chunkMs){
+    const chunkEnd=Math.min(endMs,chunkStart+chunkMs);
+    const url=
+      "https://api.exchange.coinbase.com/products/"+
+      encodeURIComponent(product)+
+      "/candles?granularity=86400"+
+      "&start="+encodeURIComponent(new Date(chunkStart).toISOString())+
+      "&end="+encodeURIComponent(new Date(chunkEnd).toISOString());
+    const response=await fetch(url,{
+      headers:{
+        "user-agent":"AI-TRADE-research/0.6",
+        "accept":"application/json",
+      },
+    });
+    if(!response.ok) throw new Error("COINBASE_HTTP_"+response.status);
+    const rows=await response.json();
+    if(!Array.isArray(rows)) throw new Error("COINBASE_BAD_RESPONSE");
+
+    for(const row of rows){
+      if(!Array.isArray(row)||row.length<5) continue;
+      const timestamp=Number(row[0]);
+      const low=finite(row[1]);
+      const high=finite(row[2]);
+      const open=finite(row[3]);
+      const close=finite(row[4]);
+      if(open===null||high===null||low===null||close===null) continue;
+      if(open<=0||high<=0||low<=0||close<=0) continue;
+      if(!(high>=Math.max(open,close)&&low<=Math.min(open,close))) continue;
+      byTs.set(timestamp,{timestamp,open,high,low,close});
+    }
+    await new Promise(resolve=>setTimeout(resolve,360));
+  }
+
+  const bars=[...byTs.values()].sort((a,b)=>a.timestamp-b.timestamp);
+  if(bars.length<80) throw new Error("INSUFFICIENT_COINBASE_BARS");
+  return bars;
+}
+
 function summarize(rs:number[]):Metrics{
   if(rs.length===0){
     return {
@@ -445,13 +493,13 @@ Deno.serve(async(req)=>{
     const results=[];
     for(const instrument of selected){
       try{
-        const useCryptoCompare=instrument.key==="ETHUSD";
-        const bars=useCryptoCompare
-          ? await cryptoCompareBars("ETH","USD",REQUESTED_START,endExclusive)
+        const useCoinbase=instrument.key==="ETHUSD";
+        const bars=useCoinbase
+          ? await coinbaseBars("ETH-USD",REQUESTED_START,endExclusive)
           : await yahooBars(instrument.yahooSymbol,REQUESTED_START,endExclusive);
         results.push({
           ok:true,
-          dataSource:useCryptoCompare?"CRYPTOCOMPARE_CCCAGG":"YAHOO_RESEARCH_PROXY",
+          dataSource:useCoinbase?"COINBASE_EXCHANGE_PUBLIC":"YAHOO_RESEARCH_PROXY",
           ...analyze(instrument,bars)
         });
       }catch(error){
