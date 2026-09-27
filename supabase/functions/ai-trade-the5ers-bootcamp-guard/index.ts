@@ -37,12 +37,21 @@ Deno.serve(async(req)=>{
     const visibleStop=Boolean(body.visibleStop);
     const accountIsDemo=body.accountIsDemo===true;
     const projectedLoss=body.projectedLossAtStop==null?null:n(body.projectedLossAtStop);
+    const mode=String(body.mode??"GUARD").toUpperCase();
 
     const initial=n(cfg.initial_balance);
     const target=initial*(1+n(cfg.profit_target_pct));
     const floor=initial*(1-n(cfg.max_loss_pct));
-    const remaining=Math.max(0,Math.min(balance,equity)-floor);
+    const lossBudgetTotal=initial-floor;
+    const currentReference=Math.min(balance,equity);
+    const remaining=Math.max(0,currentReference-floor);
     const projectedEquity=projectedLoss==null?null:equity-projectedLoss;
+    const projectedReference=projectedEquity==null
+      ? null
+      : Math.min(balance,projectedEquity);
+    const projectedRemaining=projectedReference==null
+      ? null
+      : Math.max(0,projectedReference-floor);
 
     const reasons:string[]=[];
     if(!cfg.enabled) reasons.push("BOOTCAMP_EXECUTION_DISABLED");
@@ -59,6 +68,23 @@ Deno.serve(async(req)=>{
     const achieved=Math.max(0,balance-initial);
     const targetDistance=target-initial;
     const progress=Math.min(1,targetDistance>0?achieved/targetDistance:1);
+    const lossBudgetRemainingPct=lossBudgetTotal>0
+      ? Math.max(0,Math.min(1,remaining/lossBudgetTotal))
+      : 0;
+    const nearFloorByCandidateBudget=
+      projectedLoss!=null&&projectedLoss>0&&projectedRemaining!=null
+        ? projectedRemaining<=projectedLoss
+        : null;
+
+    let alertState="NORMAL";
+    if(balance<=floor||equity<=floor){
+      alertState="FLOOR_REACHED";
+    }else if(projectedEquity!=null&&projectedEquity<=floor){
+      alertState="PROJECTED_STOP_BREACH";
+    }else if(nearFloorByCandidateBudget===true){
+      alertState="NEAR_FLOOR_BY_CANDIDATE_BUDGET";
+    }
+
     const decision=unique.length===0?"ALLOWED":"BLOCKED";
 
     await sql`
@@ -69,29 +95,58 @@ Deno.serve(async(req)=>{
         'THE5ERS',${balance},${equity},${projectedLoss},${visibleStop},
         ${decision},${JSON.stringify(unique)}::jsonb,
         ${JSON.stringify({
-          phase:Number(cfg.phase),targetBalance:target,lossFloor:floor,
-          remainingLossBudget:remaining,progressToTarget:progress,
-          accountIsDemo,automationApprovalVerified:Boolean(cfg.automation_approval_verified),
-          executionEnabled:Boolean(cfg.enabled)
+          mode,
+          phase:Number(cfg.phase),
+          targetBalance:target,
+          lossFloor:floor,
+          currentReference,
+          remainingLossBudget:remaining,
+          lossBudgetTotal,
+          lossBudgetRemainingPct,
+          progressToTarget:progress,
+          distanceToTarget:Math.max(0,target-balance),
+          distanceToFloor:Math.max(0,currentReference-floor),
+          projectedRemainingLossBudget:projectedRemaining,
+          nearFloorByCandidateBudget,
+          alertState,
+          accountIsDemo,
+          automationApprovalVerified:Boolean(cfg.automation_approval_verified),
+          executionEnabled:Boolean(cfg.enabled),
+          rulesCheckedAt:cfg.rules_checked_at
         })}::jsonb
       )
     `;
 
     return json({
       ok:true,
+      mode,
       provider:"THE5ERS",
       program:"BOOTCAMP",
       phase:Number(cfg.phase),
       decision,
       reasons:unique,
       initialBalance:initial,
+      balance,
+      equity,
       targetBalance:target,
       lossFloor:floor,
+      currentReference,
+      distanceToTarget:Math.max(0,target-balance),
+      distanceToFloor:Math.max(0,currentReference-floor),
+      lossBudgetTotal,
       remainingLossBudget:remaining,
+      lossBudgetRemainingPct,
       progressToTarget:progress,
+      projectedLossAtStop:projectedLoss,
       projectedEquityAtStop:projectedEquity,
+      projectedRemainingLossBudget:projectedRemaining,
+      nearFloorByCandidateBudget,
+      alertState,
+      accountIsDemo,
+      visibleStop,
       automationApprovalVerified:Boolean(cfg.automation_approval_verified),
       executionEnabled:Boolean(cfg.enabled),
+      rulesCheckedAt:cfg.rules_checked_at,
       liveMoneyLocked:true
     });
   }catch(error){
