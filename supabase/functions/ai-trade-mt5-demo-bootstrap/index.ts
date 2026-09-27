@@ -29,6 +29,7 @@ const CMD_SEND_VERIFY_CODES = 40;
 type Frame = { command: number; code: number; body: Buffer };
 
 type RequestBody = {
+  mode?: "transport_probe" | "open_demo";
   first_name?: string;
   second_name?: string;
   email?: string;
@@ -409,6 +410,33 @@ Deno.serve(async (req) => {
   }
 
   const body = await req.json().catch(() => ({})) as RequestBody;
+
+  if (body.mode === "transport_probe") {
+    const probe = new MT5Socket();
+    try {
+      await probe.connect();
+      return json({
+        ok: true,
+        status: "TRANSPORT_READY",
+        serverBuild: probe.serverBuild,
+        ws: true,
+        aesKeyLength: probe.key.length,
+        brokerOrders: false,
+        liveMoneyLocked: true,
+      });
+    } catch (e) {
+      return json({
+        ok: false,
+        status: "TRANSPORT_ERROR",
+        error: e instanceof Error ? e.message : String(e),
+        brokerOrders: false,
+        liveMoneyLocked: true,
+      }, 500);
+    } finally {
+      probe.close();
+    }
+  }
+
   const firstName = String(body.first_name ?? "").trim();
   const secondName = String(body.second_name ?? "").trim();
   const email = String(body.email ?? "").trim().toLowerCase();
