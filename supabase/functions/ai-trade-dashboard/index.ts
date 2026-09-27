@@ -122,6 +122,21 @@ Deno.serve(async(req)=>{
       "referrer-policy":"no-referrer"
     }});
   }
+  const publicFormat=url.searchParams.get("format");
+  if(publicFormat==="preview-candles"){
+    const symbol=String(url.searchParams.get("symbol")??"EURUSD").toUpperCase();
+    const timeframe=String(url.searchParams.get("timeframe")??"1h").toLowerCase();
+    if(!YAHOO_SYMBOLS[symbol]||!["15m","30m","1h","4h","1d"].includes(timeframe)){
+      return new Response(JSON.stringify({ok:false,error:"UNSUPPORTED_MARKET_OR_TIMEFRAME"}),{status:400,headers:{"content-type":"application/json","cache-control":"no-store"}});
+    }
+    const candles=await yahooCandles(symbol,timeframe,220);
+    return new Response(JSON.stringify({ok:true,symbol,timeframe,candles,publicMarketData:true}),{status:200,headers:{
+      "content-type":"application/json; charset=utf-8",
+      "cache-control":"public, max-age=30",
+      "access-control-allow-origin":"*",
+      "referrer-policy":"no-referrer"
+    }});
+  }
   const token=url.searchParams.get("t")??"";
   const access=await accessContext(token);
   if(!access || ["SUSPENDED","REVOKED"].includes(String(access.entitlement_state))){
@@ -135,7 +150,7 @@ Deno.serve(async(req)=>{
     });
   }
 
-  const format=url.searchParams.get("format");
+  const format=publicFormat;
   const isFounder=String(access.access_role)==="FOUNDER";
 
   if(format==="admin-testers"){
