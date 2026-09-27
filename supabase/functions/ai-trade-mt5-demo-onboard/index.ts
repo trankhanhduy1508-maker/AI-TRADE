@@ -67,8 +67,8 @@ Deno.serve(async(req)=>{
     return html("<h2>Dữ liệu tài khoản không hợp lệ.</h2>",400);
   }
 
-  if(!/demo/i.test(server)){
-    return html("<h2>Bị chặn: server phải là DEMO.</h2>",400);
+  if(server!=="MetaQuotes-Demo"){
+    return html("<h2>Bị chặn: chỉ chấp nhận MetaQuotes-Demo.</h2>",400);
   }
 
   const login=BigInt(loginText);
