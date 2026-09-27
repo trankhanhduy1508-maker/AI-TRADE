@@ -130,9 +130,15 @@ def runtime_snapshot(
     )
 
 
-def runtime_risk_context(*, own_open_positions: int, market: RuntimeMarketState) -> RiskContext:
+def runtime_risk_context(
+    *,
+    own_open_positions: int,
+    market: RuntimeMarketState,
+    current_symbol_volume: float = 0.0,
+) -> RiskContext:
     return RiskContext(
         open_positions=own_open_positions,
         spread_points=market.spread_points,
         daily_loss=market.daily_pnl,
+        current_symbol_volume=current_symbol_volume,
     )
