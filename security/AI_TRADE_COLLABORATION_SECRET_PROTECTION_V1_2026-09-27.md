@@ -1,193 +1,290 @@
-## Founder rule — Zero Repo Access Collaboration
+# CWS AI Trade — Collaboration & Secret Protection V2
 
-This rule overrides the earlier assumption that ordinary collaborators may work inside the main repository.
+Status: canonical collaboration/security architecture.
 
-External partners / collaborators must **not** receive direct read access to the proprietary CWS AI Trade repository or Core source.
+This supersedes the earlier blanket "Zero Repo Access" idea.
 
-### Collaboration model
+## Founder intent
 
-Use a one-way external contribution boundary:
+CWS AI Trade must be able to scale from one Founder to many engineers without exposing:
+- trading secrets;
+- AI-derived lessons;
+- research/backtest know-how;
+- broker/customer credentials;
+- production secrets.
 
-External collaborator
--> Collaboration Gateway / shared workspace
--> submits idea, UI artifact, API proposal, test case, or isolated code snippet
--> Founder/AI review
--> internal implementation into CWS AI Trade
--> sanitized result / API contract returned outward
+The correct model is **role-based least privilege**, not "nobody can touch the repo".
 
-The collaborator does not:
-- clone the Core repository;
-- browse repository history;
-- read private strategy source;
-- inspect research/backtest lessons;
-- access trading journals used as proprietary learning data;
-- access Supabase/Vault/broker credentials;
-- deploy production;
-- directly merge to protected branches.
+## Core principle
 
-### What collaborators may receive
+Different people get different surfaces.
 
-Only task-specific, sanitized material:
-- public/synthetic API contracts;
+Not everyone gets everything.
+Not everyone gets nothing.
+
+Access is granted by workstream, responsibility, and trust level.
+
+---
+
+## 1. External partner / temporary collaborator
+
+Examples:
+- designer;
+- contractor;
+- agency;
+- outside advisor;
+- short-term developer;
+- broker integration partner.
+
+Default access:
+- NO direct access to proprietary Core;
+- NO research/backtest vault;
+- NO production secrets;
+- NO customer financial-account data.
+
+They receive:
+- task-specific sandbox;
+- sanitized API contracts;
 - mock data;
-- screenshots;
-- wireframes;
-- isolated UI package;
-- redacted error logs;
-- acceptance criteria;
-- test fixtures with no proprietary signal logic.
+- screenshots/wireframes;
+- isolated package or component;
+- staging API with redacted responses.
 
-### Proprietary learning vault
+Their output enters CWS AI Trade through review, tests, and an internal merge.
 
-The following are treated as trade-secret material:
-- AI-derived trading lessons;
-- backtest/post-trade research conclusions;
-- failure-pattern knowledge;
-- market-regime observations;
-- strategy-selection logic;
-- promotion-gate evidence;
-- private risk heuristics;
-- customer-derived de-identified trading telemetry used for research.
+This is where **Zero Repo Access** remains the default.
 
-These materials must live behind a Founder-controlled private boundary and must never be included in collaborator-facing packages.
+---
 
-### Integration rule
+## 2. Internal product engineer
 
-External code is treated as **untrusted input**.
-
-It must be:
-1. received outside the Core repo;
-2. scanned/reviewed;
-3. tested against sanitized contracts;
-4. rewritten or cherry-picked internally where appropriate;
-5. committed by an authorized internal actor.
-
-No external contributor receives a path back into Core.
-
-### Preferred surfaces
-
-A collaborator-facing surface may be:
-- a separate public/private "Contributor Sandbox" repository containing no proprietary Core;
-- a ticket/spec system;
-- a plugin/workspace that exposes only narrow project contracts;
-- a staging API with sanitized responses.
-
-The Core repository remains invisible.
-
-# CWS AI Trade — Collaboration & Secret/Know-How Protection V1
-
-Status: security architecture draft.
-
-Founder requirement:
-multiple developers may collaborate, but no collaborator should automatically gain access to:
-- production secrets;
-- broker credentials;
-- customer financial-account credentials;
-- proprietary research corpus;
-- strategy notebooks/evidence not needed for their task;
-- deployment authority.
-
-## Principle: least privilege by workstream
-
-Split access by role.
-
-### UI developer
 May access:
-- dashboard frontend;
-- mocked schemas;
-- design tokens;
-- public API contracts.
+- CWS AI Trade App;
+- dashboard;
+- Google login;
+- billing;
+- account settings;
+- public/sanitized service contracts;
+- staging environment.
 
-Must not access:
-- Vault;
-- broker credentials;
-- proprietary strategy implementation;
-- private research datasets.
-
-### Backend/product developer
-May access:
-- product APIs;
-- non-secret schemas;
-- staging data or sanitized fixtures.
-
-Must not automatically access:
+Does not automatically receive:
+- proprietary strategy source;
+- research corpus;
+- private trading lessons;
 - production Vault;
-- live broker credentials;
-- strategy research corpus.
+- broker credentials.
 
-### Quant/research collaborator
-May access only the research package necessary for assigned experiments.
-Raw customer identity data must be excluded.
+---
 
-### Release/security owner
+## 3. Internal backend/platform engineer
+
+May access:
+- application backend;
+- service interfaces;
+- auth;
+- non-secret schemas;
+- staging infrastructure;
+- observability relevant to assigned services.
+
+Production access must be separately granted.
+
+No default access to proprietary research unless the job requires it.
+
+---
+
+## 4. Quant / AI research engineer
+
+May access:
+- assigned research workspace;
+- sanitized/de-identified market/trading datasets;
+- experiment harness;
+- backtest/forward-validation evidence needed for the assigned project.
+
+Must not receive raw customer identity data.
+
+Promotion to production remains a separate permission.
+
+---
+
+## 5. Core strategy engineer
+
+Small trusted group only.
+
+May access:
+- strategy runtime;
+- AI trading lessons;
+- private research;
+- risk heuristics;
+- promotion gates;
+- model/strategy versioning.
+
+Even this role does NOT automatically get:
+- production secrets;
+- customer broker passwords;
+- billing admin.
+
+---
+
+## 6. Security / release owner
+
+Very small group.
+
 Controls:
-- protected branch merges;
 - production deployment;
 - secret rotation;
-- Vault access;
-- strategy release/promotion.
+- Vault access policy;
+- release promotion;
+- incident response;
+- protected branches;
+- environment permissions.
 
-## Repository architecture
+Ordinary engineers should not need persistent production credentials.
 
-Recommended separation:
+---
 
-`app/`
-- customer UI
-- dashboard
-- auth UI
-- billing UI
+# Recommended repository/service structure
 
-`contracts/`
-- sanitized API schemas/interfaces
+## A. CWS AI Trade App
 
-`strategy_runtime/`
-- versioned execution interface
-- minimal runtime package
+Shareable with product engineers.
 
-`research_private/`
-- proprietary research, experiments, lessons, private evidence
-- restricted access repository or restricted workspace
+Contains:
+- customer frontend;
+- Google login UX;
+- dashboard;
+- chart;
+- billing UI;
+- account settings;
+- sanitized API clients;
+- tests with synthetic data.
 
-`infra_private/`
-- deployment/security configuration
-- restricted
+## B. CWS AI Trade Platform
 
-Do not assume a single Git repository is an adequate security boundary for highly sensitive know-how.
+Backend/product services.
 
-## Secrets
+Contains:
+- auth;
+- user profile;
+- entitlement/quota;
+- MT5 account binding metadata;
+- billing;
+- notification;
+- safe API gateway.
 
-Never put in Git:
-- MT5 passwords;
-- API keys;
-- Supabase service role;
-- broker tokens;
-- private datasets;
-- access tokens.
+## C. CWS AI Trade Core Private
 
-Use Vault/secrets manager and environment-scoped permissions.
+Highly restricted.
 
-## Git collaboration controls
+Contains:
+- proprietary strategy runtime;
+- strategy-selection logic;
+- risk engine;
+- private AI lessons;
+- research conclusions;
+- promotion rules;
+- execution policy.
 
-Use:
-- private repository;
-- role-based collaborator permissions;
-- protected main/release branches;
-- pull requests;
-- required reviews;
-- CODEOWNERS for sensitive paths;
-- no direct production deploy for ordinary contributors;
-- separate staging/prod secrets;
-- audit logs;
-- secret scanning.
+App/Platform talk to Core through a narrow authenticated interface.
 
-## IP protection reality
+## D. CWS AI Trade Research Vault
 
-No technical system can guarantee that a person who legitimately reads proprietary source code can never copy what they saw.
+Restricted to Founder + approved research team.
 
-Therefore the strongest practical design is:
-- collaborators receive only the minimum code/data required;
-- proprietary strategy logic and research are isolated behind an API or separate private repo/service;
-- most UI/product collaborators never receive the core strategy source at all.
+Contains:
+- backtests;
+- failed experiments;
+- market-regime observations;
+- training/replay evidence;
+- post-trade lessons;
+- datasets prepared for research.
 
-The goal is not “trust everyone.”
-The goal is “they never receive what they do not need.”
+This is the highest-value intellectual-property layer.
+
+## E. CWS AI Trade Infra Private
+
+Contains:
+- production infra definitions;
+- security policy;
+- deployment configuration;
+- secret references;
+- incident procedures.
+
+No plaintext secrets in Git.
+
+---
+
+# How large engineering organizations scale
+
+The scaling mechanism is **ownership**, not universal access.
+
+Each team owns a bounded service/module:
+- App team;
+- Identity team;
+- MT5/Broker Integration team;
+- Data team;
+- Quant Research team;
+- Core Strategy team;
+- Security/Release team.
+
+An engineer normally works inside their service boundary and consumes other teams through stable APIs/contracts.
+
+## Pull-request flow
+
+engineer branch
+-> tests
+-> code review
+-> CODEOWNER approval
+-> CI/security checks
+-> staging
+-> release approval
+-> production
+
+Direct production mutation by ordinary contributors is prohibited.
+
+## Secrets flow
+
+developer
+-> receives temporary/scoped credential if required
+-> secret manager injects it at runtime
+-> credential expires/rotates
+
+Do not distribute shared permanent passwords.
+
+---
+
+# Proprietary learning protection
+
+Treat the following as trade-secret material:
+- AI-derived trading lessons;
+- failure-pattern knowledge;
+- market-regime observations;
+- backtest conclusions;
+- strategy-selection logic;
+- promotion-gate evidence;
+- risk heuristics;
+- research datasets;
+- customer-derived de-identified telemetry used for strategy research.
+
+These should never be present in collaborator-facing mock packages.
+
+A product engineer can build a chart using:
+`GET /positions`
+
+without needing to know how the signal was generated.
+
+That separation is the security boundary.
+
+---
+
+# Important limitation
+
+No architecture can guarantee that a trusted engineer with legitimate access to source code cannot remember or copy what they are allowed to read.
+
+The practical defense is:
+- minimize access;
+- segment repositories/services;
+- log access;
+- use contractual/IP protections;
+- keep the most valuable Core knowledge available only to the smallest trusted group.
+
+The goal is scalable collaboration with bounded exposure, not absolute secrecy through technical fantasy.
