@@ -1,4 +1,4 @@
-# AI-TRADE
+# CWS AI Trade
 
 Hệ thống nghiên cứu giao dịch có hỗ trợ AI, theo trường phái **Reaction — không dự đoán cảm tính**.
 
