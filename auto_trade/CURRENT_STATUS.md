@@ -1,3 +1,22 @@
+## Paper-forward cloud — 2026-09-27
+
+**ACTIVE / INITIALIZED — chưa phải performance PASS.**
+
+AppDeploy hiện có paper-forward journal riêng, không broker orders:
+- EURUSD=X / GBPUSD=X / USDJPY=X;
+- Yahoo daily closed bars;
+- TF-004 fixed rules;
+- pyramiding OFF;
+- restart-safe checkpoint bằng `lastProcessed`;
+- persistent AppDeploy DB;
+- cron mỗi 6 giờ tại phút 15;
+- không backfill historical trades.
+
+Initialization probe request #29: HTTP 200, 3/3 symbols `WARMED`, 0 trades, 0R, no position, `brokerOrders=false`.
+
+Evidence: `reports/TF004_PAPER_FORWARD_CLOUD_2026-09-27.md`.
+
+
 ## Winner pyramiding cloud lab — 2026-09-27
 
 **NO_PYRAMID_PROMOTION.**
