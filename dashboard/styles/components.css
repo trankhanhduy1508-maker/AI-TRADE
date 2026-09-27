@@ -59,3 +59,23 @@
   .chart-toolbar{position:sticky;top:0;z-index:2;background:rgba(7,17,29,.96);padding:4px 0 8px}
   .chart-wrap{height:56vh;min-height:440px}
 }
+
+
+/* Founder terminal surface */
+.admin-status-grid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:0;padding:10px 12px}
+.admin-status-item{min-height:72px;padding:10px 12px;border-right:1px solid var(--line2);display:flex;flex-direction:column;justify-content:center;gap:8px}
+.admin-status-item:last-child{border-right:0}.admin-status-item small{color:var(--muted);font-size:10px;text-transform:uppercase;letter-spacing:.06em}.admin-status-item strong{font-size:24px}
+.positions-list{overflow:hidden}.position-row{width:100%;display:grid;grid-template-columns:1.1fr 1fr 1fr 1fr;gap:10px;align-items:center;text-align:left;padding:12px 14px;color:var(--text);background:transparent;border:0;border-top:1px solid var(--line2);cursor:pointer}
+.position-row:first-child{border-top:0}.position-row:hover,.position-row.active{background:rgba(69,169,255,.08)}.position-row span{display:flex;flex-direction:column;gap:4px}.position-row small{color:var(--muted);font-size:10px}.position-row b{font-size:13px}
+.chart-position-detail{display:flex;align-items:center;gap:9px;flex-wrap:wrap;color:var(--muted);font-size:11px}.chart-position-detail>span:not(.chart-position){padding-right:9px;border-right:1px solid var(--line2)}.chart-position-detail b{color:var(--text)}
+.price-projection{margin-top:10px;padding:10px 12px;border:1px solid rgba(178,101,255,.22);background:rgba(178,101,255,.06);border-radius:12px;min-height:54px;display:flex;align-items:center}.projection-muted{color:var(--muted);font-size:12px}.projection-grid{width:100%;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}.projection-grid span{display:flex;flex-direction:column;gap:4px}.projection-grid small{color:var(--muted);font-size:10px}.projection-grid b{font-size:13px}
+.founder-console .chart-section{margin-top:14px}.founder-console #journal,.founder-console #testerAdmin{content-visibility:auto;contain-intrinsic-size:500px}.founder-console #recentTrades,.founder-console #trainingArena,.founder-console #pipeline{content-visibility:auto;contain-intrinsic-size:420px}
+.footer #latency{display:inline}
+@media(max-width:760px){
+ .admin-status-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+ .admin-status-item{border-right:0;border-bottom:1px solid var(--line2);min-height:62px}.admin-status-item:last-child{border-bottom:0}
+ .position-row{grid-template-columns:1.2fr 1fr 1fr}.position-row span:last-child{display:none}
+ .chart-position-detail{gap:7px}.chart-position-detail>span:not(.chart-position){padding-right:7px}
+ .projection-grid{grid-template-columns:1fr}.price-projection{min-height:94px}
+ .chart-wrap{height:58vh;min-height:460px;touch-action:pan-y}
+}
