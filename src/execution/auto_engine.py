@@ -128,6 +128,9 @@ class DemoAutoTradeEngine:
         position: MT5Position,
         bars: Sequence[Bar],
         snapshot: SafetySnapshot,
+        risk_context: RiskContext,
+        bid: float,
+        ask: float,
     ) -> AutoTradeOutcome:
         state = self.state.get(position.position_id)
         if state is None:
@@ -153,12 +156,27 @@ class DemoAutoTradeEngine:
             )
             return AutoTradeOutcome(result.status, instruction.reason)
         if action == PositionAction.PARTIAL_CLOSE:
-            result = self.positions.partial_close(
-                position,
-                snapshot=snapshot,
-                client_order_id=self._intent_id("PARTIAL", stamp, position.position_id),
-                fraction=float(instruction.partial_fraction),
-            )
+            try:
+                result = self.positions.partial_close(
+                    position,
+                    snapshot=snapshot,
+                    client_order_id=self._intent_id("PARTIAL", stamp, position.position_id),
+                    fraction=float(instruction.partial_fraction),
+                )
+            except ValueError as exc:
+                if str(exc) != "PARTIAL_VOLUME_NOT_REPRESENTABLE":
+                    raise
+                if position.stop_loss is None:
+                    return AutoTradeOutcome("BLOCKED", "PARTIAL_UNAVAILABLE_AND_NO_PROTECTIVE_STOP")
+                fallback = self.adapter.modify_position(
+                    position.position_id,
+                    client_order_id=self._intent_id("PARTIAL_FALLBACK_TRAIL", stamp, position.position_id),
+                    stop_loss=float(position.stop_loss),
+                    take_profit=None,
+                )
+                if fallback.status in {"FILLED", "PARTIAL"}:
+                    self.state.mark_partial_done(position.position_id)
+                return AutoTradeOutcome(fallback.status, "PARTIAL_UNAVAILABLE_SWITCHED_TO_TRAILING")
             if result.status in {"FILLED", "PARTIAL"}:
                 self.adapter.modify_position(
                     position.position_id,
