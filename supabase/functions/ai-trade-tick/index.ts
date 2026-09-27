@@ -140,6 +140,57 @@ async function deterministicId(parts: string[]) {
   return "AI" + (await sha256(parts.join("|"))).slice(0, 20);
 }
 
+async function reserveComplianceIntent(args: {
+  strategyId: string;
+  symbol: string;
+  barStamp: string;
+  action: string;
+  visibleStop: boolean;
+  approvalVerified: boolean;
+}) {
+  const reasons: string[] = [];
+  if (!args.approvalVerified) reasons.push("WRITTEN_AUTOMATION_APPROVAL_REQUIRED");
+  if (!args.visibleStop) reasons.push("VISIBLE_STOP_LOSS_REQUIRED");
+
+  if (reasons.length === 0) {
+    const inserted = await sql`
+      insert into ai_trade.compliance_intents(
+        strategy_id,symbol,bar_stamp,action,visible_stop,approval_verified,details
+      )
+      values(
+        ${args.strategyId},${args.symbol},${args.barStamp},${args.action},
+        ${args.visibleStop},${args.approvalVerified},
+        ${JSON.stringify({
+          closedBar:true,
+          cooldown:"UNTIL_NEXT_CLOSED_BAR",
+          stealth:false
+        })}::jsonb
+      )
+      on conflict (strategy_id,symbol,bar_stamp) do nothing
+      returning id
+    `;
+    if (inserted.length === 0) {
+      reasons.push("ONE_INTENT_PER_BAR");
+      reasons.push("DETERMINISTIC_COOLDOWN");
+    }
+  }
+
+  const allowed = reasons.length === 0;
+  await appendEvent("compliance_gate", allowed ? "ALLOWED" : "BLOCKED", {
+    strategyId:args.strategyId,
+    symbol:args.symbol,
+    barStamp:args.barStamp,
+    action:args.action,
+    closedBar:true,
+    visibleStop:args.visibleStop,
+    writtenAutomationApproval:args.approvalVerified,
+    cooldown:"UNTIL_NEXT_CLOSED_BAR",
+    stealth:false,
+    reasons
+  });
+  return { allowed, reasons };
+}
+
 Deno.serve(async (req) => {
   try {
     const authRows = await sql`
@@ -160,9 +211,35 @@ Deno.serve(async (req) => {
       return json({ ok: false, status: "CONFIG_ERROR" }, 500);
     }
 
-    if (!config.enabled) {
-      await appendEvent("tick", "DISABLED", { symbol: config.symbol });
-      return json({ ok: true, status: "DISABLED" });
+    const readinessRows = await sql`
+      select *
+      from ai_trade.bootcamp_readiness
+      where provider='THE5ERS'
+    `;
+    const readiness = readinessRows[0];
+    if (!readiness) {
+      await appendEvent("tick", "BOOTCAMP_READINESS_MISSING");
+      return json({ ok:false, status:"BOOTCAMP_READINESS_MISSING" }, 500);
+    }
+    if (String(readiness.readiness) !== "ELIGIBLE_FOR_DEMO_PREFLIGHT") {
+      const status=String(readiness.readiness);
+      await appendEvent("tick", status, {
+        symbol:config.symbol,
+        phase:Number(readiness.phase),
+        approval:Boolean(readiness.automation_approval_verified),
+        riskProfileApproved:Boolean(readiness.risk_profile_approved),
+        executionEnabled:Boolean(readiness.execution_enabled),
+        demoSendEnabled:Boolean(readiness.demo_send_enabled)
+      });
+      return json({
+        ok:true,
+        status,
+        phase:Number(readiness.phase),
+        targetBalance:num(readiness.target_balance),
+        lossFloor:num(readiness.loss_floor),
+        tradingActivated:false,
+        liveMoneyLocked:true
+      });
     }
 
     const token = Deno.env.get("METAAPI_TOKEN")?.trim() ?? "";
@@ -201,7 +278,8 @@ Deno.serve(async (req) => {
     const startOfDay = new Date();
     startOfDay.setUTCHours(0, 0, 0, 0);
 
-    const [positionsAll, spec, price, deals, candlesRaw] = await Promise.all([
+    const [accountInfo, positionsAll, spec, price, deals, candlesRaw] = await Promise.all([
+      connection.getAccountInformation(),
       connection.getPositions(),
       connection.getSymbolSpecification(symbol),
       connection.getSymbolPrice(symbol),
@@ -225,6 +303,12 @@ Deno.serve(async (req) => {
 
     if (!spec || !price || !candlesRaw?.length) {
       throw new Error("MARKET_DATA_UNAVAILABLE");
+    }
+    if (String(accountInfo?.type) !== "ACCOUNT_TRADE_MODE_DEMO") {
+      throw new Error("DEMO_ACCOUNT_REQUIRED");
+    }
+    if (accountInfo?.tradeAllowed === false || accountInfo?.investorMode === true) {
+      throw new Error("ACCOUNT_TRADING_DISABLED");
     }
 
     const now = Date.now();
@@ -339,24 +423,66 @@ Deno.serve(async (req) => {
         String(config.strategy_id), symbol, "ENTRY", barStamp, direction,
       ]);
 
-      if (!config.demo_send_enabled) {
-        await appendEvent(
-          "entry",
-          "MONITOR_ONLY",
-          { direction, entry, stop, target },
-          clientId,
-        );
-        return json({
-          ok: true, status: "MONITOR_ONLY", direction, entry, stop, target,
-        });
-      }
-
       const volume = num(config.demo_volume);
       if (volume <= 0 || volume > 0.01) throw new Error("DEMO_VOLUME_CAP");
       if (
         spreadPoints > num(config.max_spread_points) ||
         dailyPnl <= -num(config.max_daily_loss_demo)
       ) throw new Error("RISK_GATE_BLOCKED");
+
+      const tickSize=num(spec.tickSize);
+      const lossTickValue=num(price.lossTickValue);
+      if(tickSize<=0||lossTickValue<=0){
+        await appendEvent("bootcamp_guard","BLOCKED",{
+          reason:"PROJECTED_STOP_LOSS_UNAVAILABLE",symbol,barStamp
+        },clientId);
+        return json({
+          ok:true,status:"BOOTCAMP_GUARD_BLOCKED",
+          reasons:["PROJECTED_STOP_LOSS_UNAVAILABLE"],
+          tradingActivated:false,liveMoneyLocked:true
+        });
+      }
+      const projectedLossAtStop=
+        Math.abs(entry-stop)*lossTickValue*volume/tickSize;
+      const balance=num(accountInfo.balance);
+      const equity=num(accountInfo.equity);
+      const lossFloor=num(readiness.loss_floor);
+      const remainingLossBudget=Math.max(0,Math.min(balance,equity)-lossFloor);
+      const projectedEquityAtStop=equity-projectedLossAtStop;
+      const bootcampReasons:string[]=[];
+      if(projectedEquityAtStop<=lossFloor){
+        bootcampReasons.push("PROJECTED_STOP_BREACHES_MAX_LOSS");
+      }
+      if(projectedLossAtStop>remainingLossBudget){
+        bootcampReasons.push("INTENT_EXCEEDS_REMAINING_LOSS_BUDGET");
+      }
+      if(bootcampReasons.length){
+        await appendEvent("bootcamp_guard","BLOCKED",{
+          symbol,barStamp,balance,equity,lossFloor,
+          remainingLossBudget,projectedLossAtStop,projectedEquityAtStop,
+          reasons:bootcampReasons
+        },clientId);
+        return json({
+          ok:true,status:"BOOTCAMP_GUARD_BLOCKED",reasons:bootcampReasons,
+          remainingLossBudget,projectedLossAtStop,projectedEquityAtStop,
+          tradingActivated:false,liveMoneyLocked:true
+        });
+      }
+
+      const compliance=await reserveComplianceIntent({
+        strategyId:String(config.strategy_id),
+        symbol,
+        barStamp,
+        action:"ENTRY",
+        visibleStop:Number.isFinite(stop)&&stop>0,
+        approvalVerified:Boolean(readiness.automation_approval_verified)
+      });
+      if(!compliance.allowed){
+        return json({
+          ok:true,status:"COMPLIANCE_BLOCKED",reasons:compliance.reasons,
+          tradingActivated:false,liveMoneyLocked:true
+        });
+      }
 
       const options = {
         comment: "AI-TRADE DEMO",
@@ -432,14 +558,16 @@ Deno.serve(async (req) => {
           barStamp,
           positionId,
         ]);
-        if (!config.demo_send_enabled) {
-          return json({
-            ok: true,
-            status: "MONITOR_ONLY",
-            mode: "TRAILING_FALLBACK",
-          });
-        }
         if (stopLoss <= 0) throw new Error("PROTECTIVE_STOP_MISSING");
+        const compliance=await reserveComplianceIntent({
+          strategyId:String(config.strategy_id),symbol,barStamp,
+          action:"PARTIAL_FALLBACK_TRAIL",
+          visibleStop:stopLoss>0,
+          approvalVerified:Boolean(readiness.automation_approval_verified)
+        });
+        if(!compliance.allowed){
+          return json({ok:true,status:"COMPLIANCE_BLOCKED",reasons:compliance.reasons});
+        }
         const modified = await tradeIntent(
           fallbackId,
           () => connection.modifyPosition(positionId, stopLoss, 0),
@@ -464,13 +592,15 @@ Deno.serve(async (req) => {
         });
       }
 
-      if (!config.demo_send_enabled) {
-        return json({
-          ok: true,
-          status: "MONITOR_ONLY",
-          action: "PARTIAL_CLOSE",
-          partialVolume,
-        });
+      if(stopLoss<=0) throw new Error("PROTECTIVE_STOP_MISSING");
+      const partialCompliance=await reserveComplianceIntent({
+        strategyId:String(config.strategy_id),symbol,barStamp,
+        action:"PARTIAL_CLOSE",
+        visibleStop:stopLoss>0,
+        approvalVerified:Boolean(readiness.automation_approval_verified)
+      });
+      if(!partialCompliance.allowed){
+        return json({ok:true,status:"COMPLIANCE_BLOCKED",reasons:partialCompliance.reasons});
       }
 
       const partial = await tradeIntent(
@@ -483,13 +613,8 @@ Deno.serve(async (req) => {
           set partial_done=true, updated_at=now()
           where position_id=${positionId}
         `;
-        const dropId = await deterministicId([
-          String(config.strategy_id), symbol, "DROP_TP", barStamp, positionId,
-        ]);
-        await tradeIntent(
-          dropId,
-          () => connection.modifyPosition(positionId, stopLoss, 0),
-        );
+        // Do not perform a second broker mutation on the same closed bar.
+        // TP removal is deferred to the next bar so one-intent/bar remains durable.
       }
       await appendEvent(
         "partial_close",
@@ -502,6 +627,32 @@ Deno.serve(async (req) => {
         status: partial.status,
         action: "PARTIAL_CLOSE",
       });
+    }
+
+    if(
+      config.exit_mode==="PARTIAL_THEN_TRAIL" &&
+      state.partial_done &&
+      takeProfit>0
+    ){
+      if(stopLoss<=0) throw new Error("PROTECTIVE_STOP_MISSING");
+      const dropId=await deterministicId([
+        String(config.strategy_id),symbol,"DROP_TP_AFTER_PARTIAL",barStamp,positionId
+      ]);
+      const compliance=await reserveComplianceIntent({
+        strategyId:String(config.strategy_id),symbol,barStamp,
+        action:"DROP_TP_AFTER_PARTIAL",
+        visibleStop:stopLoss>0,
+        approvalVerified:Boolean(readiness.automation_approval_verified)
+      });
+      if(!compliance.allowed){
+        return json({ok:true,status:"COMPLIANCE_BLOCKED",reasons:compliance.reasons});
+      }
+      const dropped=await tradeIntent(
+        dropId,
+        ()=>connection.modifyPosition(positionId,stopLoss,0)
+      );
+      await appendEvent("drop_tp_after_partial",dropped.status,{barStamp},dropId);
+      return json({ok:true,status:dropped.status,action:"DROP_TP_AFTER_PARTIAL"});
     }
 
     if (
@@ -524,13 +675,15 @@ Deno.serve(async (req) => {
         const trailId = await deterministicId([
           String(config.strategy_id), symbol, "TRAIL", barStamp, positionId,
         ]);
-        if (!config.demo_send_enabled) {
-          return json({
-            ok: true,
-            status: "MONITOR_ONLY",
-            action: "TRAIL",
-            candidate,
-          });
+        if(candidate<=0) throw new Error("PROTECTIVE_STOP_MISSING");
+        const compliance=await reserveComplianceIntent({
+          strategyId:String(config.strategy_id),symbol,barStamp,
+          action:"TRAIL",
+          visibleStop:true,
+          approvalVerified:Boolean(readiness.automation_approval_verified)
+        });
+        if(!compliance.allowed){
+          return json({ok:true,status:"COMPLIANCE_BLOCKED",reasons:compliance.reasons});
         }
         const modified = await tradeIntent(
           trailId,
