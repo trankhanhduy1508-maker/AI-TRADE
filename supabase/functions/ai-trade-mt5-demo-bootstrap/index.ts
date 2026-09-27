@@ -30,7 +30,7 @@ const CMD_SEND_VERIFY_CODES = 40;
 type Frame = { command: number; code: number; body: Buffer };
 
 type RequestBody = {
-  mode?: "transport_probe" | "open_demo";
+  mode?: "transport_probe" | "open_demo" | "open_demo_alias";
   first_name?: string;
   second_name?: string;
   email?: string;
@@ -438,12 +438,13 @@ Deno.serve(async (req) => {
     }
   }
 
-  const firstName = String(body.first_name ?? "").trim();
-  const secondName = String(body.second_name ?? "").trim();
-  const email = String(body.email ?? "").trim().toLowerCase();
+  const aliasMode = body.mode === "open_demo_alias";
+  const firstName = aliasMode ? "AI" : String(body.first_name ?? "").trim();
+  const secondName = aliasMode ? "Trade" : String(body.second_name ?? "").trim();
+  const email = aliasMode ? "" : String(body.email ?? "").trim().toLowerCase();
   const emailCode = Number(body.email_code ?? 0);
 
-  if (!firstName || !secondName || !email || !email.includes("@")) {
+  if (!firstName || !secondName || (!aliasMode && (!email || !email.includes("@")))) {
     return json({
       ok: false,
       status: "IDENTITY_INPUT_REQUIRED",
