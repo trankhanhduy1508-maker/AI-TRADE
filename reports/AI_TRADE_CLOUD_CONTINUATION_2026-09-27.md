@@ -193,3 +193,29 @@ Live/funded-money automation remains hard locked.
 The `ai_trade` schema currently does not grant schema usage or table SELECT/INSERT/UPDATE privileges to Supabase `anon` or `authenticated` roles.
 
 RLS is not enabled on these private-schema tables, so RLS remains defense-in-depth work rather than a demonstrated public exposure at this checkpoint. No unrelated CWS public-schema security setting was changed.
+
+
+## J. Written approval request sent
+
+A real approval request was sent to The5ers Support at `help@the5ers.com`.
+
+Subject:
+`Request for written approval to use owner-developed automated trading software in Bootcamp`
+
+Gmail sent message id:
+`1a0e12ba86e3e300`
+
+The request explicitly disclosed:
+- owner-developed automated trading software;
+- closed-bar-only decisions;
+- one intent per strategy/symbol/bar;
+- broker-visible protective stop loss;
+- no stealth stop loss;
+- no HFT/tick scalping;
+- no prohibited arbitrage;
+- no emulator;
+- no copied third-party signals/shared third-party EA;
+- duplicate suppression and audit trail;
+- execution remains locked until written approval is verified.
+
+Sending the request is NOT approval evidence. `automation_approval_verified` remains false until a written affirmative response is received and verified.
