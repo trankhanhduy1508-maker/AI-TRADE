@@ -115,21 +115,25 @@ Deno.serve(async(req)=>{
 
   const rows=requested
     ? await sql`
-      select a.id,a.login,a.server,
-             pgp_sym_decrypt(a.password_cipher,s.key_text) as password
+      select a.account_login as login,a.server,
+             v.decrypted_secret as password
       from ai_trade.mt5_demo_accounts a
-      cross join ai_trade.mt5_demo_secret s
-      where s.id=1 and a.login=${BigInt(requested)}
-        and a.account_mode='DEMO' and a.server='MetaQuotes-Demo'
+      join vault.decrypted_secrets v on v.id=a.password_secret_id
+      where a.account_login=${BigInt(requested)}
+        and a.account_type='DEMO'
+        and a.server='MetaQuotes-Demo'
+        and a.is_active=true
       limit 1
     `
     : await sql`
-      select a.id,a.login,a.server,
-             pgp_sym_decrypt(a.password_cipher,s.key_text) as password
+      select a.account_login as login,a.server,
+             v.decrypted_secret as password
       from ai_trade.mt5_demo_accounts a
-      cross join ai_trade.mt5_demo_secret s
-      where s.id=1 and a.account_mode='DEMO' and a.server='MetaQuotes-Demo'
-      order by a.id desc
+      join vault.decrypted_secrets v on v.id=a.password_secret_id
+      where a.account_type='DEMO'
+        and a.server='MetaQuotes-Demo'
+        and a.is_active=true
+      order by a.last_verified_at desc nulls last,a.created_at desc
       limit 1
     `;
 
@@ -163,17 +167,13 @@ Deno.serve(async(req)=>{
 
     const account=parseAccount(acctResult.body);
     const verified=account.isDemo&&account.serverName==="MetaQuotes-Demo";
-    await sql`
-      update ai_trade.mt5_demo_accounts
-      set verified=${verified},
-          last_verified_at=case when ${verified} then now() else last_verified_at end,
-          server_build=${account.serverBuild},
-          metadata=coalesce(metadata,'{}'::jsonb)||${JSON.stringify({
-            validation:"WEBTERMINAL_READ_ONLY",
-            brokerOrders:false
-          })}::jsonb
-      where id=${Number(row.id)}
-    `;
+    if(verified){
+      await sql`
+        update ai_trade.mt5_demo_accounts
+        set last_verified_at=now(),is_active=true
+        where account_login=${login}
+      `;
+    }
 
     return json({
       ok:true,
