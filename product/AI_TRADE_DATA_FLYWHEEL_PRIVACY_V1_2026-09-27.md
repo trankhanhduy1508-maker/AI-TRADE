@@ -1,4 +1,4 @@
-# AI-TRADE — Data Flywheel & Privacy V1
+# CWS AI Trade — Data Flywheel & Privacy V1
 
 Status: product/privacy design direction, not legal advice.
 
@@ -60,7 +60,7 @@ Do not pre-check boxes.
 
 Keep purposes distinct, for example:
 - [ ] Allow de-identified trading telemetry to improve AI research.
-- [ ] Allow product usage analytics to improve AI-TRADE.
+- [ ] Allow product usage analytics to improve CWS AI Trade.
 - [ ] Allow personalized broker/offers/advertising.
 
 The advertising consent must not be silently bundled into AI-improvement consent.
