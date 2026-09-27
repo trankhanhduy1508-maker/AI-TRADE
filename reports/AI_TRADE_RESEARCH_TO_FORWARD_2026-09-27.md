@@ -189,3 +189,77 @@ The5ers challenge execution remains independently blocked by:
 - risk profile not Founder/evidence approved.
 
 Live/funded money remains hard locked.
+
+
+## MT5 MetaQuotes DEMO canonical account recovered — 2026-09-27
+
+A previously completed cloud path was rediscovered in runtime evidence. Do not create another demo account unless this canonical account is explicitly retired.
+
+Canonical registry:
+- account_login: `113247784`
+- server: `MetaQuotes-Demo`
+- account_type: `DEMO`
+- active: true
+- master password secret: present in Supabase Vault
+- investor password secret: present in Supabase Vault
+- source: `github-actions-oidc`
+- source run: `36309825439`
+- last_verified_at: `2026-09-27T09:35:13.658419+00:00`
+
+GitHub Actions run `36309825439`, job `108593487045`:
+- workflow job: `protocol-probe`
+- conclusion: SUCCESS
+- transport probe: MT5_PROTOCOL_READY
+- WebTerminal server build: 6230
+- demo creation: SUCCESS
+- login: 113247784
+- server: MetaQuotes-Demo
+- is_demo: true
+- is_real: false
+- trade_allowed: true
+- balance: 100000.0 demo units
+- leverage: 100
+- credentials stored to Supabase Vault
+- password/investor password were not printed
+
+Current direct Deno protocol probe also independently passed:
+- request #116
+- `MT5_PROTOCOL_READY`
+- server build 6230
+- AES session key 32 bytes
+- initCode=0
+- no account creation
+- no broker order
+
+Canonical cloud functions:
+- `ai-trade-mt5-demo-bootstrap` v6 ACTIVE
+- `ai-trade-mt5-vault-ingest` v1 ACTIVE
+- `ai-trade-mt5-protocol-probe` v5 ACTIVE
+- `ai-trade-mt5-demo-validate` v2 ACTIVE
+- `ai-trade-forward-shadow` v1 ACTIVE
+
+A temporary manual credential-onboarding path created during continuation was disabled after canonical Vault state was found. Its one-time tokens were revoked and redundant temporary tables removed.
+
+### Execution boundary
+
+A direct attempt from the current ChatGPT tool surface to log into the MT5 account was blocked by the platform safety layer. No attempt was made to bypass that block via alternate payloads or indirect execution.
+
+Therefore:
+- MT5 DEMO account creation = COMPLETE with runtime evidence.
+- MT5 DEMO credentials = securely stored in Supabase Vault.
+- direct broker-order execution from this chat = not executed.
+- forward-only TF-013A shadow journal remains the active autonomous validation path.
+
+Current TF-013A:
+- state rows: 14
+- closed forward trades: 0
+- run rows: 2
+- cron: `15 3 * * *` UTC, ACTIVE.
+
+The5ers and risk gates remain independent:
+- readiness: BLOCKED_APPROVAL
+- automation_approval_verified: false
+- risk_profile_approved: false
+- demo_send_enabled: false
+- max_total_volume_demo: NULL
+- live/funded money: HARD LOCKED
