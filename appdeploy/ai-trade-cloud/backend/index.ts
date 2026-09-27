@@ -1264,6 +1264,300 @@ async function tf004PyramidLab() {
   };
 }
 
+
+type PaperForwardTrade = {
+  direction: 'UP' | 'DOWN';
+  entryTimestamp: number;
+  exitTimestamp: number;
+  r: number;
+  exitReason: 'TRAILING_STOP';
+};
+
+type PaperForwardPosition = {
+  direction: 'UP' | 'DOWN';
+  entryBarTimestamp: number;
+  entryPrice: number;
+  stop: number;
+  initialStop: number;
+};
+
+type PaperForwardRecord = {
+  key: string;
+  symbol: string;
+  lastProcessed: number;
+  position?: PaperForwardPosition;
+  trades: PaperForwardTrade[];
+  events: EventItem[];
+};
+
+type StoredPaperForwardRecord = PaperForwardRecord & { id: string };
+
+function paperCost(symbol: string): ResearchCost {
+  if (symbol === 'USDJPY=X') {
+    return {
+      spread: 0.02,
+      commission: 0.002,
+      slippage: 0.005,
+      swapPerBar: 0.001,
+    };
+  }
+  return {
+    spread: 0.0002,
+    commission: 0.00002,
+    slippage: 0.00005,
+    swapPerBar: 0.00001,
+  };
+}
+
+async function listPaperStates() {
+  const { items } = await db.list<PaperForwardRecord>('paper-forward', {
+    limit: 10,
+  });
+  return items as StoredPaperForwardRecord[];
+}
+
+async function getPaperState(symbol: string) {
+  const states = await listPaperStates();
+  return states.find((item) => item.key === symbol);
+}
+
+async function createPaperState(
+  symbol: string,
+  lastProcessed: number
+): Promise<StoredPaperForwardRecord> {
+  const record: PaperForwardRecord = {
+    key: symbol,
+    symbol,
+    lastProcessed,
+    trades: [],
+    events: [
+      {
+        at: new Date().toISOString(),
+        result: 'WARMED',
+        detail: 'Forward-only start; no historical trades backfilled',
+      },
+    ],
+  };
+  const [id] = await db.add('paper-forward', [record]);
+  if (!id) throw new Error('PAPER_STATE_CREATE_FAILED_' + symbol);
+  return { ...record, id };
+}
+
+async function savePaperState(state: StoredPaperForwardRecord) {
+  const { id, ...record } = state;
+  record.trades = record.trades.slice(-200);
+  record.events = record.events.slice(-40);
+  const [ok] = await db.update('paper-forward', [{ id, record }]);
+  if (!ok) throw new Error('PAPER_STATE_UPDATE_FAILED_' + state.symbol);
+}
+
+function paperEvent(
+  state: StoredPaperForwardRecord,
+  result: string,
+  detail?: string
+) {
+  state.events = [
+    ...state.events,
+    { at: new Date().toISOString(), result, detail },
+  ].slice(-40);
+}
+
+function paperMetrics(state: StoredPaperForwardRecord) {
+  return researchMetrics(
+    state.trades.map((trade) => ({
+      r: trade.r,
+      exitDay: new Date(trade.exitTimestamp * 1000)
+        .toISOString()
+        .slice(0, 10),
+    }))
+  );
+}
+
+async function runPaperSymbol(symbol: string) {
+  const bars = await yahooDailyBars(symbol);
+  const latest = bars[bars.length - 1];
+  let state = await getPaperState(symbol);
+  if (!state) {
+    state = await createPaperState(symbol, latest.timestamp);
+    return {
+      symbol,
+      status: 'WARMED',
+      lastProcessed: latest.timestamp,
+      metrics: paperMetrics(state),
+    };
+  }
+
+  const cost = paperCost(symbol);
+  const pendingIndexes: number[] = [];
+  for (let i = 0; i < bars.length; i += 1) {
+    if (bars[i].timestamp > state.lastProcessed) pendingIndexes.push(i);
+  }
+
+  if (pendingIndexes.length === 0) {
+    return {
+      symbol,
+      status: 'NO_NEW_CLOSED_BAR',
+      lastProcessed: state.lastProcessed,
+      position: state.position?.direction ?? null,
+      metrics: paperMetrics(state),
+    };
+  }
+
+  for (const index of pendingIndexes) {
+    const bar = bars[index];
+    let exitedThisBar = false;
+
+    if (state.position && index > 20) {
+      const priorChannel = bars.slice(index - 20, index);
+      if (state.position.direction === 'UP') {
+        state.position.stop = Math.max(
+          state.position.stop,
+          Math.min(...priorChannel.map((item) => item.low))
+        );
+      } else {
+        state.position.stop = Math.min(
+          state.position.stop,
+          Math.max(...priorChannel.map((item) => item.high))
+        );
+      }
+
+      const stopHit =
+        state.position.direction === 'UP'
+          ? bar.low <= state.position.stop
+          : bar.high >= state.position.stop;
+      if (stopHit) {
+        const exitPrice =
+          state.position.direction === 'UP'
+            ? state.position.stop - cost.slippage
+            : state.position.stop + cost.slippage;
+        const executed =
+          state.position.direction === 'UP'
+            ? exitPrice - state.position.entryPrice
+            : state.position.entryPrice - exitPrice;
+        const entryIndex = bars.findIndex(
+          (item) => item.timestamp === state.position!.entryBarTimestamp
+        );
+        const holdingBars =
+          entryIndex >= 0 ? Math.max(0, index - entryIndex) : 0;
+        const pnl =
+          executed -
+          cost.spread -
+          cost.commission -
+          cost.swapPerBar * holdingBars;
+        const initialRisk = Math.abs(
+          state.position.entryPrice - state.position.initialStop
+        );
+        const r = initialRisk > 0 ? pnl / initialRisk : 0;
+        state.trades.push({
+          direction: state.position.direction,
+          entryTimestamp: state.position.entryBarTimestamp,
+          exitTimestamp: bar.timestamp,
+          r,
+          exitReason: 'TRAILING_STOP',
+        });
+        paperEvent(
+          state,
+          'PAPER_EXIT',
+          state.position.direction + ' ' + r.toFixed(3) + 'R'
+        );
+        state.position = undefined;
+        exitedThisBar = true;
+      }
+    }
+
+    if (!state.position && !exitedThisBar && index > 20 && index > 5) {
+      const reference = bars[index - 21].close;
+      if (reference !== bar.close) {
+        const direction: 'UP' | 'DOWN' =
+          bar.close > reference ? 'UP' : 'DOWN';
+        const prior = bars.slice(index - 5, index);
+        const stop =
+          direction === 'UP'
+            ? Math.min(...prior.map((item) => item.low))
+            : Math.max(...prior.map((item) => item.high));
+        const validStop =
+          direction === 'UP' ? stop < bar.close : stop > bar.close;
+        if (validStop) {
+          const entryPrice =
+            direction === 'UP'
+              ? bar.close + cost.slippage
+              : bar.close - cost.slippage;
+          state.position = {
+            direction,
+            entryBarTimestamp: bar.timestamp,
+            entryPrice,
+            stop,
+            initialStop: stop,
+          };
+          paperEvent(
+            state,
+            'PAPER_ENTRY',
+            direction + ' @ ' + entryPrice.toFixed(6)
+          );
+        }
+      }
+    }
+
+    state.lastProcessed = bar.timestamp;
+  }
+
+  await savePaperState(state);
+  return {
+    symbol,
+    status: 'PROCESSED',
+    processedBars: pendingIndexes.length,
+    lastProcessed: state.lastProcessed,
+    position: state.position?.direction ?? null,
+    metrics: paperMetrics(state),
+  };
+}
+
+async function runPaperForward() {
+  const symbols = ['EURUSD=X', 'GBPUSD=X', 'USDJPY=X'];
+  const results = [];
+  for (const symbol of symbols) {
+    try {
+      results.push(await runPaperSymbol(symbol));
+    } catch (cause) {
+      results.push({
+        symbol,
+        status: 'ERROR',
+        error: cause instanceof Error ? cause.message : String(cause),
+      });
+    }
+  }
+  return {
+    generatedAt: new Date().toISOString(),
+    mode: 'PAPER_ONLY',
+    brokerOrders: false,
+    pyramiding: false,
+    results,
+  };
+}
+
+async function paperForwardSnapshot() {
+  const states = await listPaperStates();
+  return {
+    generatedAt: new Date().toISOString(),
+    mode: 'PAPER_ONLY',
+    brokerOrders: false,
+    pyramiding: false,
+    states: states.map((state) => ({
+      symbol: state.symbol,
+      lastProcessed: state.lastProcessed,
+      lastProcessedIso: new Date(state.lastProcessed * 1000).toISOString(),
+      position: state.position?.direction ?? null,
+      metrics: paperMetrics(state),
+      recentEvents: state.events.slice(-8).reverse(),
+    })),
+  };
+}
+
+export const paperForwardCronHandler = async () => {
+  await runPaperForward();
+  return { statusCode: 200 };
+};
+
 export const tradeCronHandler = async () => {
   await runTick();
   return { statusCode: 200 };
@@ -1278,6 +1572,15 @@ export const handler = router({
   ],
   'GET /api/research/tf004-pyramid': [
     async () => json(await tf004PyramidLab()),
+  ],
+  'GET /api/research/paper-forward': [
+    async () => json(await paperForwardSnapshot()),
+  ],
+  'GET /api/research/paper-forward/run': [
+    async () => {
+      await runPaperForward();
+      return json(await paperForwardSnapshot());
+    },
   ],
   'GET /api/status': [
     async () => {
