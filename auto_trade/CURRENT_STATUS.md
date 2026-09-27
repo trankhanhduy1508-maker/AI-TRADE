@@ -1,3 +1,62 @@
+## All-market paper training arena — 2026-09-27
+
+Founder requested accelerated learning across all major tracked markets.
+
+A separate paper-only arena is now active:
+- strategy id: `TF-013A-ARENA-ALL-MARKETS`
+- markets: 14
+- open paper positions: 14
+- closed arena trades: 0
+- arena journal events: 14
+- brokerOrders=false
+- liveMoneyLocked=true
+- contaminatesForward=false
+
+Arena universe:
+EURUSD, GBPUSD, USDJPY, AUDUSD, USDCAD, USDCHF, NZDUSD,
+XAUUSD, USOIL, BTCUSD, ETHUSD, US30, NAS100, US500.
+
+Arena behavior:
+- all markets may hold simultaneous paper positions;
+- initial position uses current TF-013A directional vote;
+- stop = 4 ATR(20);
+- daily mark-to-market in R;
+- stop or reversal closes the paper trade;
+- reversal may immediately open the opposite paper side;
+- every OPEN / MARK / CLOSE / REVERSE event is written to `ai_trade.training_arena_journal`;
+- closed arena trades are stored in `ai_trade.training_arena_trades`;
+- arena data never enters `forward_shadow_trades`.
+
+Autonomous schedule:
+- 03:15 UTC forward engine
+- 03:20 UTC shadow broker
+- 03:25 UTC forward evaluator
+- 03:30 UTC official forward journal
+- 03:35 UTC training arena
+
+Replay training also completed:
+- run: `TF013A_REPLAY_10X14_20260927`
+- 10 trades per market
+- 14 markets
+- 140 replay trades total
+- 15 lesson records (14 symbol + 1 portfolio)
+- 46 wins / 94 losses
+- net R at synthetic 10 bps: +22.0257R
+- average: +0.1573R/trade
+- this replay is training-only and does not promote execution.
+
+Training replay symbol observations:
+- positive net R: XAUUSD, BTCUSD, NAS100, US500, US30.
+- negative net R: USDCHF, ETHUSD, USDJPY, USDCAD, AUDUSD, USOIL, GBPUSD, EURUSD, NZDUSD.
+- these are not rankings or trade permissions; sample is only 10 trades per market.
+
+Dashboard:
+- premium modular UI includes Training Arena table with all open positions;
+- shows side, entry, floating R and recent arena journal lessons;
+- chart timeframe selector: M15 / M30 / H1 / H4 / D1;
+- chart title text removed as requested;
+- timeframe changes reload chart data without reloading the whole dashboard.
+
 ## Premium modular dashboard — 2026-09-27
 
 Founder selected Direction B: full premium UI with feature-level rollback boundaries.
