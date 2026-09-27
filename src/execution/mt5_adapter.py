@@ -292,7 +292,7 @@ class MT5BrokerAdapter:
         return self._checked_send(order.client_order_id, self._request_dict(order))
 
     def positions(self, symbol: str | None = None) -> tuple[MT5Position, ...]:
-        self._ensure_mutation_allowed()
+        self._ensure_read_allowed()
         if not self._connected and not self.connect():
             raise ConnectionError("MT5 terminal initialization failed")
         getter = getattr(self._terminal, "positions_get", None)
@@ -317,6 +317,7 @@ class MT5BrokerAdapter:
         """Ratchet protective levels without ever increasing risk."""
         if not client_order_id.strip():
             raise ValueError("client_order_id is required")
+        self._ensure_mutation_allowed()
         duplicate = self._duplicate_result(client_order_id)
         if duplicate is not None:
             return duplicate
@@ -364,6 +365,7 @@ class MT5BrokerAdapter:
         """Close all or part of a DEMO position with duplicate suppression."""
         if not client_order_id.strip():
             raise ValueError("client_order_id is required")
+        self._ensure_mutation_allowed()
         duplicate = self._duplicate_result(client_order_id)
         if duplicate is not None:
             return duplicate
@@ -394,6 +396,12 @@ class MT5BrokerAdapter:
             "comment": client_order_id,
         }
         return self._checked_send(client_order_id, request, broker_order_id=position.position_id)
+
+    def _ensure_read_allowed(self) -> None:
+        if self._mode == ExecutionMode.DISABLED:
+            raise TradingDisabledError("MT5 access is disabled")
+        if self._mode == ExecutionMode.LIVE:
+            raise TradingDisabledError("LIVE execution is locked")
 
     def _ensure_mutation_allowed(self) -> None:
         if self._mode == ExecutionMode.DISABLED or not self._allow_order_send:
