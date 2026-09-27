@@ -1,3 +1,34 @@
+## CWS AI Trade brand rename — 2026-09-27
+
+Canonical customer-facing product name is now **CWS AI Trade**.
+
+Changed:
+- README project title;
+- live dashboard header;
+- browser page title;
+- dashboard architecture documentation;
+- business model / identity / data flywheel / collaboration security documents;
+- contributing guide.
+
+Runtime evidence:
+- Supabase dashboard Edge Function v12 ACTIVE.
+- live request #158 HTTP 200 and redirects to the branded build.
+- branded HTML request #159 HTTP 200 and renders `<title>CWS AI Trade</title>`.
+
+Compatibility rule:
+- keep existing technical identifiers such as `ai_trade`, `TF-...`, and `ai-trade-...` unless a future migration has a functional reason;
+- do not rename database/schema/runtime identifiers merely for cosmetic branding.
+
+Repository note:
+- current GitHub repository path remains `trankhanhduy1508-maker/AI-TRADE`;
+- the connected GitHub capability does not expose repository rename/create-private-repository actions;
+- no alternative installed plugin provides a safer repository-admin action;
+- do not claim repository rename/private split is complete until an authorized repository-admin surface exists.
+
+Target split remains:
+- `CWS AI Trade App` — shareable product/UI surface;
+- `CWS AI Trade Core Private` — proprietary strategy/research/risk core.
+
 ## Founder product knowledge + light dashboard + collaboration boundary — 2026-09-27
 
 Canonical product/security docs added:
