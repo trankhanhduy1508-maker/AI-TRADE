@@ -86,7 +86,7 @@ function badgeClass(kind:string){
 }
 
 const SUPABASE_URL="https://oziktadfeenydvgobudr.supabase.co";
-const SUPABASE_PUBLISHABLE_KEY="sb_publishable_0cpWKAruLpo2lm412LKWKg_QN8RRU-l";
+const SUPABASE_AUTH_API_KEY=Deno.env.get("SUPABASE_ANON_KEY")??"";
 
 async function accessContext(req:Request,token:string){
   if(!token){
@@ -94,7 +94,7 @@ async function accessContext(req:Request,token:string){
     const bearer=auth.match(/^Bearer\s+(.+)$/i)?.[1]??"";
     if(!bearer)return null;
     const userRes=await fetch(SUPABASE_URL+"/auth/v1/user",{
-      headers:{apikey:SUPABASE_PUBLISHABLE_KEY,Authorization:"Bearer "+bearer},
+      headers:{apikey:SUPABASE_AUTH_API_KEY,Authorization:"Bearer "+bearer},
       cache:"no-store"
     });
     if(!userRes.ok)return null;
