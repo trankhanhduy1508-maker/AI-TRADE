@@ -103,3 +103,30 @@ Bootcamp challenge execution may only become eligible when all of the following 
 8. broker symbol/contract preflight passes.
 
 No live/funded-money auto execution is unlocked by this document.
+
+
+## Unified readiness gate
+
+Supabase view:
+`ai_trade.bootcamp_readiness`
+
+Current runtime state:
+- provider: THE5ERS
+- program: BOOTCAMP
+- phase: 1
+- target_balance: 5300
+- loss_floor: 4750
+- automation_approval_verified: false
+- execution_enabled: false
+- risk_profile_approved: false
+- demo_send_enabled: false
+- readiness: `BLOCKED_APPROVAL`
+
+Readiness precedence:
+1. BLOCKED_APPROVAL
+2. BLOCKED_RISK_PROFILE
+3. BLOCKED_EXECUTION_DISABLED
+4. BLOCKED_DEMO_SEND_DISABLED
+5. ELIGIBLE_FOR_DEMO_PREFLIGHT
+
+This is a readiness status only. `ELIGIBLE_FOR_DEMO_PREFLIGHT` still does not mean an order may be sent; broker/account/symbol/stop/compliance gates must pass afterward.
