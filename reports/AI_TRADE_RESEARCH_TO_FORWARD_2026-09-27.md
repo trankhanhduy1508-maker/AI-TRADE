@@ -310,3 +310,58 @@ Access:
 Supabase advisors after DDL did not report a new AI-TRADE-specific security finding for these tables. Existing advisor findings concern unrelated public CWS tables / pg_net placement / leaked-password protection.
 
 This layer is an execution-rehearsal substitute, not a claim that real broker orders were sent.
+
+
+## Autonomous TF-013A forward evaluator — 2026-09-27
+
+A preregistered promotion gate now evaluates only true forward evidence.
+
+Protocol:
+`research/TF_013A_FORWARD_PROMOTION_GATE_2026-09-27.md`
+
+States:
+- `COLLECTING`
+- `FORWARD_REJECT`
+- `FORWARD_CANDIDATE`
+
+Minimum evidence before any pass/reject decision:
+- 50 closed forward trades;
+- 120 elapsed calendar days from the first closed forward trade;
+- 8 markets with at least one closed forward trade.
+
+Frozen candidate gates at synthetic 10 bps:
+- aggregate net R > 0;
+- expectancy R > 0;
+- profit factor R > 1;
+- return/max-drawdown R > 0.5;
+- at least 5 positive markets;
+- single-market positive contribution dominance <= 40%.
+
+Synthetic 20 bps:
+- aggregate net R > 0.
+
+Execution-integrity gates:
+- zero same-bar multi-mutation flags;
+- zero shadow entries without visible stop;
+- duplicate client_order_id prevented by unique database constraint.
+
+These are research evidence gates only. They do not approve account-level risk.
+
+Runtime:
+- Edge Function: `ai-trade-forward-evaluate` v1 ACTIVE.
+- request #121: HTTP 200.
+- current state: `COLLECTING`.
+- closed trades: 0.
+- integrity gates currently PASS.
+- performance gates remain unevaluated/false because there is no forward sample yet.
+
+Autonomous schedule:
+- 03:15 UTC — forward signal engine.
+- 03:20 UTC — shadow broker reconcile.
+- 03:25 UTC — forward evaluator.
+
+Canonical latest state:
+`ai_trade.forward_validation_readiness`
+
+The evaluator is deliberately read-only with respect to execution gates:
+it never flips `risk_profile_approved`, `demo_send_enabled`, The5ers approval, or live/funded controls.
