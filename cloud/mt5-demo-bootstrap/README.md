@@ -25,3 +25,8 @@ Optional:
 - `MT5_DEMO_DEPOSIT` (default 100000 demo currency units)
 - `MT5_DEMO_LEVERAGE` (default 100)
 - `MT5_DEMO_GROUP`
+
+
+## Verification mailbox attribution
+
+When a service-owned temporary verification inbox is needed, the Supabase bootstrap uses [Mail.tm](https://mail.tm/) and its public API. Inbound content is allowlisted and treated as untrusted data; only the numeric MetaQuotes verification code is extracted.
