@@ -425,7 +425,7 @@ Deno.serve(async(req)=>{
       values(
         ${runKey},${STRATEGY_ID},${REQUESTED_START}::date,
         ${requestedEnd}::date,${UNIVERSE.length},
-        ${JSON.stringify(result)}::jsonb
+        ${sql.json(result)}
       )
       on conflict (run_key) do nothing
     `;
