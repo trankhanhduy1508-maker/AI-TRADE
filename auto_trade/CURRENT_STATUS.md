@@ -1,3 +1,24 @@
+## Mobile live dashboard — 2026-09-27
+
+A founder-facing live dashboard is deployed:
+- Edge Function: `ai-trade-dashboard` v1 ACTIVE.
+- mobile responsive;
+- auto refresh every 30 seconds;
+- token-protected;
+- token itself is not stored in GitHub;
+- response uses `no-store`, `no-referrer`, CSP and frame denial.
+
+Runtime request #122:
+- HTTP 200;
+- evaluation state: COLLECTING;
+- progress: 0/50 closed trades, 0/120 days, 0/8 markets;
+- all three daily pipeline jobs render ACTIVE;
+- forward/shadow metrics render from canonical database state;
+- MT5 DEMO connection status is shown without credentials;
+- The5ers/risk/live-money locks are shown.
+
+The dashboard is read-only and cannot enable trading gates.
+
 ## Autonomous forward evaluation — 2026-09-27
 
 Daily cloud pipeline is now fully chained:
