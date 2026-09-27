@@ -1,4 +1,4 @@
-# AI-TRADE — Identity, Google Login & MT5 Binding V1
+# CWS AI Trade — Identity, Google Login & MT5 Binding V1
 
 Status: architecture direction.
 
@@ -27,7 +27,7 @@ Free quota must not be keyed only to Google email.
 A user can own many Google accounts.
 
 Quota/account eligibility should be associated with:
-- AI-TRADE user id;
+- CWS AI Trade user id;
 - and a normalized broker account identity.
 
 Recommended MT5 identity key:
