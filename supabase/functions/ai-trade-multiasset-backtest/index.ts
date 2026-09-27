@@ -474,6 +474,7 @@ Deno.serve(async(req)=>{
       symbols?:string[];
       runKey?:string;
       sourceOverride?:"PRIMARY"|"COINBASE"|"YAHOO";
+      startOverride?:string;
     };
     const requestedSymbols=Array.isArray(body.symbols)
       ? new Set(body.symbols.map(x=>String(x).toUpperCase()))
@@ -500,9 +501,10 @@ Deno.serve(async(req)=>{
         const defaultCoinbase=instrument.key==="ETHUSD"&&!forceYahoo;
         const useCoinbase=forceCoinbase||defaultCoinbase;
         const product=instrument.key==="BTCUSD"?"BTC-USD":"ETH-USD";
+        const fetchStart=body.startOverride?.trim()||REQUESTED_START;
         const bars=useCoinbase
-          ? await coinbaseBars(product,REQUESTED_START,endExclusive)
-          : await yahooBars(instrument.yahooSymbol,REQUESTED_START,endExclusive);
+          ? await coinbaseBars(product,fetchStart,endExclusive)
+          : await yahooBars(instrument.yahooSymbol,fetchStart,endExclusive);
         results.push({
           ok:true,
           dataSource:useCoinbase?"COINBASE_EXCHANGE_PUBLIC":"YAHOO_RESEARCH_PROXY",
