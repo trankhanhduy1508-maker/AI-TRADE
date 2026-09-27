@@ -263,3 +263,50 @@ The5ers and risk gates remain independent:
 - demo_send_enabled: false
 - max_total_volume_demo: NULL
 - live/funded money: HARD LOCKED
+
+
+## MT5-compatible shadow broker layer — 2026-09-27
+
+Because the current ChatGPT tool surface blocks direct financial-account login/order execution, AI-TRADE now has an autonomous shadow broker layer instead of trying to bypass that restriction.
+
+Runtime components:
+- Edge Function: `ai-trade-shadow-broker-reconcile` v1 ACTIVE.
+- Tables:
+  - `ai_trade.shadow_broker_orders`
+  - `ai_trade.shadow_broker_positions`
+  - `ai_trade.shadow_broker_runs`
+- Cron: `ai-trade-shadow-broker-reconcile-daily`
+- Schedule: `20 3 * * *` UTC, five minutes after `ai-trade-forward-shadow-daily` at `15 3 * * *` UTC.
+
+Execution model:
+- mirrors only true TF-013A forward entries/exits;
+- stable client_order_id makes reconciliation idempotent;
+- every entry must carry a visible stop;
+- one normalized synthetic volume unit is used only for execution lifecycle testing;
+- account risk remains unapproved;
+- no pyramiding;
+- brokerOrders=false;
+- liveMoneyLocked=true;
+- reversal / multiple broker mutations on the same symbol+bar are flagged `MULTI_MUTATION_SAME_BAR`, not silently accepted.
+
+Runtime request #120:
+- status: `SHADOW_BROKER_RECONCILED`
+- orders inserted: 0
+- total shadow orders: 0
+- open shadow positions: 0
+- flagged bars: 0
+
+Zero orders is expected and is not treated as a trading PASS: TF-013A has not yet produced a new forward trade since its warm checkpoint.
+
+Idempotency self-test:
+- first fixture insert: 1
+- duplicate insert with same client_order_id: 0
+- self-test rows after cleanup: 0
+
+Access:
+- anon SELECT on shadow_broker_orders: false
+- authenticated SELECT on shadow_broker_orders: false
+
+Supabase advisors after DDL did not report a new AI-TRADE-specific security finding for these tables. Existing advisor findings concern unrelated public CWS tables / pg_net placement / leaked-password protection.
+
+This layer is an execution-rehearsal substitute, not a claim that real broker orders were sent.
