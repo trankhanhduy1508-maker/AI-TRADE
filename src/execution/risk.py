@@ -12,6 +12,7 @@ class RiskLimits:
     max_open_positions: int
     max_spread_points: float
     max_daily_loss: float
+    max_total_volume_per_symbol: float | None = None
 
     def __post_init__(self) -> None:
         if not math.isfinite(self.max_volume) or self.max_volume <= 0:
@@ -22,6 +23,11 @@ class RiskLimits:
             raise ValueError("max_spread_points must be finite and non-negative")
         if not math.isfinite(self.max_daily_loss) or self.max_daily_loss < 0:
             raise ValueError("max_daily_loss must be finite and non-negative")
+        if self.max_total_volume_per_symbol is not None and (
+            not math.isfinite(self.max_total_volume_per_symbol)
+            or self.max_total_volume_per_symbol <= 0
+        ):
+            raise ValueError("max_total_volume_per_symbol must be finite and positive")
 
 
 @dataclass(frozen=True)
@@ -29,10 +35,14 @@ class RiskContext:
     open_positions: int
     spread_points: float
     daily_loss: float
+    current_symbol_volume: float = 0.0
+    increases_existing_position: bool = False
 
     def __post_init__(self) -> None:
         if self.open_positions < 0:
             raise ValueError("open_positions must be non-negative")
+        if not math.isfinite(self.current_symbol_volume) or self.current_symbol_volume < 0:
+            raise ValueError("current_symbol_volume must be finite and non-negative")
 
 
 @dataclass(frozen=True)
@@ -55,8 +65,17 @@ class IndependentRiskEngine:
 
         if order.volume > self._limits.max_volume:
             reasons.append("MAX_VOLUME")
-        if context.open_positions >= self._limits.max_open_positions:
+        if (
+            context.open_positions >= self._limits.max_open_positions
+            and not context.increases_existing_position
+        ):
             reasons.append("MAX_OPEN_POSITIONS")
+        if (
+            self._limits.max_total_volume_per_symbol is not None
+            and context.current_symbol_volume + order.volume
+            > self._limits.max_total_volume_per_symbol
+        ):
+            reasons.append("MAX_SYMBOL_VOLUME")
         if context.spread_points > self._limits.max_spread_points:
             reasons.append("MAX_SPREAD")
         if context.daily_loss <= -self._limits.max_daily_loss:
