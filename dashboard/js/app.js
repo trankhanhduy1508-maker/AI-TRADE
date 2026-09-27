@@ -145,10 +145,23 @@ async function reloadChart(){
   if(adminPreview){
     const symbol=document.getElementById("chartSymbol")?.value||s.selectedSymbol||CONFIG.defaultSymbol;
     const timeframe=document.getElementById("chartTimeframe")?.value||s.selectedTimeframe||CONFIG.defaultTimeframe;
-    store.set({selectedSymbol:symbol,selectedTimeframe:timeframe,chartOpened:true,candles:[]});
     document.getElementById("chart").innerHTML=renderCandlestickShell(symbol,timeframe,true,null);
     const holder=document.getElementById("candlestickChart");
-    if(holder)holder.innerHTML='<div class="empty-state">Admin Preview — dữ liệu runtime chỉ hiện sau khi Founder xác thực.</div>';
+    if(holder)holder.innerHTML='<div class="chart-loading">Đang tải market data công khai…</div>';
+    try{
+      const u=new URL(CONFIG.apiBase);
+      u.searchParams.set("format","preview-candles");
+      u.searchParams.set("symbol",symbol);
+      u.searchParams.set("timeframe",timeframe);
+      const r=await fetch(u,{cache:"no-store"});
+      if(!r.ok)throw new Error("PREVIEW_CANDLES_"+r.status);
+      const data=await r.json();
+      const candles=data.candles??[];
+      store.set({selectedSymbol:symbol,selectedTimeframe:timeframe,chartOpened:true,candles});
+      await mountCandlestick(candles,null);
+    }catch{
+      if(holder)holder.innerHTML='<div class="empty-state">Admin Preview — market data hiện không tải được.</div>';
+    }
     bindChartControls();
     return;
   }
