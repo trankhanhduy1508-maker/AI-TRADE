@@ -5,6 +5,8 @@ import urllib.parse
 import urllib.request
 
 from pymt5 import MT5WebClient, DemoAccountRequest
+from pymt5.constants import CMD_OPEN_DEMO
+from pymt5._parsers import _parse_open_account_result
 
 WS_URI = "wss://web.metatrader.app/terminal"
 INGEST_URL = "https://oziktadfeenydvgobudr.supabase.co/functions/v1/ai-trade-mt5-vault-ingest"
@@ -74,7 +76,20 @@ async def main():
     )
 
     async with MT5WebClient(uri=WS_URI, timeout=25) as client:
-        result = await client.open_demo_account(request)
+        await client.init_session()
+        payload = client._build_opening_base_payload(request)
+        raw = await client.transport.send_command(CMD_OPEN_DEMO, payload)
+        body_len = len(raw.body or b"")
+        diagnostic = {
+            "event": "OPEN_DEMO_RAW",
+            "command_code": int(raw.code),
+            "body_len": body_len,
+            "credential_shape": body_len >= 76,
+        }
+        if raw.code != 0 or body_len < 76:
+            diagnostic["body_prefix_hex"] = (raw.body or b"")[:32].hex()
+        print(json.dumps(diagnostic, separators=(",", ":")), flush=True)
+        result = _parse_open_account_result(raw.body)
 
     emit(
         "OPEN_DEMO_RESULT",
@@ -84,8 +99,10 @@ async def main():
         password_exposed=False,
         investor_password_exposed=False,
     )
+    if raw.code != 0:
+        raise RuntimeError(f"DEMO_COMMAND_REJECTED_HEADER_{raw.code}")
     if not result.success or int(result.login or 0) <= 0 or not result.password:
-        raise RuntimeError(f"DEMO_CREATE_REJECTED_CODE_{result.code}")
+        raise RuntimeError(f"DEMO_CREATE_REJECTED_CODE_{result.code}_BODY_{body_len}")
 
     login = int(result.login)
     password = str(result.password)
