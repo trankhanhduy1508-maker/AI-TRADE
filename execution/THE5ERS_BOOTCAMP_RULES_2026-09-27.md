@@ -10,6 +10,20 @@ Official references:
 - https://the5ers.com/faqs/prohibited-trading-practices/
 - https://the5ers.com/terms-and-conditions/
 
+## Re-check 2026-09-27
+
+Official pages were re-checked on 2026-09-27 before any activation attempt.
+
+Observed official-page update labels:
+- English Terms & Conditions page: Last update – Aug. 3nd 2026.
+- Bootcamp workflow FAQ: last update: September 6, 2026.
+- EA FAQ: last update: July 22, 2026.
+- Prohibited Trading Practices FAQ: last update: July 28, 2026.
+
+The current Terms still require written notification and prior written approval before Automated Trading Software may be used. No written approval evidence has been verified for AI-TRADE. automation_approval_verified therefore remains false.
+
+The Bootcamp FAQ confirms the three challenge phases are on demo accounts, evaluation time is unlimited, the 3% daily pause applies only to funded accounts, and inactivity beyond 30 consecutive days may close the account.
+
 ## Challenge phases
 
 | Phase | Initial | Target | Max Loss | Target Balance | Absolute Floor |
@@ -45,7 +59,7 @@ Stealth SL is prohibited.
 
 Current official FAQ allows owned EA subject to prohibited-practice restrictions.
 
-Current Terms dated 2026-09-23 additionally require:
+Current official Terms re-checked 2026-09-27 additionally require:
 - written notification;
 - written approval before using Automated Trading Software.
 
