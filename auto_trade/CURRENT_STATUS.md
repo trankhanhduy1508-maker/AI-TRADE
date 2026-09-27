@@ -1,3 +1,56 @@
+## CWS AI Trade fast UI + Google Login + TradingView v5 — 2026-09-27
+
+Founder feedback from mobile tester screenshot triggered a shared Founder/Tester UI upgrade.
+
+### Instant first paint
+- static HTML now renders CWS AI Trade shell immediately before JavaScript executes;
+- skeleton cards are visible while live data loads;
+- last successful dashboard state is cached per access token for up to 10 minutes;
+- cached state hydrates immediately, then network refresh happens in background;
+- overview renders first; remaining feature requests load in parallel;
+- refresh remains 60 seconds.
+
+### Google Login
+- real Google OAuth button added to Founder and Tester header;
+- Google provider was runtime-probed through Supabase Auth and redirects to accounts.google.com;
+- Supabase publishable key is used client-side as intended; no service-role secret is exposed;
+- authenticated Google name/email is shown in the header;
+- logout removes the browser Google session token used by the dashboard client.
+
+### Chart upgrade
+- upgraded from TradingView Lightweight Charts 4.1.3 to official 5.0.8;
+- 14 selectable markets:
+  EURUSD, GBPUSD, USDJPY, AUDUSD, USDCAD, USDCHF, NZDUSD,
+  XAUUSD, USOIL, BTCUSD, ETHUSD, US30, NAS100, US500;
+- timeframes remain M15/M30/H1/H4/D1;
+- mobile pinch/zoom/drag and kinetic scroll enabled;
+- chart shows roughly the most recent 72 bars instead of compressing full history;
+- Entry/SL lines use selected market position data;
+- BUY/SELL entry marker is rendered on the selected market;
+- TP line is shown only when a real strategy TP exists; no fake TP is invented;
+- chart summary explicitly says TP is not set when strategy has none;
+- TradingView attribution logo enabled.
+
+### Performance behavior
+- chart library remains lazy but is prewarmed during browser idle time;
+- candle data still loads only when chart is opened;
+- switching market/timeframe reloads only chart data, not full dashboard.
+
+### Runtime evidence
+- Edge Function `ai-trade-dashboard` v16 ACTIVE.
+- #171 tester live HTTP 200.
+- #172 branded instant HTML HTTP 200 text/html.
+- #173 app.js HTTP 200 application/javascript.
+- #174 candlestick.js HTTP 200 application/javascript.
+- #175 TradingView Lightweight Charts v5.0.8 HTTP 200.
+- #176 BTCUSD H1 candles HTTP 200.
+- #177 NAS100 H4 candles HTTP 200.
+- #169/#170 Google OAuth authorize flow successfully redirects to accounts.google.com.
+
+No live-money gate was changed.
+No broker order was enabled.
+Founder and Tester continue to share one codebase with server-side role separation.
+
 ## CWS AI Trade Founder + Tester split — 2026-09-27
 
 Implemented two server-side access modes using one codebase:
