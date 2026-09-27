@@ -193,3 +193,73 @@ def test_partial_then_trail_closes_half_and_removes_target():
         adapter.close()
         kill.close()
         state.close()
+
+
+def test_winner_pyramiding_sends_add_order_and_persists_add_count():
+    terminal = Terminal()
+    terminal.position_records = [
+        SimpleNamespace(
+            ticket=42,
+            symbol="EURUSD",
+            type=0,
+            volume=.01,
+            price_open=1.1,
+            sl=1.09,
+            tp=0.0,
+            magic=260926,
+            comment="AI",
+        )
+    ]
+    with dbs() as db:
+        adapter = MT5BrokerAdapter(
+            terminal,
+            mode=ExecutionMode.DEMO,
+            allow_order_send=True,
+            ledger_path=db[0],
+        )
+        kill = KillSwitchStore(db[1])
+        kill.deactivate("test")
+        risk = IndependentRiskEngine(
+            RiskLimits(
+                .01, 1, 20, 100,
+                max_total_volume_per_symbol=.02,
+            )
+        )
+        entry = ExecutionCoordinator(
+            adapter, SafetyGate(kill), risk_engine=risk
+        )
+        state = PositionStateStore(db[2])
+        controller = PositionActionCoordinator(
+            PositionLifecycleManager(adapter), state
+        )
+        engine = DemoAutoTradeEngine(
+            config=AutoTradeConfig(
+                "TF-X",
+                "EURUSD",
+                exit_mode=ExitMode.TRAILING_ONLY,
+                trailing_lookback=50,
+                max_pyramid_adds=1,
+            ),
+            adapter=adapter,
+            entry=entry,
+            positions=controller,
+            state=state,
+            signal_evaluator=lambda history: Signal("UP", 1.09),
+        )
+
+        outcome = engine.on_closed_bar(
+            bars(),
+            bid=1.106,
+            ask=1.1062,
+            snapshot=snapshot(),
+            risk_context=RiskContext(
+                1, 10, 0, current_symbol_volume=.01
+            ),
+        )
+
+        assert outcome.status == "FILLED"
+        assert terminal.sent[0]["action"] == terminal.TRADE_ACTION_DEAL
+        assert state.get("42").pyramid_adds == 1
+        adapter.close()
+        kill.close()
+        state.close()
