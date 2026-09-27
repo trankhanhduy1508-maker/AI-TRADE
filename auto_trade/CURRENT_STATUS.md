@@ -1,3 +1,51 @@
+
+## Cloud-native production runtime — 2026-09-27
+
+**DEPLOYMENT READY — broker DEMO credentials not yet supplied.**
+
+Primary runtime:
+- AppDeploy app: `AI-TRADE Cloud`
+- public status dashboard: `https://ai-trade-cloud-vpwo6l.v2.appdeploy.ai/`
+- cron: `trade-tick` every 5 minutes
+- latest deployment status: `ready`
+- latest cron status: `success`
+- frontend/backend QA errors: none
+- live-money path: hard locked; runtime accepts MT5 DEMO only.
+
+Implemented in production runtime:
+- MetaApi cloud MT5 bridge, no Windows/desktop terminal dependency;
+- deterministic time-series momentum entry from closed bars;
+- mandatory protective SL;
+- `TRAILING_ONLY`, `FIXED_TP`, `PARTIAL_THEN_TRAIL` code paths;
+- partial-close broker volume normalization with safe trailing fallback;
+- trailing stop can only ratchet risk downward;
+- persistent bounded intent ledger and duplicate suppression;
+- daily-loss and spread gates;
+- broker state reconciliation by magic number;
+- winner-only pyramiding, maximum 1 add by default;
+- pyramiding restricted to MT5 netting accounts, same-direction signal, winning position, original stop already at least breakeven, and total DEMO volume cap;
+- secure backend secret storage via AppDeploy secret-entry flow;
+- dashboard exposes status only, never secret values.
+
+Evidence:
+- AppDeploy deployment `ai-trade-cloud-vpwo6l` reached `ready`;
+- cron handler enabled at `*/5 * * * *`, last observed status `success`, failure_count=0;
+- QA web/mobile reported no frontend or network errors.
+- MetaApi SDK 29.3.3 used in production runtime.
+
+Remaining broker-runtime gate:
+- `METAAPI_TOKEN`
+- `MT5_DEMO_LOGIN`
+- `MT5_DEMO_PASSWORD`
+- `MT5_DEMO_SERVER`
+- `AI_TRADE_DEMO_ENABLE`
+
+Until those are supplied through the out-of-band secret-entry flow, the engine remains fail-closed and cannot send a broker order.
+
+Production source mirror:
+- `appdeploy/ai-trade-cloud/`
+
+
 # AI AUTO TRADE — CURRENT STATUS
 
 ## North Star
