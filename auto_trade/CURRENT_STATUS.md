@@ -1,3 +1,55 @@
+## Research → forward transition — 2026-09-27
+
+Historical validation has reached the point where additional post-result tuning would increase data-mining risk.
+
+Completed sequence:
+- TF-004 maximum robustness validation -> NOT VALIDATED FOR AUTONOMOUS DEMO.
+- Preregistered TF-005A/006A/007A suite -> request #79 NO_VALIDATION_CANDIDATE.
+- Preregistered TF-008A/009A/010A portfolio suite -> request #80 NO_VALIDATION_CANDIDATE.
+- TF-011A sealed final holdout -> request #81 HOLDOUT_FAIL despite positive portfolio R; concentration gates failed.
+- TF-012A 17-year rolling causal OOS -> request #82 ROLLING_OOS_FAIL despite positive aggregate R; year/class/market breadth gates failed.
+
+No gate was relaxed after results.
+
+Generic MT5 DEMO cloud investigation:
+- official MetaApi path needs an auth token;
+- request #83 confirmed METAAPI_TOKEN and METAAPI_ACCOUNT_ID are both absent;
+- Replit path blocked by requires_active_subscription; no purchase made;
+- Firecrawl browser surfaces blocked by credits/token authorization;
+- no relevant MT5/MetaApi ChatGPT plugin was found;
+- no identity/OTP/CAPTCHA bypass attempted.
+
+True forward evidence is now active through TF-013A:
+- function: `ai-trade-forward-shadow` v1;
+- universe: 14 markets;
+- forward start: 2026-09-27;
+- historical bars warm indicators only;
+- no historical trade backfill;
+- monthly closed-bar review;
+- next-bar-open execution;
+- fixed 4 ATR emergency stop;
+- gap-aware stop;
+- gross / synthetic 10 bps / synthetic 20 bps journal;
+- brokerOrders=false;
+- liveMoneyLocked=true.
+
+Runtime:
+- #84: 14/14 WARMED, 0 trades.
+- #85: 14/14 NO_NEW_CLOSED_BAR, no duplicate.
+- cron `ai-trade-forward-shadow-daily`: `15 3 * * *` UTC, ACTIVE.
+
+Full checkpoint:
+`reports/AI_TRADE_RESEARCH_TO_FORWARD_2026-09-27.md`.
+
+The5ers:
+- no written approval reply found in the latest inbox check;
+- automation_approval_verified remains false.
+
+Risk:
+- risk_profile_approved remains false;
+- max_total_volume_demo remains NULL;
+- no hard-risk number was auto-approved.
+
 ## TF-004 maximum robustness validation — 2026-09-27
 
 **RESEARCH BASELINE ONLY — NOT VALIDATED FOR AUTONOMOUS DEMO.**
