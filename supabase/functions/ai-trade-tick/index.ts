@@ -424,7 +424,36 @@ Deno.serve(async (req) => {
       ]);
 
       const volume = num(config.demo_volume);
-      if (volume <= 0 || volume > 0.01) throw new Error("DEMO_VOLUME_CAP");
+      if (volume <= 0) throw new Error("DEMO_VOLUME_INVALID");
+      const maxTotalVolumeDemo = num(config.max_total_volume_demo, 0);
+      if (maxTotalVolumeDemo <= 0) {
+        await appendEvent("risk_gate", "RISK_PROFILE_INCOMPLETE", {
+          reason: "MAX_TOTAL_VOLUME_DEMO_NOT_APPROVED",
+          symbol,
+          barStamp
+        }, clientId);
+        return json({
+          ok:true,
+          status:"RISK_PROFILE_INCOMPLETE",
+          reasons:["MAX_TOTAL_VOLUME_DEMO_NOT_APPROVED"],
+          tradingActivated:false,
+          liveMoneyLocked:true
+        });
+      }
+      const existingOwnVolume=(ownPositions ?? [])
+        .reduce((sum:number,p:Row)=>sum+num(p.volume),0);
+      if(existingOwnVolume+volume>maxTotalVolumeDemo){
+        await appendEvent("risk_gate","TOTAL_VOLUME_BLOCKED",{
+          existingOwnVolume,
+          requestedVolume:volume,
+          maxTotalVolumeDemo
+        },clientId);
+        return json({
+          ok:true,status:"TOTAL_VOLUME_BLOCKED",
+          existingOwnVolume,requestedVolume:volume,maxTotalVolumeDemo,
+          tradingActivated:false,liveMoneyLocked:true
+        });
+      }
       if (
         spreadPoints > num(config.max_spread_points) ||
         dailyPnl <= -num(config.max_daily_loss_demo)
