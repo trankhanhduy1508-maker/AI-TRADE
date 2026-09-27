@@ -1,3 +1,38 @@
+## TF-004 maximum robustness validation — 2026-09-27
+
+**RESEARCH BASELINE ONLY — NOT VALIDATED FOR AUTONOMOUS DEMO.**
+
+Validation now includes:
+- 14 popular markets;
+- longest practical public daily history, from ~10 years to ~99 years depending on instrument;
+- OOS 70/30;
+- expanding walk-forward;
+- 27-configuration parameter sensitivity;
+- cost stress 0x → 5x;
+- 6 chronological regimes;
+- start-date sensitivity;
+- 1D/3D/5D time-scale stress;
+- 2,000-path Monte Carlo bootstrap per market;
+- next-open execution;
+- gap-aware stop fills;
+- winner-concentration stress;
+- Yahoo/Coinbase crypto source cross-check;
+- recent 1H + approximate 4H validation on all 14 markets.
+
+Critical finding:
+- only ETH, NAS100 and US500 retained both positive daily OOS + WF under next-open + gap-aware execution;
+- all three are GROSS_ONLY;
+- no research-cost-aware market currently has both positive conservative OOS and conservative WF;
+- intraday conservative validation also produced no research-cost-aware market with both-positive OOS + WF;
+- gold headline OOS +116R was dominated by one +112R trade and failed conservative execution.
+
+Therefore repeating the same historical backtest is no longer the primary missing evidence. TF-004 execution semantics and broker-aligned costs remain unresolved.
+
+Full evidence:
+`reports/TF004_MAXIMUM_ROBUSTNESS_VALIDATION_2026-09-27.md`.
+
+No broker orders were sent. Risk profile remains unapproved. The5ers approval remains unverified. Live/funded money remains hard locked.
+
 ## 14-market 10-year historical backtest — 2026-09-27
 
 Historical coverage is now complete for the requested popular universe:
