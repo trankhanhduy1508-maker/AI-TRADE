@@ -280,8 +280,7 @@ async function load(){
       if(trade)trade.innerHTML='<section class="section"><div class="section-head"><h2>Trạng thái giao dịch hiện tại</h2></div><div class="card card-pad"><div class="empty-state">Admin Preview — Entry / SL / TP / Lot / P&L unavailable khi chưa xác thực Founder.</div></div></section>';
       const box=document.getElementById("errorBox");
       if(box){box.textContent="ADMIN PREVIEW — giao diện Founder/Admin thật, dữ liệu runtime được ẩn cho đến khi xác thực Founder.";box.style.display="block"}
-      const holder=document.getElementById("candlestickChart");
-      if(holder)holder.innerHTML='<div class="empty-state">Admin Preview — chart runtime unavailable khi chưa xác thực Founder.</div>';
+      requestAnimationFrame(()=>reloadChart());
       return;
     }
     if(!token)throw new Error("Thiếu token dashboard trong link.");
