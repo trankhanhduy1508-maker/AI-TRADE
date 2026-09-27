@@ -26,6 +26,36 @@ Execution target mới bao gồm full lifecycle: entry + SL/TP + trailing/gồng
 
 Repo hiện có code-verified safety/risk/recovery pieces và native MQL5 EA, nhưng **chưa có runtime DEMO evidence đầy đủ** cho toàn lifecycle trên broker terminal. Live-money vẫn khóa.
 
+## Autonomous MT5 bot checkpoint — 2026-09-27
+
+**CODE VERIFIED — broker runtime chưa verify.**
+
+Đã implement:
+- autonomous closed-bar runner `scripts/run_mt5_demo_autotrade.py`;
+- MT5 market data bridge: closed bars, tick freshness, spread, daily PnL theo magic;
+- DEMO-only entry qua SafetyGate + IndependentRiskEngine;
+- broker-side SL/TP;
+- trailing stop ratchet only;
+- partial/full close;
+- `TRAILING_ONLY`, `FIXED_TP`, `PARTIAL_THEN_TRAIL`;
+- winner-only pyramiding với total symbol volume cap;
+- persistent lifecycle state;
+- broker-authoritative restart reconciliation;
+- deterministic intent ID + duplicate suppression;
+- own-position filtering bằng magic number.
+
+Verification local:
+- py_compile PASS;
+- targeted execution/risk/runtime regression: **36 passed**.
+
+Runtime blocker đã chứng minh:
+- CWS PC Commander: SSE probe 404.
+- Remote Desktop Commander: MAY086/MAY087/MAY088 đều offline tại thời điểm test.
+
+Vì không có Windows host online, **không** đánh dấu MT5 broker runtime PASS. Khi host online, gate kế tiếp là one-shot DEMO runtime rồi mới loop 24/7. Live-money vẫn khóa.
+
+Chi tiết: `reports/MT5_AUTONOMOUS_BOT_CHECKPOINT_2026-09-27.md`.
+
 ## Current Priority
 
 **P4 - EXIT-MODEL AND DATA-QUALITY VALIDATION - IN PROGRESS (TF-004 PRELIMINARY)**
