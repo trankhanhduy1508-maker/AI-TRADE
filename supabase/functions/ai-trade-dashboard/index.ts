@@ -222,19 +222,17 @@ Deno.serve(async(req)=>{
   }
   const url=new URL(req.url);
   if(url.searchParams.get("admin")==="1"){
-    return new Response(adminLoginHtml(),{status:200,headers:{
-      "content-type":"text/html; charset=utf-8",
+    return new Response(null,{status:302,headers:{
+      "location":"https://cws-ai-trade-founder-admin-j7mzf3.v2.appdeploy.ai/",
       "cache-control":"no-store, max-age=0",
-      "referrer-policy":"no-referrer",
-      "x-content-type-options":"nosniff"
+      "referrer-policy":"no-referrer"
     }});
   }
   if(url.searchParams.get("admin_app")==="1"){
-    return new Response(adminAppHtml(),{status:200,headers:{
-      "content-type":"text/html; charset=utf-8",
+    return new Response(null,{status:302,headers:{
+      "location":"https://cws-ai-trade-founder-admin-j7mzf3.v2.appdeploy.ai/?mode=admin",
       "cache-control":"no-store, max-age=0",
-      "referrer-policy":"no-referrer",
-      "x-content-type-options":"nosniff"
+      "referrer-policy":"no-referrer"
     }});
   }
   if(url.searchParams.get("admin_preview")==="1"){
