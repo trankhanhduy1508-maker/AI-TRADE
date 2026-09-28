@@ -32,3 +32,18 @@ The original local files were hashed and CRC/integrity checked before upload. In
 - QA APK SHA-256 `2506f856b1b258386b2509cbafc0138397d4de93a3f27200555c2f6cd46c0d99`.
 
 The APK corresponds to the GitHub Android debug workflow for commit `8b2642013526dd9448ed1a2e39b9ebe82e369f69`, which completed Gradle lint/assemble and an APK Signature Scheme v2 verification with an **ephemeral debug certificate**. Drive storage is a private QA convenience, not release-signature stability, device QA, Play Store publication or production readiness. Private Drive file IDs and full EPUB contents are intentionally omitted from this public checkpoint.
+
+## Automated replay quarantine (bounded, fail-closed)
+
+Applied Supabase migration `20260928102300_ai_trade_known_replay_quarantine_cron_v1` and committed the exact SQL as `supabase/migrations/20260928102300_ai_trade_known_replay_quarantine_cron_v1.sql`. Added two internal `SECURITY INVOKER` functions:
+
+- `ai_trade.quarantine_known_replay_run(text)` accepts **only** the preregistered TF-013A 14-symbol / 10-trade replay run format. It checks the completed run, trade counts, unique symbol/sequence pairs, entry/exit time/price bounds and all 15 original lesson records; builds a source-pinned JSONB snapshot and SHA-256 version. It deduplicates identical snapshots and creates an **additional immutable version** if an existing run's underlying evidence later changes. Stored data remain internal research with provider rights **UNVERIFIED**, `approved_for_training=false`, `public_inference=false`, `broker_orders=false` and `live_money_locked=true`.
+- `ai_trade.quarantine_completed_known_replays()` takes a transaction-scoped advisory lock, processes at most ten completed eligible runs and reports the number of newly quarantined versions. A new Supabase Cron job `ai-trade-knowledge-quarantine-daily` runs `45 3 * * *` UTC. No network calls, external subscriptions, live orders, model retraining or approval occur in this job.
+
+### Independent acceptance gates
+
+1. **Input and deterministic versioning:** `quarantine_known_replay_run('TF013A_REPLAY_10X14_20260927')` was invoked twice and returned the **same** existing `CWS_REPLAY_TF013A_20260927_V1` row; both bounded-scanner invocations returned `newly_quarantined=0`. An unknown/future run was explicitly **rejected** with the expected incomplete-run exception. Source count remained two; hashes and all quarantine flags independently verified.
+2. **Actual remote runtime:** Supabase migration history contains `20260928102300_ai_trade_known_replay_quarantine_cron_v1`. `cron.job` readback shows job ID 10, schedule `45 3 * * *`, `active=true` and command exactly `SELECT ai_trade.quarantine_completed_known_replays();`. This confirms the job is configured; it does **not** claim that a future scheduled run has executed.
+3. **Security and GitHub readback:** `anon` and `authenticated` cannot execute either function; `service_role` can invoke the reviewed ingest function. GitHub migration source readback matched the committed 7,520-character SQL. The unrelated execution flags remain `enabled=false`, `demo_send_enabled=false`, `risk_profile_approved=false`, with **zero order intents**. RLS-without-public-policy on the private immutable table is intentional fail-closed behavior, not a public read policy.
+
+This automates **quarantine/version collection only**. It cannot use unverified Yahoo-derived research as an approved training dataset, convert simulated R into realized broker P/L, automatically promote the two rejected models or satisfy the still-required future forward-paper/broker-cost evidence.
