@@ -47,3 +47,12 @@ Ingest a genuinely permitted closed-bar OHLCV snapshot with an explicit rights/r
 
 \`knowledge/self_learning/SOURCE_REGISTRY_V1.json\` pins the three already-verified GitHub blobs (CWS Masterbook V3 **distilled**, practitioner registry, CWS 10-year backtest report), their rights scope and quarantine status. Only CWS-authored summaries/report text is covered by CWS_OWNED; third-party full books, 49-page EPUB and third-party raw market data are **not** ingested or relicensed. Git blob SHA-1 identifies the source; \`stage_knowledge\` independently creates the file SHA-256 once the verified repository source is available to the offline runner. No source was automatically approved or used to train model weights.
 
+## 2026-09-28 continuation — fixed, pre-registered offline ML candidate code
+
+- Added \`src/self_learning/model.py\` with a deterministic standard-library logistic baseline, pinned feature list/hyperparameters, train-only normalization, chronological splits and pre-OOS expanding walk-forward folds.
+- Added \`tests/self_learning/test_model.py\`: deterministic candidate, source/version integrity, positive/negative license and cost gate, tamper rejection, abstention and zero broker orders.
+- Updated \`src/self_learning/pipeline.py\`: dataset now carries its exact source metadata and declared 1x proxy cost; \`dataset_version\` hashes the full snapshot, and the candidate refuses mutated rows. 2x cost stress is actually applied to selected research returns.
+- Pre-registered all details at \`research/SELF_LEARNING_BASELINE_PREREG_2026-09-28.md\`.
+- Offline unit tests use explicitly synthetic TEST-market fixture bars to verify computation; these fixtures are **not evidence of trading or model profitability**.
+- Actual model weights on real data: **BLOCKED until source license, immutable licensed OHLC series, and cost provenance have been independently verified**. Yahoo-derived last-ten-per-market replay results are inadequate for this specific bar-level baseline.
+- Public website and PWA deployment remain unchanged by this Python research-code commit; model status stays NOT_TRAINED/ABSTAIN. All existing execution controls stay locked.

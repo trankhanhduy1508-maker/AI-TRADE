@@ -116,10 +116,11 @@ def build_labeled_bars(bars: list[dict[str, Any]], source: dict[str, Any],
                      "feature_bar_range": (hi-lo)/op, "target_next_bar_net_return": net,
                      "target_positive_after_cost": int(net > 0)})
     signature = {"schema_version": 1, "source": {k: source[k] for k in required},
-                 "round_trip_cost_bps": round_trip_cost_bps, "rows": rows}
+                 "round_trip_cost_bps": float(round_trip_cost_bps), "rows": rows}
     return {"dataset_version": "dv1-" + _digest(signature)[:20], "status": "RESEARCH_CANDIDATE",
             "market": source["market"], "timeframe": source["timeframe"],
             "source_id": source["source_id"], "cost_mode": "RESEARCH_PROXY",
+            "source": signature["source"], "round_trip_cost_bps": float(round_trip_cost_bps),
             "row_count": len(rows), "rows": rows}
 
 
