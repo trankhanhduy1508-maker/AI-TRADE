@@ -29,3 +29,8 @@ This is a debug QA APK with a temporary signing key. Physical-device E2E and sta
 ## 2026-09-28 — Android 15/16 system-bar fix (source pending cloud/device QA)
 
 Founder screenshot of the first-party Android shell shows the OS clock/battery overlapping the CWS logo/topbar. The native activity now wraps the unchanged WebView in a FrameLayout and applies system-bar + display-cutout insets on API 35+, preserving the safe rendering area. This is a UI/layout fix only; no permission change, broker secret, order API or model promotion. VersionCode 3 / versionName 0.3.0-debug forces an identifiable QA artifact. A successful cloud lint/build and a separate physical Android visual check are still required before reporting the layout fixed on-device.
+
+
+## CHÍNH SÁCH MỚI 2026-09-28 — DỪNG TẠO APK TRƯỚC KHI AUTO-TRADE HOÀN THÀNH
+
+Lịch sử build và đường dẫn debug APK ở trên **chỉ là kiểm thử đã có trong quá khứ**, không phải hàng cần Founder cài hiện tại. Founder đã chốt Web App trước, MT5 DEMO auto-trade sau khi toàn bộ gate PASS, rồi **duy nhất một APK phát hành hoàn chỉnh, có cập nhật tại chỗ**. Workflow `.github/workflows/cws-ai-trade-android-debug.yml` không còn push trigger hay Gradle/build/upload job. `scripts/check_android_release_gate.py` từ chối khi thiếu approval. Từ nay tuyệt đối không upload/gửi APK debug mỗi commit; mọi sửa UI/runtime thực hiện và test trên Web App/cloud trước. Điều kiện ký và tự cập nhật chi tiết: `docs/CWS_AI_TRADE_RELEASE_AND_AUTOUPDATE_POLICY_2026-09-28.md`.

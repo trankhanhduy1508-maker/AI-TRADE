@@ -136,3 +136,8 @@ Không dùng AppDeploy làm dependency mới. Không tạo nhiều builder/proje
 **Chưa có bằng chứng để gọi xong:** model trading tự học mới được train/evaluate; vòng feedback production; Google Sites Founder được publish; APK; quyền inference compute dài hạn; authenticated Founder/live position; bất kỳ khả năng ra lệnh thật nào của model.
 
 Chặng đầu được ủy quyền cho chat tiếp theo: **ground tối thiểu → kiểm tra runtime/chi phí → tạo baseline nghiên cứu học máy read-only trên dữ liệu được phép → thử nghiệm chứng cứ → checkpoint**, giữ nguyên gate. Triển khai Google Site thực tế chỉ khi có phiên chỉnh sửa được phép; không bịa publish.
+
+
+## 9. Founder chốt lại quy trình (2026-09-28, thay thế thứ tự APK trước đó)
+
+Quy tắc có hiệu lực ở `docs/CWS_AI_TRADE_RELEASE_AND_AUTOUPDATE_POLICY_2026-09-28.md`: **làm và nghiệm thu Web App đầy đủ trước → xác minh MT5 demo + dữ liệu hợp pháp + auto-trade và toàn bộ gate → chỉ sau đó mới tạo một APK release hoàn chỉnh có cập nhật tại chỗ**. Không build hay chuyển APK debug cho Founder từng checkpoint. Tự cập nhật APK cần cùng package ID, khóa ký release ổn định, versionCode tăng và kênh Play In-App Updates hoặc manifest HTTPS đã kiểm chứng với xác nhận cài đặt Android. Không đổi quyết định live-money LOCKED.

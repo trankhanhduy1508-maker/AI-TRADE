@@ -1,58 +1,21 @@
-name: CWS AI Trade Android debug APK
+name: CWS AI Trade APK release gate (no build until Web App + auto-trade approved)
 
+# Founder rule 2026-09-28: never create APK on push.
+# This manual workflow checks release evidence only. It CANNOT build an APK.
 on:
-  push:
-    branches: [codex/p0-covel-knowledge-audit]
-    paths:
-      - 'android/**'
-      - '.github/workflows/cws-ai-trade-android-debug.yml'
   workflow_dispatch:
 
 permissions:
   contents: read
 
 jobs:
-  android-debug:
+  release-readiness-only:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 3
     steps:
-      - name: Checkout
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # verified v7
-      - name: Java 17
-        uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # verified v6
-        with:
-          distribution: temurin
-          java-version: '17'
-      - name: Android SDK
-        uses: android-actions/setup-android@be39fa834029ff78f1a44aa3bb0819b8fc2bd8fd # verified v4
-      - name: Gradle 8.13
-        uses: gradle/actions/setup-gradle@9c971963bec38e04b3d30dcc455b5382be2fdbfb # verified v6
-        with:
-          gradle-version: '8.13'
-      - name: SDK platform and build tools
-        run: sdkmanager "platforms;android-36" "build-tools;35.0.0"
-      - name: Generate first-party assets for native offline shell
-        run: |
-          python3 scripts/build_cws_trade_static.py --base /assets/ --android --output android/app/src/main/assets/www
-          test -s android/app/src/main/assets/www/index.html
-          test -s android/app/src/main/assets/www/icon-512.png
-          ! grep -q 'src="./pwa.js"' android/app/src/main/assets/www/index.html
-          ! grep -q '?asset=' android/app/src/main/assets/www/index.html
-      - name: Assemble debug APK
-        run: gradle -p android --no-daemon :app:lintDebug :app:assembleDebug
-      - name: Verify APK
-        run: |
-          test -s android/app/build/outputs/apk/debug/app-debug.apk
-          "${ANDROID_HOME}/build-tools/35.0.0/apksigner" verify --verbose --print-certs android/app/build/outputs/apk/debug/app-debug.apk
-          sha256sum android/app/build/outputs/apk/debug/app-debug.apk
-          unzip -l android/app/build/outputs/apk/debug/app-debug.apk | grep -q 'assets/www/index.html'
-          unzip -l android/app/build/outputs/apk/debug/app-debug.apk | grep -q 'assets/www/portfolio.js'
-          unzip -l android/app/build/outputs/apk/debug/app-debug.apk | grep -q 'assets/www/tradingview.js'
-          unzip -l android/app/build/outputs/apk/debug/app-debug.apk | grep -q 'assets/www/icon-512.png'
-      - name: Upload temporary debug artifact
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # verified v7
-        with:
-          name: cws-ai-trade-android-debug
-          path: android/app/build/outputs/apk/debug/app-debug.apk
-          if-no-files-found: error
-          retention-days: 1
+      - name: Checkout only
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      - name: Fail closed when full release evidence is absent
+        run: python3 scripts/check_android_release_gate.py
+      - name: No package build or artifact publishing
+        run: echo "Policy requires Web App, verified DEMO auto-trade, stable signing and update E2E before creating APK."
