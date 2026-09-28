@@ -40,3 +40,7 @@
 | Kiểm thử visual TradingView đầy đủ trên mobile/browser | PENDING | Widget hosted có nguồn/asset live, chưa chứng minh tương tác biểu đồ trên thiết bị |
 
 **Đầu ra phiên này:** một bản evidence mới, không chỉnh code/migration/deployment vì đối chiếu chưa phát hiện lỗi đủ bằng chứng để sửa; không bật dịch vụ trả phí hay mở lệnh. Trạng thái sản phẩm tiếp tục `MODEL_NOT_APPROVED / ABSTAIN / LOCKED`. Các blocker còn thiếu được phân loại, không được gọi hoàn tất toàn hệ thống.
+
+## Bổ sung độc lập — kiểm thử chính mã JS đóng trong APK mới
+
+Sau checkpoint evidence đầu tiên, tải và giải nén **chính APK mới** đã đối chiếu với GitHub artifact + Google Drive, chạy **Node v22.16.0** trong môi trường cloud cô lập (không phải PC Founder) trên `assets/www/portfolio.js` trích từ APK. Kết quả **8/8 PASS**: 16 thị trường, BUY/SELL hỗn hợp, gain/loss từng position, tổng nhiều cặp, thiếu Lot/P&L fail-closed, không đổi paper R thành broker P/L, và negative-path nhập JSON. Đây là lần chạy mới **trên mã thực tế trong gói APK**, không phải kết quả fixture cũ. Git blob SHA-1 của `assets/www/portfolio.js` trong APK = `1627dfe167d1dc8318270bdf91822ce1ccc13dc7`, **bằng chính xác** Git blob `google-sites/cws-ai-trade/portfolio.js` trên nhánh; tương tự `assets/www/tradingview.js` = `2c263b63123b8e04bec6a1940d84173eb91db4de` bằng chính xác source GitHub. APK SHA và ZIP CRC giữ nguyên như ở trên. Chạy Node trên asset trích từ APK **không** thay thế kiểm thử cài/khởi động/offline/reopen trên thiết bị Android thật.
