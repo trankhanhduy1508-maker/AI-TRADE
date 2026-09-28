@@ -42,3 +42,8 @@ Result: **9 passed**. Tests exercise synthetic fixtures **only** to test validat
 ## Next exact action
 
 Ingest a genuinely permitted closed-bar OHLCV snapshot with an explicit rights/reference and cost profile, then build a fixed chronological research dataset and separately train a lightweight candidate. Pre-register baseline, OOS, walk-forward and costs before inspecting holdout results. Keep production inference ABSTAIN and all execution gates locked until independently approved.
+
+## Source registry linked
+
+\`knowledge/self_learning/SOURCE_REGISTRY_V1.json\` pins the three already-verified GitHub blobs (CWS Masterbook V3 **distilled**, practitioner registry, CWS 10-year backtest report), their rights scope and quarantine status. Only CWS-authored summaries/report text is covered by CWS_OWNED; third-party full books, 49-page EPUB and third-party raw market data are **not** ingested or relicensed. Git blob SHA-1 identifies the source; \`stage_knowledge\` independently creates the file SHA-256 once the verified repository source is available to the offline runner. No source was automatically approved or used to train model weights.
+
