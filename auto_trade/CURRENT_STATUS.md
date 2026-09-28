@@ -1,3 +1,63 @@
+## Founder checkpoint — Position UI integrity fix deployed, auth blocker — 2026-09-28
+
+### UI integrity fix
+Branch duy nhất: `codex/p0-covel-knowledge-audit`.
+
+Sau khi đối chiếu Supabase v34 data contract, phát hiện:
+- `format=current` không có real `lot` cho shadow position;
+- `floatingPL` hiện không có cho shadow position;
+- `synthetic_volume` không được phép giả thành Lot thật;
+- R-multiple không được phép gắn nhãn P/L USD.
+
+Đã sửa minimal diff:
+- `dashboard/js/modules/current-trade.js`: thiếu real floating P/L → hiển thị `—`, không fallback sang `floatingR`.
+- `dashboard/js/modules/training-arena.js`: thiếu real USD P/L → hiển thị `—`, không fallback sang `unrealizedR`.
+- Lot vẫn chỉ hiển thị khi có field `lot` thật > 0; thiếu → `—`.
+
+Commits:
+- `a77d9f8f48939342197aa1827e5776f29ea07dd0`
+- `4817f0327b082c023c8fa59dfea6ebee27e1d656` (bao gồm cả hai fix)
+
+AppDeploy Founder Secure đã pin dashboard build:
+`4817f0327b082c023c8fa59dfea6ebee27e1d656`
+
+Deployment snapshot:
+`1790568706337`
+
+### Mandatory 3-round verification state
+**Round 1 — PASS**
+- AppDeploy health → 200 / `{"ok":true}`;
+- stable Supabase Admin URL redirect đúng sang AppDeploy Secure;
+- unauthenticated Founder verifier → 401;
+- unauthenticated Supabase dashboard current API → 403;
+- `ai-trade-dashboard` vẫn v34 ACTIVE;
+- DB hiện `shadow_broker_positions = 0`;
+- không thay live-money/broker execution/risk/The5ers gates.
+
+**Round 2 — BLOCKED bởi external Founder Google authentication**
+TinyFish runtime run:
+`6a3d3aa0-3a57-44fe-88e4-68e1a4475d84`
+
+Verified trước blocker:
+- Founder Login render thật;
+- Google Auth mở đúng;
+- Founder email được nhận diện.
+
+Blocker:
+- Google yêu cầu password/passkey;
+- TinyFish Browser Context/Vault hiện không có credential/session Founder đã lưu;
+- không được nhập/bypass/fake Founder credential;
+- vì vậy chưa vào được post-login Founder Console để runtime-verify UI position mới.
+
+**Round 3 — NOT RUN**
+Không được chạy/cộng PASS trước khi Round 2 post-login hoàn tất.
+
+### E-book gate
+E-book **chưa bắt đầu** vì Founder rule yêu cầu UI PASS đủ 3/3 trước.
+
+### Unblock condition
+Cần một persistent TinyFish Browser Context Profile đã đăng nhập Founder Google để tiếp tục Round 2 rồi Round 3 fresh/reload/mobile. Không dùng local Founder PC và không ghi credential vào repo/chat.
+
 ## Founder checkpoint — UI positions + Google Auth rescue + e-book intent — 2026-09-28
 
 ### Founder UI intent just reconfirmed
