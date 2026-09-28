@@ -107,3 +107,42 @@ Founder intent và form bàn giao mới nhất:
 Mục tiêu: model học máy riêng do CWS kiểm soát, nạp kiến thức có provenance từ Masterbook và dữ liệu market/backtest/forward, không lấy GPT làm bộ não bắt buộc. Cập nhật knowledge → candidate dataset/model → OOS/WF/cost/stress → approval → promote; có lựa chọn `ABSTAIN` và risk gate độc lập.
 
 **Trạng thái:** đây là kiến trúc/Founder intent đã checkpoint, **chưa có bằng chứng model mới được train hoặc triển khai**. Google Sites thuộc tài khoản Founder vẫn chưa publish. Giữ live-money locked, không chạm broker/risk/The5ers và không biến trang public thành Founder Secure.
+
+## 2026-09-28 — PWA đầu tiên, dùng Web App trước APK
+
+**Link cài trực tiếp:**
+https://oziktadfeenydvgobudr.supabase.co/functions/v1/cws-ai-trade-site/app/
+
+Bản Supabase Edge Function `cws-ai-trade-site` **v7 ACTIVE**.
+- PWA HTML manifest `?asset=manifest.webmanifest`, tên `CWS AI Trade`, mode `standalone`, start/scope `/functions/v1/cws-ai-trade-site/app/`.
+- Biểu tượng PNG 192px và 512px sinh từ mã nguồn `supabase/functions/cws-ai-trade-site/pwa-icon.ts`, cả hai đã kiểm tra có trả ảnh thật.
+- Service worker `?asset=sw.js`, cache `cws-ai-trade-static-v2` lưu static shell, manifest, icons và tùy chọn cache JSZip/CDN + public distilled Masterbook; không cache API giao dịch hay private files.
+- PWA có nút Cài ứng dụng khi browser thực sự phát `beforeinstallprompt`; nếu không có, hướng dẫn dùng menu trình duyệt.
+- Tab Masterbook có tùy chọn **Lưu kiến thức sách trên thiết bị** bằng IndexedDB, mặc định **không** chọn; có nút xóa. EPUB luôn đọc trong browser và không upload server.
+- Google Sites chỉ nhúng/gắn link Web App trực tiếp; không coi iframe Google Sites là bề mặt cài PWA.
+- Bản giao diện ngoại tuyến có thể mở và tìm trong sách đã lưu; quote/biểu đồ thị trường cần mạng và không trả dữ liệu giá giả.
+
+### Vì sao chọn PWA trước
+
+| Tiêu chí | PWA trực tiếp | APK Android |
+| --- | --- | --- |
+| Giữ một codebase HTML/CSS/JS | Có | Có nếu APK chỉ bọc web |
+| Cài icon lên màn hình chính | Có trên browser hỗ trợ | Có |
+| Build lại APK mỗi khi sửa UI | Không | Có nếu bundle nội dung web |
+| Cần Android SDK / signing key | Không | Có |
+| Có thể truy cập khi không có mạng | Static shell và EPUB đã lưu | Chỉ nếu nội dung đóng gói/cached |
+| Đưa lên Google Play | Không cần để phát hành web | Cần quy trình ký/phát hành |
+
+Android APK có thể tạo sau qua Capacitor hoặc TWA/Bubblewrap. TWA chuẩn đòi Digital Asset Links nằm ở đường dẫn `/.well-known/assetlinks.json` tại origin của site và chứng chỉ ký đúng. URL Supabase Edge dưới đường dẫn con hiện tại **không cho CWS kiểm soát root origin** đó; vì vậy chưa được gọi là TWA APK production-ready. Nếu chỉ cần trải nghiệm app trên Android, PWA giải quyết được mà chưa cần APK.
+
+### Kiểm thử PWA
+
+- Static PWA manifest/script contract + mock browser install: **13/13 PASS**, bao gồm button prompt, đúng SW scope, shortcuts, PNG 192/512 declarations và không cache private market API.
+- Site v7 Edge ACTIVE, manifest/JS/HTML/SW trước v7 đã được GET thực tế qua URL query chính xác; icon 192/512 live GET có image output thực.
+- Trên v7 cần smoke lại endpoint nếu source có sửa meaningful.
+- **Android Chrome thực tế / nút install / offline reload / EPUB IndexedDB end-to-end chưa có device-browser evidence**, không đánh dấu PASS.
+- Google Sites Publish vẫn PENDING do thiếu phiên chỉnh sửa Google Sites của đúng account.
+
+### Giới hạn miễn phí
+
+PWA không cần AppDeploy và không dùng OpenAI API chỉ để hiển thị giao diện/tra cứu cục bộ. Hosting Supabase, tài nguyên trình duyệt, feed công khai, ChatGPT account và CDN có quota/chính sách thực tế. Không hứa chi phí bằng 0 hoặc unlimited vĩnh viễn. Full generative chatbot nhúng trong website cần inference backend có nguồn lực được duyệt; tính năng hiện tại là local search + ChatGPT plugin qua ứng dụng ChatGPT.
