@@ -32,7 +32,7 @@ Deno.serve(async req=>{
  if(url.searchParams.get("health")==="1")return Response.json({ok:true,service:"cws-ai-trade-site",version:"pwa-1",publicReadOnly:true,liveMoneyLocked:true,assets:Object.keys(ASSETS),installPath:ROOT},{headers:{"cache-control":"no-store"}});
  const leaf=appRoute?url.pathname.slice(ROOT.length):"";
  const requestedAsset=url.searchParams.get("asset");
- if(appRoute&&(["icon-192.png","icon-512.png"].includes(requestedAsset)||["icon-192.png","icon-512.png"].includes(leaf)))return await iconResponse((requestedAsset||leaf)==="icon-192.png"?192:512,method);
+ if(["icon-192.png","icon-512.png"].includes(requestedAsset)||(appRoute&&["icon-192.png","icon-512.png"].includes(leaf)))return await iconResponse((requestedAsset||leaf)==="icon-192.png"?192:512,method);
  if(appRoute&&leaf&&!Object.prototype.hasOwnProperty.call(ASSETS,leaf))return new Response("Not found",{status:404});
  const key=url.searchParams.get("asset")||leaf||"index.html";
  if(!Object.prototype.hasOwnProperty.call(ASSETS,key))return new Response("Not found",{status:404});
