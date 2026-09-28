@@ -79,3 +79,30 @@
  .projection-grid{grid-template-columns:1fr}.price-projection{min-height:94px}
  .chart-wrap{height:58vh;min-height:460px;touch-action:pan-y}
 }
+
+/* Simplified position surface: Symbol / Side / Lot / P&L */
+.position-total{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:13px 16px;margin-bottom:10px}
+.position-total span{color:var(--muted);font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.05em}
+.position-total strong{font-size:24px}.position-total strong.pos,.position-pnl.pos,.compact-position .pos{color:var(--green)}
+.position-total strong.neg,.position-pnl.neg,.compact-position .neg{color:var(--red)}
+.positions-list .position-row{grid-template-columns:1.2fr .8fr .8fr 1fr}
+.side-buy{color:var(--green)}.side-sell{color:var(--red)}
+.compact-trade{padding:16px}.compact-position{display:grid;grid-template-columns:1.2fr .8fr .8fr 1fr;gap:12px;align-items:center}
+.compact-position>div{display:flex;flex-direction:column;gap:6px}.compact-position small{color:var(--muted);font-size:10px;text-transform:uppercase;letter-spacing:.05em}
+.compact-position strong{font-size:18px}.compact-symbol{font-size:28px!important}
+.arena-row-simple{grid-template-columns:1.25fr .75fr .75fr 1fr}
+@media(max-width:760px){
+  .positions-list .position-row{grid-template-columns:1.15fr .8fr .75fr 1fr}
+  .position-row span:last-child{display:flex}
+  .compact-position{grid-template-columns:1.15fr .8fr .75fr 1fr;gap:8px}
+  .compact-position strong{font-size:15px}.compact-symbol{font-size:20px!important}
+  .arena-row-simple{grid-template-columns:1.15fr .75fr .7fr 1fr}
+  .arena-row-simple>:nth-child(4){display:flex;flex-direction:column}
+}
+@media(max-width:480px){
+  .positions-list .position-row{grid-template-columns:1fr .72fr .65fr .95fr;padding:11px 10px;gap:6px}
+  .position-row b{font-size:12px}
+  .compact-position{grid-template-columns:1fr 1fr}
+  .arena-row-simple{grid-template-columns:1fr .72fr .65fr .95fr;padding:11px 10px;gap:6px}
+  .arena-row-simple b{font-size:12px}
+}
