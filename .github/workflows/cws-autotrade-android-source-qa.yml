@@ -41,11 +41,13 @@ jobs:
         with:
           gradle-version: '8.13'
 
-      - name: Set up Android SDK 36 without an APK build
-        uses: android-actions/setup-android@v3
-      - name: Install compile-only Android SDK platform
+      - name: Reuse Android SDK on hosted runner (no obsolete SDK tools package)
         run: |
-          sdkmanager --install "platforms;android-36" "build-tools;35.0.0"
+          test -d "${ANDROID_HOME:?Android SDK unavailable}"
+          SDKMANAGER="$(find "$ANDROID_HOME/cmdline-tools" -type f -name sdkmanager -print -quit)"
+          test -n "$SDKMANAGER"
+          "$SDKMANAGER" --version
+          "$SDKMANAGER" --sdk_root="$ANDROID_HOME" --install "platforms;android-36" "build-tools;35.0.0"
 
       - name: Check standalone native security contracts
         run: python3 scripts/check_native_autotrade_contract.py
