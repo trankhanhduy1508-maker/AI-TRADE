@@ -100,3 +100,26 @@ Offline evidence:
 The private provider license has a personal/internal research boundary and does **not** authorize making that provider's data or derived model available through a public/commercial Web App. Provider terms and permissions must be checked separately for any production use. The model, if any, cannot be represented as broker-net profitable or live validated.
 
 No Google Sites publish, Android install E2E or APK completion is asserted in this checkpoint.
+
+
+## 2026-09-28 — ECB reference-rate real-data research and reproducibility
+
+This is an internal, NON-EXECUTABLE research continuation. It does not supersede a broker-price model, forward-paper evidence, or any execution/risk approval.
+
+- The protocol and fixed rejection thresholds were committed **before** opening/evaluating the complete source: \`research/CWS_ML_ECB_REFERENCE_V1_PREREG_2026-09-28.md\`, protocol commit \`2c6ed583173f4f050d85362b63491df02a02ce90\`.
+- Independently retrieved five bounded windows of the ECB Data Portal's \`EXR.D.USD.EUR.SP00.A\` official EUR/USD reference-rate series. Validated 954 unique, chronologically ordered published observations from 2023-01-02 through 2026-09-25, consistent overlaps, reference series/currency/status and original official rate strings. ECB reference rates are **informational, not executable broker prices**. Attribute \`Source: ECB statistics.\`; no third-party rights are assumed.
+- Created 948 causal one-reference-step samples; fit a genuine deterministic two-feature logistic research model on 568 historical train observations; evaluated 189 validation and 189 sealed OOS observations, plus three development-only walk-forward folds. Research-only fictional 10/20-bps cost proxy was used, not broker-net costs or paper P/L.
+- The real ECB research model was **REJECTED under frozen preregistered gates**: insufficient selected OOS observations and failed doubled-cost research stress. No threshold, features or rejection gate was retuned after inspecting OOS. The previous BTC internal model also remains REJECTED. No approved production model exists.
+- Source observations, dataset/model weights and private evaluation were persisted only to a private local research workspace and immutable RLS-protected \`ai_trade.private_ml_baseline_runs\` on Supabase as \`ECB_EURUSD_REFERENCE_BASELINE_20260928_V1\`. The external-provider observations, model weights and private evaluation are **not committed to this public GitHub repository or served by CWS Web App**.
+- The model's official source/data/code hashes, immutable snapshot and preregistration commit were independently read back. Stored research artifact is \`REJECTED\`, \`public_inference=false\`, \`broker_orders=false\`, \`live_money_locked=true\`, \`ABSTAIN/LOCKED\`.
+- Added \`scripts/run_ecb_reference_research.py\` and \`tests/self_learning/test_reference_reproduction.py\`, an offline GPT-independent reproduction runner pinned to the independently verified source digest and exact original model Git blob. The runner refuses changed input, changed model code, output inside the repository, symlinked private destination or overwrite of immutable artifacts. It never calls a broker.
+- Hardening of \`src/self_learning/epub_ingest.py\` now restricts the private book quarantine directory to \`0700\`, files to \`0600\`, rejects symlinks and removes partial writes; original staged book/chapter material was also made private locally.
+- Test evidence: 29/29 Python self-learning tests (synthetic fixtures only), 8/8 Node portfolio tests; actual independently sourced ECB model trained/evaluated separately and reproducibly through the pinned offline runner. The offline reproduction returned the exact original research model/dataset version and REJECTED state. No unit fixture was presented as market evidence.
+
+### Triple-check evidence
+
+1. Source and causal dataset: official ECB CSV fields, 954 original observations, date bounds, duplicate conflicts, frozen source/dataset SHA-256, sealed chronology, exact original model Git blob.
+2. Independent evaluation and regression: original Python model and independent JavaScript parity check agreed to numerical tolerance on the real source; Python/Node tests passed; all OOS/WF and predeclared negative gates respected. Reproduction runner replayed the real private experiment and refused modified/fake source.
+3. Persistent runtime/security: Supabase readback confirmed source_snapshot SHA-256, 954 stored original observations, exactly 3 WF folds, REJECTED evaluation, model/prereg code references, RLS, no public/authenticated SELECT and immutable update/delete trigger. Final read-only runtime check: \`enabled=false\`, \`demo_send_enabled=false\`, \`risk_profile_approved=false\`, and 0 broker order intents.
+
+The public PWA is still read-only with no approved model and no direct broker execution. Google Sites actual Founder publish, Android-device install/offline E2E, signed APK, legitimate broker-executable data/cost alignment, OOS-qualified model and **real future paper evidence** remain unverified; these are not declared PASS.
