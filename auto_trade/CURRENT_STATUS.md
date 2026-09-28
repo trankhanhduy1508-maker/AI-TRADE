@@ -1,3 +1,66 @@
+## Founder Google Login — stable Supabase entry — 2026-09-28
+
+Status: **PASS đến Google account selection / callback route configured**.
+
+### Stable Admin URL
+`https://oziktadfeenydvgobudr.supabase.co/functions/v1/ai-trade-dashboard?admin=1`
+
+Không redirect qua raw.githack ở bước login nữa. Supabase Edge Function phục vụ trực tiếp trang Founder Login.
+
+### UI / OAuth evidence
+TinyFish final regression:
+`be9f863d-b717-4341-a7f0-b988aab7ee3d`
+
+PASS:
+- URL giữ ở Supabase stable admin route;
+- title `CWS AI Trade · Founder Login`;
+- hiển thị `Founder Login`;
+- badge `ADMIN LOGIN`;
+- nút `Đăng nhập Google để vào Admin`;
+- trước auth không expose runtime data;
+- click login mở Google OAuth;
+- OAuth `redirect_to` quay về chính stable Supabase Admin URL;
+- không có `redirect_not_allowed` / callback configuration error;
+- test dừng trước bước chọn Google account, không nhập credential.
+
+### Founder allowlist
+Thêm table:
+`ai_trade.dashboard_google_access`
+
+Security:
+- RLS enabled;
+- `anon` SELECT = false;
+- `authenticated` SELECT = false;
+- policy deny public API access.
+
+Authorization không dựa vào display name/email do browser gửi. Backend:
+1. nhận Supabase Google Bearer session;
+2. verify session qua Supabase Auth;
+3. lấy `auth.users.id`;
+4. map user id server-side qua `dashboard_google_access`;
+5. chỉ mở runtime nếu mapped token có role `FOUNDER`, chưa revoke và còn hạn.
+
+Hiện có **1 active Founder Google mapping**.
+
+### Post-auth flow
+Sau Google callback:
+- login page lấy Supabase access token từ URL hash;
+- gọi `?format=google-session` bằng Bearer token;
+- backend verify Founder mapping;
+- nếu PASS, lưu session vào browser localStorage;
+- chuyển sang `?admin_app=1&mode=admin`;
+- dashboard API sau đó dùng Authorization Bearer, không cần raw dashboard token trong URL.
+
+### Deployment
+- `ai-trade-dashboard` **v31 ACTIVE**.
+- frontend auth/API build pin: `5face2eabc66267e1e6adfb076dad713745d990c`.
+- login page được server trực tiếp bởi Edge Function, tránh raw.githack interstitial.
+- live money vẫn LOCKED;
+- không thay broker execution/risk/The5ers gates.
+
+### Remaining human-auth step
+Full Google callback → Founder runtime bằng chính Google account của Founder cần người sở hữu account chọn/đăng nhập Google một lần. Không bypass/mint session giả để ép PASS. Authenticated Founder runtime phía dashboard đã PASS độc lập bằng temporary Founder E2E token trước đó; Google OAuth transport tới account-selection hiện cũng PASS.
+
 ## Founder Google Login — 2026-09-28
 
 Status: **PASS tới Google OAuth / cổng Admin thật đã thay Admin Preview**.
