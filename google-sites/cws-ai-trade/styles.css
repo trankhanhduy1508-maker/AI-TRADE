@@ -21,3 +21,5 @@ footer{padding:22px 0 0;color:#7f96b4;text-align:center;font-size:10px}
 .install-button:hover{background:#2387bd}.install-button[hidden],.pwa-install-hint[hidden]{display:none!important}
 .pwa-install-hint{border:1px solid #285579;background:#112b44;border-radius:8px;padding:9px 13px;color:#b8d5ec;font-size:12px;margin-bottom:12px;line-height:1.5}
 @media(max-width:640px){.install-button{font-size:11px;padding:8px 9px}.top-right{gap:5px}.pwa-install-hint{font-size:11px;padding:8px 10px}}
+
+.book-storage{display:flex;flex-wrap:wrap;align-items:center;gap:9px;margin:10px 17px;font-size:12px;color:#bdd4eb}.book-storage label{display:inline-flex;align-items:center;gap:7px;line-height:1.5;cursor:pointer}.book-storage input{accent-color:#2bd0a2;width:17px;height:17px}.book-clear{margin:0;padding:7px 11px}.book-clear[hidden]{display:none!important}
