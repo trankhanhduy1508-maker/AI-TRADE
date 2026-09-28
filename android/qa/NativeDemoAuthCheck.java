@@ -16,6 +16,6 @@ public class NativeDemoAuthCheck {
     boolean blocked=false;
     try{NativeDemoAuth.challenge("short");}catch(IllegalArgumentException e){blocked=true;}
     if(!blocked)throw new AssertionError("invalid PKCE not blocked");
-    System.out.println("PASS: Java PKCE verifier, SHA-256 challenge, URL and callback nonce checks (9 assertions)");
+    System.out.println("PASS: Java PKCE RFC 7636, verifier, URL and callback nonce checks (9 assertions)");
   }
 }
