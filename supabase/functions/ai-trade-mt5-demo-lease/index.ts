@@ -16,7 +16,8 @@ const PR_REF_PREFIX="refs/pull/2/";
 const ALLOWED_PURPOSES=new Set(["preflight"]);
 
 const json=(body:unknown,status=200)=>new Response(JSON.stringify(body),{
-  status,headers:{"content-type":"application/json; charset=utf-8"}
+  status,headers:{"content-type":"application/json; charset=utf-8",
+    "cache-control":"no-store","x-content-type-options":"nosniff"}
 });
 const bearer=(req:Request)=>{
   const h=req.headers.get("authorization")??"";
@@ -78,11 +79,9 @@ Deno.serve(async(req)=>{
       brokerOrdersAllowed:false,
       liveMoneyLocked:true
     });
-  }catch(error){
-    return json({
-      ok:false,status:"MT5_DEMO_LEASE_FAILED",
-      error:error instanceof Error?error.name:"Error",
-      detail:error instanceof Error?error.message.slice(0,200):String(error).slice(0,200)
-    },500);
+  }catch{
+    // Never return Vault, JWT or SQL exception details to any caller.
+    return json({ok:false,status:"MT5_DEMO_LEASE_FAILED",
+      brokerOrdersAllowed:false,liveMoneyLocked:true},500);
   }
 });

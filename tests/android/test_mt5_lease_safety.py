@@ -22,3 +22,10 @@ def test_preflight_lease_uses_investor_secret_only():
     assert "NO_READ_ONLY_DEMO_CREDENTIAL" in source
     assert re.search(r"\ba\.password_secret_id\b", source) is None
     assert re.search(r"\brow\.password\b", source) is None
+
+def test_vault_lease_is_not_cached_or_reflected_in_errors():
+    source = SOURCE.read_text(encoding="utf-8")
+    assert '"cache-control":"no-store"' in source
+    assert 'Never return Vault, JWT or SQL exception details' in source
+    assert 'error.message.slice' not in source
+    assert 'detail:error' not in source
