@@ -1,7 +1,8 @@
 /* CWS AI Trade PWA: public static shell only. No caching of private data, market API or position files. */
 "use strict";
 const ROOT="/functions/v1/cws-ai-trade-site/app/";
-const CACHE="cws-ai-trade-static-v1";
+const CACHE="cws-ai-trade-static-v2";
+const BOOK="https://raw.githubusercontent.com/trankhanhduy1508-maker/AI-TRADE/2e9ae2e17e449f1b1574963103454f4a38226b94/knowledge/CWS_TRADING_MASTERBOOK_V3_DISTILLED_2026-09-28.md";
 const CDN="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js";
 const CORE=[
   ROOT,
@@ -17,6 +18,17 @@ self.addEventListener("install",event=>{
   event.waitUntil((async()=>{
     const cache=await caches.open(CACHE);
     await cache.addAll(CORE);
+    // Optional public-only files. Failure must not block app installation.
+    for(const url of [CDN,BOOK]){
+      try{
+        const controller=new AbortController();
+        const timer=setTimeout(()=>controller.abort(),7000);
+        try{
+          const response=await fetch(url,{signal:controller.signal});
+          if(response.ok)await cache.put(url,response.clone());
+        }finally{clearTimeout(timer);}
+      }catch{/* Offline shell is still installable without optional resources. */}
+    }
     self.skipWaiting();
   })());
 });
@@ -31,7 +43,7 @@ self.addEventListener("fetch",event=>{
   const request=event.request;
   if(request.method!=="GET")return;
   const u=new URL(request.url);
-  if(u.href===CDN){
+  if(u.href===CDN||u.href===BOOK){
     event.respondWith((async()=>{
       const cache=await caches.open(CACHE);
       const hit=await cache.match(request);
