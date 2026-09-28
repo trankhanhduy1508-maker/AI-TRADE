@@ -60,3 +60,7 @@ Commit `559fe83fd5bbb5bba21800536e89d6f38a6f30a4` buộc `terminal_info().connec
 ## 7. Checkpoint native Android + Supabase DEMO read-only (2026-09-28)
 
 Đã bổ sung màn hình native MT5 DEMO dùng Google OAuth trên browser ngoài WebView (PKCE/nonce), trường Login/Password/Server, backend Founder v2 trả balance/currency chỉ sau xác minh broker mới; Equity/positions chưa có và không fake. Thư viện native release verifier bước đầu xác minh signed metadata, SHA-256 và versionCode monotonic, nhưng APK installer, signer production, migration/recovery và Android E2E vẫn chưa có. Java QA 18 phép thử PASS với mock; không phải thiết bị/broker PASS. Kiến thức và đường dẫn evidence chi tiết: `reports/CWS_AUTOTRADE_ANDROID_DEMO_SOURCE_EVIDENCE_2026-09-28.md` mục 6. **Release gate vẫn đóng; không phát hành APK.**
+
+## 8. Checkpoint an toàn MT5 DEMO / Android (29/09/2026)
+
+Đã sửa race lúc readback MT5 (kiểm broker trước/sau positions), thêm MetaApi guard yêu cầu broker xác nhận rõ `ACCOUNT_TRADE_MODE_DEMO` cùng Login/Server, chống account switch và lọc thông tin exception SDK. QA source-only: 37 Python unit tests + 18 Java checks PASS. Không có Android/broker thực E2E, MetaApi full-repo integration chưa chạy, risk/model approval chưa có, không build/phát hành APK. Xem `reports/CWS_AUTOTRADE_DEMO_ANDROID_PROGRESS_2026-09-29.md`. Live/funded LOCKED, mọi quyền gửi lệnh DEMO vẫn tắt.
