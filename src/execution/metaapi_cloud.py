@@ -12,7 +12,9 @@ import math
 from pathlib import Path
 from typing import Any
 
+from src.execution.demo_readback import DemoAccountSnapshot
 from src.execution.metaapi_demo_guard import MetaApiDemoBlocked, assert_metaapi_demo_context
+from src.execution.metaapi_readback import read_metaapi_demo_snapshot
 from src.execution.mt5_adapter import (
     MT5OrderRequest,
     MT5OrderResult,
@@ -95,10 +97,24 @@ class MetaApiCloudAdapter:
         self._connected = False
         self._ledger.close()
 
+    async def account_snapshot(self) -> DemoAccountSnapshot:
+        """Read broker DEMO balance/equity/positions, with no order submission.
+
+        Owner authorization is required at the caller. Broker synchronization
+        and identity must be confirmed before this read on every request.
+        """
+        await self._ensure_connected()
+        await self.connection.wait_synchronized()
+        await self._ensure_connected()
+        return read_metaapi_demo_snapshot(self.account, self.connection.terminal_state)
+
     async def positions(self, symbol: str | None = None) -> tuple[MT5Position, ...]:
         await self._ensure_connected()
-        records = tuple(_get(self.connection.terminal_state, "positions", ()) or ())
+        records = _get(self.connection.terminal_state, "positions", None)
+        if records is None or not isinstance(records, (tuple, list)):
+            raise MetaApiDemoBlocked("BROKER_POSITIONS_INCOMPLETE")
         positions = tuple(self._position_from_record(record) for record in records)
+        await self._ensure_connected()
         if symbol is not None:
             positions = tuple(p for p in positions if p.symbol == symbol)
         return positions
