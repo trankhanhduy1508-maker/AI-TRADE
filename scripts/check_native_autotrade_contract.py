@@ -17,6 +17,7 @@ CHECKS = (
     ("NativeDemoAuth", "NativeDemoAuthCheck", "PKCE"),
     ("NativeReleaseVerifier", "NativeReleaseVerifierCheck", "signed-update"),
     ("NativeSessionCodec", "NativeSessionCodecCheck", "encrypted-session"),
+    ("NativeUpdatePolicy", "NativeUpdatePolicyCheck", "apk-update-policy"),
 )
 
 
