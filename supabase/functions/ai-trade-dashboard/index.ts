@@ -151,7 +151,7 @@ Deno.serve(async(req)=>{
   }
   const url=new URL(req.url);
   if(url.searchParams.get("admin")==="1"){
-    const target="https://raw.githack.com/trankhanhduy1508-maker/AI-TRADE/e2e5ae5fbd7a56b786f49bb3c2466f1fa084b8b8/dashboard/admin.html";
+    const target="https://raw.githack.com/trankhanhduy1508-maker/AI-TRADE/5face2eabc66267e1e6adfb076dad713745d990c/dashboard/admin.html";
     return new Response(null,{status:302,headers:{
       "location":target,
       "cache-control":"no-store, max-age=0",
@@ -159,7 +159,7 @@ Deno.serve(async(req)=>{
     }});
   }
   if(url.searchParams.get("admin_preview")==="1"){
-    const target="https://raw.githack.com/trankhanhduy1508-maker/AI-TRADE/e2e5ae5fbd7a56b786f49bb3c2466f1fa084b8b8/dashboard/index.html?mode=admin-preview";
+    const target="https://raw.githack.com/trankhanhduy1508-maker/AI-TRADE/5face2eabc66267e1e6adfb076dad713745d990c/dashboard/index.html?mode=admin-preview";
     return new Response(null,{status:302,headers:{
       "location":target,
       "cache-control":"no-store, max-age=0",
@@ -189,6 +189,7 @@ Deno.serve(async(req)=>{
       headers:{
         "content-type":"text/html; charset=utf-8",
         "cache-control":"no-store",
+        "access-control-allow-origin":"*",
         "referrer-policy":"no-referrer"
       }
     });
@@ -276,7 +277,7 @@ Deno.serve(async(req)=>{
   }
 
   if(!format){
-    const target="https://raw.githack.com/trankhanhduy1508-maker/AI-TRADE/31c65a7e12626cf8100a052cc94699710c2b10c0/dashboard/index.html?t="+encodeURIComponent(token);
+    const target="https://raw.githack.com/trankhanhduy1508-maker/AI-TRADE/5face2eabc66267e1e6adfb076dad713745d990c/dashboard/index.html?t="+encodeURIComponent(token);
     return new Response(null,{
       status:302,
       headers:{
