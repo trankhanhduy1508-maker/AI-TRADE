@@ -49,6 +49,7 @@
         <span class="side-label">Tình trạng hệ thống</span>
         <div class="safety-item"><span>● Giao diện</span><b>Hoạt động</b></div>
         <div class="safety-item"><span>● Sách Masterbook</span><b id="bookBadge">Đang tải</b></div>
+        <div class="safety-item"><span>● CWS Trading Engine</span><b class="warning">CHƯA HUẤN LUYỆN</b></div>
         <div class="safety-item"><span>● Broker</span><b>Chưa kết nối</b></div>
         <div class="safety-item"><span>● Live money</span><b class="warning">KHÓA</b></div>
         <div class="safety-info">Bản này chỉ đọc dữ liệu công khai và phân tích kiến thức. Không gửi lệnh BUY/SELL, không điều khiển MT5.</div>
@@ -86,6 +87,12 @@
           </section>
         </div>
         <div class="below-grid">
+          <section class="panel compact-panel" id="modelResearchPanel" aria-label="Trạng thái mô hình CWS Trading Engine">
+            <div class="panel-heading"><h2>CWS Trading Engine</h2><span class="pill" id="modelResearchStatus">MODEL_NOT_TRAINED</span></div>
+            <p>Phân tích máy học: <strong>CHƯA HUẤN LUYỆN</strong> trên bộ dữ liệu thị trường đã được phê duyệt.</p>
+            <p class="muted">Tín hiệu: ABSTAIN · Gate: LOCKED · Chỉ đọc. Không có model production, không gửi lệnh BUY/SELL và không thay đổi Risk/The5ers gate.</p>
+            <p class="muted micro">Model version: — · Dataset version: — · OOS/WF: Chưa kiểm chứng</p>
+          </section>
           <section class="panel compact-panel">
             <div class="panel-heading"><h2>Nguồn dữ liệu vị thế</h2></div>
             <p class="muted">Bản Google Sites không thể đọc phiên đăng nhập AppDeploy ở tên miền khác. Có thể nạp tệp JSON để xem tổng hợp ngay trong trình duyệt; dữ liệu không được tải lên máy chủ.</p>
