@@ -186,6 +186,67 @@ async function verifyStoredDemo(req:Request,id:number){
     autoTradeActive:false,brokerOrders:false,liveMoneyLocked:true
   }};
 }
+/** One fresh broker read for the authenticated Founder's existing DEMO account. */
+async function freshSnapshot(id:number){
+  const [binding]=await sql`
+    select b.account_login,b.server from ai_trade.account_mt5_bindings b
+    join ai_trade.mt5_demo_accounts a
+      on a.account_login=b.account_login and a.server=b.server
+    where b.access_token_id=${id}
+      and b.account_type='DEMO' and b.server='MetaQuotes-Demo'
+      and a.account_type='DEMO' and a.is_active=true
+    limit 1
+  `;
+  if(!binding)return {code:404,body:{ok:false,status:"FOUNDER_DEMO_NOT_LINKED",
+    brokerOrders:false,liveMoneyLocked:true}};
+  const login=String(binding.account_login);
+  const [cron]=await sql`select secret from ai_trade.cron_auth where id=1`;
+  const secret=String(cron?.secret??"");
+  if(!secret)return {code:503,body:{ok:false,status:"BROKER_VERIFIER_UNAVAILABLE",
+    brokerOrders:false,liveMoneyLocked:true}};
+  let data:Record<string,unknown>;
+  try{
+    const response=await fetch(URL_ROOT+"/functions/v1/ai-trade-mt5-demo-validate",{
+      method:"POST",
+      headers:{"content-type":"application/json","x-ai-trade-cron":secret},
+      body:JSON.stringify({login}),
+      cache:"no-store",signal:AbortSignal.timeout(120000)
+    });
+    if(!response.ok)throw new Error("UPSTREAM_UNAVAILABLE");
+    data=await response.json();
+  }catch{
+    return {code:503,body:{ok:false,status:"BROKER_SNAPSHOT_UNAVAILABLE",
+      brokerOrders:false,liveMoneyLocked:true}};
+  }
+  if(data.verified!==true||data.status!=="DEMO_VERIFIED"
+      ||data.accountType!==1||data.server!==binding.server
+      ||String(data.login)!==login
+      ||typeof data.balance!=="number"||!Number.isFinite(data.balance)
+      ||typeof data.currency!=="string"||!/^[A-Z]{3,8}$/.test(data.currency)){
+    return {code:503,body:{ok:false,status:"FRESH_BROKER_DEMO_READBACK_FAILED",
+      brokerOrders:false,liveMoneyLocked:true}};
+  }
+  // This upstream protocol returns balance but not equity/positions.
+  // Do not substitute historic data or infer equity from balance.
+  const updated=await sql`
+    update ai_trade.account_mt5_bindings set
+      connection_state='CONNECTED',last_verified_at=now(),updated_at=now()
+    where access_token_id=${id}
+      and account_login=${login}::bigint
+      and server='MetaQuotes-Demo' and account_type='DEMO'
+    returning id
+  `;
+  if(updated.length!==1)return {code:409,body:{ok:false,status:"BINDING_CHANGED"}};
+  return {code:200,body:{
+    ok:true,status:"DEMO_SNAPSHOT_READ_ONLY",
+    login,server:"MetaQuotes-Demo",mode:"DEMO",
+    balance:data.balance,currency:data.currency,
+    equity:null,positions:null,asOf:new Date().toISOString(),
+    readbackSource:"MT5_DEMO_VERIFIER",
+    autoTradeActive:false,brokerOrders:false,liveMoneyLocked:true
+  }};
+}
+
 Deno.serve(async(req)=>{
   const origin=req.headers.get("origin")??"";
   if(origin&&!ALLOWED_ORIGINS.has(origin)){
@@ -205,6 +266,10 @@ Deno.serve(async(req)=>{
     const path=new URL(req.url).pathname;
     if(req.method==="GET"&&path.endsWith("/status"))
       return respond(await status(person.id),200,origin);
+    if(req.method==="POST"&&path.endsWith("/snapshot")){
+      const value=await freshSnapshot(person.id);
+      return respond(value.body,value.code,origin);
+    }
     if(req.method==="POST"&&path.endsWith("/verify-demo")){
       const result=await verifyStoredDemo(req,person.id);
       return respond(result.body,result.code,origin);
