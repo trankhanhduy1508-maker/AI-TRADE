@@ -250,4 +250,3 @@ def train_reference_candidate(dataset: dict[str, Any], *, code_sha: str,
     identity = json.dumps(artifact, sort_keys=True, separators=(',', ':'), allow_nan=False).encode('utf-8')
     artifact['model_version'] = 'ecb-mc1-' + sha256(identity).hexdigest()[:20]
     return artifact
-
