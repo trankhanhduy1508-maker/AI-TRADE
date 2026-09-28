@@ -155,7 +155,7 @@ public final class DemoLoginActivity extends Activity {
             && verifier != null
             && NativeDemoAuth.matchesCallback(uri.getScheme(), uri.getHost(), uri.getPath(), nonce);
         prefs.edit().clear().apply();
-        String code = uri.getQueryParameter("code");
+        String code = valid ? uri.getQueryParameter("code") : null;
         if (!valid || code == null || !code.matches("[A-Za-z0-9_-]{16,128}")) {
             status.setText("Callback không hợp lệ hoặc quá hạn. Đăng nhập lại.");
             return;
