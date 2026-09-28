@@ -1,0 +1,41 @@
+name: CWS AI Trade research QA snapshot
+
+on:
+  push:
+    branches: [codex/p0-covel-knowledge-audit]
+    paths:
+      - '.github/workflows/cws-ai-trade-research-qa-once.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  triple-check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 7
+    steps:
+      - name: Checkout immutable tested commit
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # verified v7
+      - name: Pin pytest
+        run: python3 -m pip install --disable-pip-version-check 'pytest==8.4.2'
+      - name: Python syntax and regression
+        run: |
+          python3 -m compileall -q src/self_learning scripts/run_ecb_reference_research.py
+          PYTHONPATH=. python3 -m pytest -q tests/self_learning
+      - name: Portfolio contract regression
+        run: node --test google-sites/cws-ai-trade/tests/portfolio.test.cjs
+      - name: Immutable QA source snapshot
+        if: always()
+        run: |
+          mkdir -p /tmp/cws-qa
+          tar -czf /tmp/cws-qa/cws-ai-trade-tested-source.tar.gz src/self_learning scripts/run_ecb_reference_research.py tests/self_learning google-sites/cws-ai-trade/portfolio.js google-sites/cws-ai-trade/tests/portfolio.test.cjs
+          sha256sum /tmp/cws-qa/cws-ai-trade-tested-source.tar.gz
+          git rev-parse HEAD
+      - name: Upload temporary source artifact
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # verified v7
+        with:
+          name: cws-ai-trade-tested-source-qa
+          path: /tmp/cws-qa/cws-ai-trade-tested-source.tar.gz
+          if-no-files-found: error
+          retention-days: 1
