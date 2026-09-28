@@ -55,6 +55,16 @@ jobs:
       - name: Compile Android Java source, do not assemble or sign
         run: gradle --no-daemon -p android :app:compileDebugJavaWithJavac --stacktrace
 
+      - name: Verify production packaging is blocked without Founder approval
+        run: |
+          if gradle --no-daemon -p android :app:verifyCwsReleasePrerequisites > "$RUNNER_TEMP/cws-release-denial.txt" 2>&1; then
+            echo "FAIL: production release gate unexpectedly accepted missing credentials"
+            exit 1
+          fi
+          grep -q "Founder release authorization and external signing are required" "$RUNNER_TEMP/cws-release-denial.txt"
+          rm "$RUNNER_TEMP/cws-release-denial.txt"
+          echo "PASS: release signing and approval gate fails closed."
+
       - name: Verify no APK was created
         run: |
           if find android/app/build/outputs -name '*.apk' -print -quit 2>/dev/null | grep -q .; then

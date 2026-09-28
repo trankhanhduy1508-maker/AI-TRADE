@@ -33,7 +33,7 @@ import java.util.concurrent.Executors;
 /** User-initiated external-APK update. Never installs silently or trusts a debug signer. */
 public final class NativeUpdateCoordinator {
     private static final String MANIFEST =
-        "https://github.com/trankhanhduy1508-maker/AI-TRADE/releases/latest/download/cws-autotrade-manifest.json";
+        "https://github.com/trankhanhduy1508-maker/AI-TRADE/releases/download/cws-autotrade-stable/cws-autotrade-manifest.json";
     private static final String KEY = BuildConfig.CWS_RELEASE_PUBLIC_KEY_SPKI_B64;
     private static final int META_LIMIT = 32768;
     private static final int MAX_REDIRECTS = 5;
@@ -83,8 +83,10 @@ public final class NativeUpdateCoordinator {
                 PublicKey key = ownerKey();
                 byte[] manifestBytes = readBounded(new URL(MANIFEST), META_LIMIT);
                 JSONObject manifest = new JSONObject(new String(manifestBytes, StandardCharsets.UTF_8));
-                if (!"CWS_AUTOTRADE_APK_V1".equals(manifest.optString("schema", ""))) {
-                    throw new IOException("INVALID_RELEASE_SCHEMA");
+                if (!"CWS_AUTOTRADE_APK_V1".equals(manifest.optString("schema", ""))
+                    || !"SHA256withRSA".equals(
+                        manifest.optString("signatureAlgorithm", ""))) {
+                    throw new IOException("INVALID_RELEASE_SCHEMA_OR_SIGNATURE_ALGORITHM");
                 }
                 String appId = manifest.optString("applicationId", "");
                 int version = manifest.optInt("versionCode", -1);
