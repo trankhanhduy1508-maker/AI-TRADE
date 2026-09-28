@@ -9,6 +9,12 @@ import sys
 
 
 async def main() -> int:
+    # No environment flag is sufficient authority to send broker orders.
+    # Server-side model/risk approval and persistent kill-switch status must
+    # be checked immediately before each order, not only at process startup.
+    if os.getenv("AI_TRADE_ENABLE_DEMO_SEND", "").upper() == "YES":
+        print("CONFIG_BLOCKED: server-authoritative DEMO order approval is not wired", flush=True)
+        return 78
     token = os.getenv("METAAPI_TOKEN", "").strip()
     account_id = os.getenv("METAAPI_ACCOUNT_ID", "").strip()
     if not token or not account_id:
@@ -34,7 +40,7 @@ async def main() -> int:
     )
     state_dir = Path(os.getenv("AI_TRADE_STATE_DIR", "/data/ai-trade"))
     state_dir.mkdir(parents=True, exist_ok=True)
-    allow_send = os.getenv("AI_TRADE_ENABLE_DEMO_SEND", "").upper() == "YES"
+    allow_send = False  # read-only until the per-order server gate is implemented
     poll_seconds = max(5.0, float(os.getenv("AI_TRADE_POLL_SECONDS", "30")))
     max_tick_age = float(os.getenv("AI_TRADE_MAX_TICK_AGE_SECONDS", "120"))
     max_spread = float(os.getenv("AI_TRADE_MAX_SPREAD_POINTS", "30"))
