@@ -22,3 +22,13 @@ The Masterbook source is CWS's already-public **distilled** writing; it does not
 3. **Unchanged execution.** Live runtime `enabled=false`, `demo_send_enabled=false`, `risk_profile_approved=false`, zero broker order intents. The two existing research models remain **REJECTED**; zero model registry rows permit public inference or broker orders.
 
 The evidence is from actual Supabase SQL readback after insert, not a unit-test fixture. Two separate SQL negative tests attempted same-value UPDATE and DELETE inside exception-checked blocks; both operations were rejected by the immutable trigger, and post-test readback retained exactly two valid quarantined records. Do not convert QUARANTINED to APPROVED, claim commercially licensed data, publish proprietary snapshots or unlock broker/risk/The5ers gates without the separately established evidence/approval process.
+
+## Private owner Drive copies (not public application deployment)
+
+The original **Founder CWS Trading Masterbook EPUB** and the **debug-QA Android APK** were copied into separate private owner-only Google Drive folders under `CWS AI TRADE`. Google Drive readback reported `shared=false` and only the owner permission, and returned 1,707,675-byte EPUB and 11,887-byte APK.
+
+The original local files were hashed and CRC/integrity checked before upload. Independently re-downloaded Drive bytes matched **exactly**:
+- EPUB SHA-256 `c7d1ef5cca95217e67ec1764cf0b9cbc14ad1fa30cfa542717d0fe3373b5b00a`;
+- QA APK SHA-256 `2506f856b1b258386b2509cbafc0138397d4de93a3f27200555c2f6cd46c0d99`.
+
+The APK corresponds to the GitHub Android debug workflow for commit `8b2642013526dd9448ed1a2e39b9ebe82e369f69`, which completed Gradle lint/assemble and an APK Signature Scheme v2 verification with an **ephemeral debug certificate**. Drive storage is a private QA convenience, not release-signature stability, device QA, Play Store publication or production readiness. Private Drive file IDs and full EPUB contents are intentionally omitted from this public checkpoint.
