@@ -1,6 +1,7 @@
 package vn.cws.aitrade;
 
 import java.net.URLEncoder;
+import java.io.UnsupportedEncodingException;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -46,10 +47,16 @@ public final class NativeDemoAuth {
 
     public static String authorizeUrl(String nonce, String verifier) {
         String redirect = redirectUri(nonce);
-        return SUPABASE_URL + "/auth/v1/authorize?provider=google"
-            + "&redirect_to=" + URLEncoder.encode(redirect, StandardCharsets.UTF_8)
-            + "&code_challenge=" + challenge(verifier)
-            + "&code_challenge_method=s256";
+        try {
+            // URLEncoder.encode(String, Charset) requires Android API 33.
+            // The String encoding overload works with the supported minSdk 26.
+            return SUPABASE_URL + "/auth/v1/authorize?provider=google"
+                + "&redirect_to=" + URLEncoder.encode(redirect, "UTF-8")
+                + "&code_challenge=" + challenge(verifier)
+                + "&code_challenge_method=s256";
+        } catch (UnsupportedEncodingException e) {
+            throw new IllegalStateException("UTF-8 unavailable", e);
+        }
     }
 
     public static boolean matchesCallback(String scheme, String host, String path,
