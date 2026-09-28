@@ -1,0 +1,36 @@
+name: CWS AI Trade Web-only static smoke (never builds APK)
+on:
+  push:
+    branches: [codex/p0-covel-knowledge-audit]
+    paths:
+      - 'google-sites/cws-ai-trade/**'
+      - 'scripts/build_cws_trade_static.py'
+      - '.github/workflows/cws-ai-trade-web-smoke.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  web-smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 4
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      - name: Build portable first-party PWA for repo subpath
+        run: |
+          python3 scripts/build_cws_trade_static.py --base /AI-TRADE/ --output site-dist
+          test -s site-dist/index.html
+          test -s site-dist/mt5-login.html
+          test -s site-dist/founder-mt5.js
+          test -s site-dist/icon-512.png
+          ! grep -q '?asset=' site-dist/index.html
+          ! grep -q 'functions/v1/cws-ai-trade-site/app/' site-dist/index.html
+          ! grep -q 's3.tradingview.com' site-dist/mt5-login.html
+          ! grep -q 'cdnjs.cloudflare.com' site-dist/mt5-login.html
+      - name: Test web-only contracts
+        run: |
+          node --test google-sites/cws-ai-trade/tests/*.test.cjs
+          python3 -m py_compile scripts/build_cws_trade_static.py
+      - name: No APK and no deploy
+        run: echo "Web source smoke only; APK and public deployment are deliberately excluded."

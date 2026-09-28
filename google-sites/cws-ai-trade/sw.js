@@ -62,7 +62,7 @@ self.addEventListener("fetch",event=>{
     event.respondWith((async()=>{
       try{
         const result=await fetch(request);
-        if(result.ok&&result.headers.get("content-type")?.includes("text/html")){
+        if(result.ok&&result.headers.get("content-type")?.includes("text/html")&&(u.pathname===ROOT||u.pathname===ROOT+"index.html")){
           const cache=await caches.open(CACHE);
           await cache.put(ROOT,result.clone());
         }
