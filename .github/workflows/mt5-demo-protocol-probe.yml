@@ -29,4 +29,4 @@ jobs:
       - name: Create and securely persist MetaQuotes demo account
         run: python cloud/mt5-demo-bootstrap/create_demo.py
       - name: Verify existing MT5 DEMO through investor-only OIDC lease
-        run: python cloud/mt5-demo-bootstrap/readback_investor.py
+        run: PYTHONPATH=. python cloud/mt5-demo-bootstrap/readback_investor.py
