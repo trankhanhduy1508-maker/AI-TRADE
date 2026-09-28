@@ -22,7 +22,11 @@ jobs:
           python-version: '3.12'
       - name: Install pinned pymt5
         run: pip install 'git+https://github.com/cloudQuant/pymt5.git@e7b5a8d28201879576e6cd22a39b9ea8677d4ee1'
+      - name: Validate fail-closed investor-only readback contract
+        run: python -m unittest discover -s tests/execution -p 'test_mt5_investor_readback_contract.py' -q
       - name: Probe official MetaTrader WebTerminal transport only
         run: python cloud/mt5-demo-bootstrap/probe.py
       - name: Create and securely persist MetaQuotes demo account
         run: python cloud/mt5-demo-bootstrap/create_demo.py
+      - name: Verify existing MT5 DEMO through investor-only OIDC lease
+        run: python cloud/mt5-demo-bootstrap/readback_investor.py
