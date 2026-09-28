@@ -70,3 +70,6 @@ tasks.configureEach { task ->
         task.dependsOn prepareCwsAndroidAssets
     }
 }
+
+// No production APK without external Founder signing and full evidence gate.
+apply from: rootProject.file('release-signing.gradle')
