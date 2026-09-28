@@ -197,3 +197,17 @@ Nếu chỉ tiếp tục chỉnh nội dung, giữ nguyên canonical byline:
 **Duy Trần - Founder CWS**
 
 Không quay lại bản ebook cũ quá nặng về backtest.
+
+
+## Final artifact QA checkpoint
+
+Current final publishing state:
+- DOCX/PDF: 49 pages.
+- All 49 DOCX-render pages visually inspected after final TOC edit.
+- PDF re-exported from final DOCX.
+- Visible DOCX/PDF `Mục lục`: 29 internal links.
+- PDF: 59 annotations, 201 outline items.
+- EPUB: 147 TOC/internal links; 0 broken targets; UTF-8 Vietnamese PASS.
+- Author/byline: `Duy Trần - Founder CWS`.
+
+Do not regress the visible TOC back to an empty Word field or the earlier `Table of Contents` heading.
