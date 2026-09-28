@@ -23,12 +23,12 @@ jobs:
           python3 -m compileall -q src/self_learning scripts/run_ecb_reference_research.py
           PYTHONPATH=. python3 -m pytest -q tests/self_learning
       - name: Portfolio contract regression
-        run: node --test google-sites/cws-ai-trade/tests/portfolio.test.cjs
+        run: node --test google-sites/cws-ai-trade/tests/*.test.cjs
       - name: Immutable QA source snapshot
         if: always()
         run: |
           mkdir -p /tmp/cws-qa
-          tar -czf /tmp/cws-qa/cws-ai-trade-tested-source.tar.gz src/self_learning scripts/run_ecb_reference_research.py tests/self_learning google-sites/cws-ai-trade/portfolio.js google-sites/cws-ai-trade/tests/portfolio.test.cjs
+          tar -czf /tmp/cws-qa/cws-ai-trade-tested-source.tar.gz src/self_learning scripts/run_ecb_reference_research.py tests/self_learning google-sites/cws-ai-trade supabase/functions/cws-ai-trade-site/index.ts supabase/functions/ai-trade-dashboard/index.ts
           sha256sum /tmp/cws-qa/cws-ai-trade-tested-source.tar.gz
           git rev-parse HEAD
       - name: Upload temporary source artifact
