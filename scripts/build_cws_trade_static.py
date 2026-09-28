@@ -69,6 +69,16 @@ def _icon(size: int) -> bytes:
         b"IDAT",zlib.compress(scan,9)) + chunk(b"IEND",b"")
 
 
+def _cache_revision(source: dict[str, str]) -> str:
+    """Content-addressed SW cache: every first-party source change upgrades PWA."""
+    parts = [
+        f"{name}\\0{sha256(source[name].encode('utf-8')).hexdigest()}"
+        for name in sorted(source)
+    ]
+    parts.append("builder\\0" + sha256(Path(__file__).read_bytes()).hexdigest())
+    return sha256("\\n".join(parts).encode("utf-8")).hexdigest()[:12]
+
+
 def build(output: Path, base: str = "/", *, android: bool = False) -> dict[str, str]:
     """Whitelist public source assets and emit direct URLs (no API HTML)."""
     if not re.fullmatch(r"/(?:[A-Za-z0-9_-]+/)*", base):
@@ -110,7 +120,8 @@ def build(output: Path, base: str = "/", *, android: bool = False) -> dict[str, 
     sw = _require_replace(sw,'const ROOT="'+APP_OLD_ROOT+'";',
                           'const ROOT='+json.dumps(base)+';',"offline root")
     sw = _require_replace(sw,'cws-ai-trade-static-v5',
-                          'cws-ai-trade-static-v6',"cache version")
+                          'cws-ai-trade-static-'+_cache_revision(source),
+                          "content-addressed PWA cache version")
     sw = _require_replace(sw,'ROOT+"?asset=','ROOT+"',"direct offline assets")
     sw = _require_replace(sw,'const asset=u.searchParams.get("asset");',
                           'const asset=u.pathname.slice(ROOT.length);',"static asset guard")

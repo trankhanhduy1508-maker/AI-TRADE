@@ -32,5 +32,15 @@ jobs:
         run: |
           node --test google-sites/cws-ai-trade/tests/*.test.cjs
           python3 -m py_compile scripts/build_cws_trade_static.py
+          python3 - <<'PY'
+          from pathlib import Path
+          from scripts.build_cws_trade_static import _cache_revision
+          import re
+          sw=Path("site-dist/sw.js").read_text(encoding="utf-8")
+          assert re.search(r'const CACHE="cws-ai-trade-static-[0-9a-f]{12}"',sw)
+          assert _cache_revision({"index.html":"A"})!=_cache_revision({"index.html":"B"})
+          assert _cache_revision({"index.html":"A"})==_cache_revision({"index.html":"A"})
+          print("PWA content-addressed update smoke PASS")
+          PY
       - name: No APK and no deploy
         run: echo "Web source smoke only; APK and public deployment are deliberately excluded."
