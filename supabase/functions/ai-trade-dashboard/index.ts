@@ -23,6 +23,77 @@ function fmtR(v:unknown){
   return (n>0?"+":"")+n.toFixed(2)+"R";
 }
 
+const ADMIN_BUILD="5face2eabc66267e1e6adfb076dad713745d990c";
+const ADMIN_ASSET_BASE="https://cdn.jsdelivr.net/gh/trankhanhduy1508-maker/AI-TRADE@"+ADMIN_BUILD+"/dashboard";
+const ADMIN_URL="https://oziktadfeenydvgobudr.supabase.co/functions/v1/ai-trade-dashboard?admin=1";
+const ADMIN_APP_URL="https://oziktadfeenydvgobudr.supabase.co/functions/v1/ai-trade-dashboard?admin_app=1&mode=admin";
+
+function adminLoginHtml(){
+  return `<!doctype html><html lang="vi"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#020814"><meta name="referrer" content="no-referrer">
+<title>CWS AI Trade · Founder Login</title>
+<style>
+html,body{margin:0;background:#020814;color:#eef5ff;font-family:Inter,system-ui,-apple-system,sans-serif;min-height:100%}
+.wrap{min-height:100vh;display:grid;place-items:center;padding:22px;box-sizing:border-box}
+.card{width:min(520px,100%);background:#0a1828;border:1px solid #17324a;border-radius:24px;padding:28px;box-sizing:border-box;box-shadow:0 20px 80px rgba(0,0,0,.35)}
+.brand{display:flex;gap:14px;align-items:center;margin-bottom:24px}.logo{width:48px;height:48px;border-radius:14px;border:1px solid #17415a;display:grid;place-items:center;color:#43d6ff;font-weight:900;font-size:20px}
+h1{margin:0;font-size:28px}.sub{color:#8ea4b8;margin:4px 0 0}.badge{display:inline-block;margin:18px 0;padding:7px 12px;border-radius:999px;border:1px solid #6b5b23;color:#f6d36a;background:#2a281a;font-size:12px;font-weight:800}
+p{line-height:1.55;color:#b8c7d5}.btn{width:100%;border:0;border-radius:13px;padding:14px 16px;background:#fff;color:#172033;font-size:16px;font-weight:800;cursor:pointer}.btn:disabled{opacity:.6}
+.note{margin-top:14px;color:#7f95aa;font-size:12px;text-align:center}.error{margin-top:14px;padding:11px 12px;border-radius:12px;border:1px solid #683a46;background:#26151b;color:#ffb7c5;display:none}
+</style></head><body><main class="wrap"><section class="card">
+<div class="brand"><div class="logo">C</div><div><h1>CWS AI Trade</h1><div class="sub">Founder Login</div></div></div>
+<span class="badge">ADMIN LOGIN</span>
+<p>Đăng nhập bằng tài khoản Google Founder đã đăng ký để mở dashboard runtime thật. Không cần token thủ công.</p>
+<button id="loginBtn" class="btn" type="button">G · Đăng nhập Google để vào Admin</button>
+<div id="error" class="error"></div>
+<div class="note">Live money vẫn bị khóa. Trang đăng nhập không gửi lệnh giao dịch.</div>
+</section></main>
+<script>
+const KEY="cws-ai-trade-google-token";
+const API="https://oziktadfeenydvgobudr.supabase.co/functions/v1/ai-trade-dashboard";
+const err=document.getElementById("error");
+function fail(msg){err.textContent=msg;err.style.display="block";localStorage.removeItem(KEY)}
+async function verify(token){
+  const r=await fetch(API+"?format=google-session",{headers:{Authorization:"Bearer "+token},cache:"no-store"});
+  if(!r.ok)throw new Error(r.status===403?"Tài khoản Google này chưa được cấp quyền Founder.":"Không xác thực được phiên Google.");
+  const data=await r.json();
+  if(!data?.viewer?.founder)throw new Error("Tài khoản này không có quyền Founder.");
+  localStorage.setItem(KEY,token);
+  location.replace("https://oziktadfeenydvgobudr.supabase.co/functions/v1/ai-trade-dashboard?admin_app=1&mode=admin");
+}
+(async()=>{
+  const hash=new URLSearchParams(location.hash.replace(/^#/,""));
+  const fromHash=hash.get("access_token");
+  if(fromHash){history.replaceState(null,"",location.pathname+location.search);try{await verify(fromHash)}catch(e){fail(e.message)}return}
+  const saved=localStorage.getItem(KEY);
+  if(saved){try{await verify(saved);return}catch(e){fail(e.message)}}
+})();
+document.getElementById("loginBtn").addEventListener("click",()=>{
+  const u=new URL("https://oziktadfeenydvgobudr.supabase.co/auth/v1/authorize");
+  u.searchParams.set("provider","google");
+  u.searchParams.set("redirect_to","https://oziktadfeenydvgobudr.supabase.co/functions/v1/ai-trade-dashboard?admin=1");
+  location.href=u.toString();
+});
+</script></body></html>`;
+}
+
+function adminAppHtml(){
+  const b=ADMIN_ASSET_BASE;
+  return `<!doctype html><html lang="vi"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#020814"><meta name="referrer" content="no-referrer"><title>CWS AI Trade · Founder</title>
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+<style>html,body{margin:0;background:#020814;color:#eef5ff;font-family:Inter,system-ui,-apple-system,sans-serif}.shell{max-width:1120px;margin:auto;padding:18px 18px 50px}</style>
+<link rel="stylesheet" href="${b}/styles/tokens.css">
+<link rel="stylesheet" href="${b}/styles/layout.css">
+<link rel="stylesheet" href="${b}/styles/components.css">
+<script>if(!localStorage.getItem("cws-ai-trade-google-token"))location.replace("https://oziktadfeenydvgobudr.supabase.co/functions/v1/ai-trade-dashboard?admin=1");</script>
+<script type="module" src="${b}/js/app.js"></script></head><body>
+<main id="app" class="shell"><div style="padding:32px 0;color:#8ea4b8">Đang mở Founder Console…</div></main>
+<noscript>Cần bật JavaScript để xem CWS AI Trade.</noscript></body></html>`;
+}
+
 const DASH_STRATEGY="TF-013A-FORWARD-DIVERSIFIED-TREND";
 const YAHOO_SYMBOLS:Record<string,string>={
   EURUSD:"EURUSD=X",GBPUSD:"GBPUSD=X",USDJPY:"USDJPY=X",AUDUSD:"AUDUSD=X",
@@ -151,11 +222,19 @@ Deno.serve(async(req)=>{
   }
   const url=new URL(req.url);
   if(url.searchParams.get("admin")==="1"){
-    const target="https://raw.githack.com/trankhanhduy1508-maker/AI-TRADE/5face2eabc66267e1e6adfb076dad713745d990c/dashboard/admin.html";
-    return new Response(null,{status:302,headers:{
-      "location":target,
+    return new Response(adminLoginHtml(),{status:200,headers:{
+      "content-type":"text/html; charset=utf-8",
       "cache-control":"no-store, max-age=0",
-      "referrer-policy":"no-referrer"
+      "referrer-policy":"no-referrer",
+      "x-content-type-options":"nosniff"
+    }});
+  }
+  if(url.searchParams.get("admin_app")==="1"){
+    return new Response(adminAppHtml(),{status:200,headers:{
+      "content-type":"text/html; charset=utf-8",
+      "cache-control":"no-store, max-age=0",
+      "referrer-policy":"no-referrer",
+      "x-content-type-options":"nosniff"
     }});
   }
   if(url.searchParams.get("admin_preview")==="1"){
@@ -197,6 +276,24 @@ Deno.serve(async(req)=>{
 
   const format=publicFormat;
   const isFounder=String(access.access_role)==="FOUNDER";
+
+  if(format==="google-session"){
+    return new Response(JSON.stringify({
+      ok:true,
+      viewer:{
+        role:String(access.access_role),
+        entitlementState:String(access.entitlement_state),
+        subjectLabel:String(access.subject_label??""),
+        founder:isFounder
+      },
+      liveMoneyLocked:true
+    }),{status:200,headers:{
+      "content-type":"application/json; charset=utf-8",
+      "cache-control":"no-store",
+      "access-control-allow-origin":"*",
+      "referrer-policy":"no-referrer"
+    }});
+  }
 
   if(format==="admin-testers"){
     if(!isFounder)return new Response(JSON.stringify({ok:false,error:"FOUNDER_ONLY"}),{status:403,headers:{"content-type":"application/json"}});
