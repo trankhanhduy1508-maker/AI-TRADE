@@ -14,6 +14,8 @@ from pathlib import Path
 import sqlite3
 from typing import Any
 
+from src.execution.demo_readback import DemoAccountSnapshot, read_demo_snapshot
+
 
 class ExecutionMode(StrEnum):
     DISABLED = "DISABLED"
@@ -246,6 +248,7 @@ class MT5BrokerAdapter:
         self._allow_order_send = allow_order_send
         self._ledger = OrderIntentLedger(ledger_path)
         self._connected = False
+        self._bound_identity: tuple[str, str] | None = None
 
     def connect(self) -> bool:
         if self._mode == ExecutionMode.DISABLED:
@@ -272,6 +275,11 @@ class MT5BrokerAdapter:
         ) is not True:
             self._terminal.shutdown()
             raise TradingDisabledError("account trading disabled")
+        login = getattr(info, "login", None)
+        server = getattr(info, "server", None)
+        self._bound_identity = (
+            (str(login), str(server)) if login is not None and server else None
+        )
         self._connected = True
         return True
 
@@ -279,6 +287,7 @@ class MT5BrokerAdapter:
         if self._connected:
             self._terminal.shutdown()
             self._connected = False
+        self._bound_identity = None
         self._ledger.close()
 
     def submit(self, order: MT5OrderRequest) -> MT5OrderResult:
@@ -307,6 +316,18 @@ class MT5BrokerAdapter:
         if records is None:
             raise RuntimeError("positions_get failed")
         return tuple(self._position_from_record(record) for record in records)
+
+    def account_snapshot(
+        self, *, expected_login: str, expected_server: str
+    ) -> DemoAccountSnapshot:
+        """Fresh, owner-bound DEMO snapshot; never grants order permission."""
+        self._ensure_read_allowed()
+        if not self._connected and not self.connect():
+            raise ConnectionError("MT5 terminal initialization failed")
+        return read_demo_snapshot(
+            self._terminal, expected_login=expected_login,
+            expected_server=expected_server,
+        )
 
     def broker_position_ids(self, *, magic: int | None = None) -> set[str]:
         positions = self.positions()
@@ -508,6 +529,23 @@ class MT5BrokerAdapter:
             comment=str(getattr(record, "comment", "") or ""),
         )
 
+    def _assert_demo_account(self) -> None:
+        """Recheck immediately before and after order_check: terminals can switch accounts."""
+        getter = getattr(self._terminal, "account_info", None)
+        info = getter() if callable(getter) else None
+        if not self._connected or info is None:
+            raise TradingDisabledError("MT5 session unavailable")
+        if getattr(info, "trade_mode", None) != DEMO_ACCOUNT_TRADE_MODE:
+            raise TradingDisabledError("DEMO account is required")
+        if (getattr(info, "trade_allowed", None) is not True
+                or getattr(info, "trade_expert", None) is not True):
+            raise TradingDisabledError("account trading disabled")
+        if self._bound_identity is not None:
+            identity = (str(getattr(info, "login", "")),
+                        str(getattr(info, "server", "")))
+            if identity != self._bound_identity:
+                raise TradingDisabledError("DEMO account identity changed")
+
     def _checked_send(
         self,
         client_order_id: str,
@@ -515,6 +553,7 @@ class MT5BrokerAdapter:
         *,
         broker_order_id: str | None = None,
     ) -> MT5OrderResult:
+        self._assert_demo_account()
         check = self._terminal.order_check(request)
         check_retcode = self._retcode(check)
         if check_retcode != 0:
@@ -522,6 +561,7 @@ class MT5BrokerAdapter:
             self._ledger.record(client_order_id, "CHECK_REJECTED", broker_order_id, check_retcode)
             return MT5OrderResult(client_order_id, "CHECK_REJECTED", broker_order_id, check_retcode, message)
 
+        self._assert_demo_account()
         response = self._terminal.order_send(request)
         retcode = self._retcode(response)
         returned_order_id = self._optional_id(getattr(response, "order", None)) or broker_order_id

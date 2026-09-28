@@ -34,6 +34,8 @@ class FakeTerminal:
             trade_mode=1,
         )
         self.account = SimpleNamespace(
+            login=123456,
+            server="MetaQuotes-Demo",
             trade_mode=0,
             trade_allowed=True,
             trade_expert=True,
@@ -326,5 +328,57 @@ def test_contract_preflight_rejects_stop_at_entry_even_without_broker_minimum():
 
     assert result.status == "CONTRACT_REJECTED"
     assert result.message == "STOP_DISTANCE_INVALID"
+    assert terminal.check_calls == 0
+    assert terminal.send_calls == 0
+
+
+@pytest.mark.parametrize("mutate_account", [
+    lambda a: setattr(a, "trade_mode", 2),
+    lambda a: setattr(a, "trade_allowed", False),
+    lambda a: setattr(a, "login", 654321),
+    lambda a: setattr(a, "server", "Different-Demo"),
+])
+def test_broker_switch_after_order_check_blocks_order_send(mutate_account):
+    terminal = FakeTerminal()
+    original = terminal.order_check
+
+    def switching_check(request):
+        result = original(request)
+        mutate_account(terminal.account)
+        return result
+
+    terminal.order_check = switching_check
+    with _ledger_path() as db_path:
+        adapter = MT5BrokerAdapter(
+            terminal, mode=ExecutionMode.DEMO,
+            allow_order_send=True, ledger_path=db_path,
+        )
+        with pytest.raises(TradingDisabledError):
+            adapter.submit(_request("session-switch"))
+        adapter.close()
+    assert terminal.check_calls == 1
+    assert terminal.send_calls == 0
+
+
+def test_adapter_account_snapshot_requires_exact_demo_identity():
+    terminal = FakeTerminal()
+    terminal.account.currency = "USD"
+    terminal.account.balance = 1000.0
+    terminal.account.equity = 1002.5
+    terminal.positions_get = lambda: ()
+    with _ledger_path() as db_path:
+        adapter = MT5BrokerAdapter(
+            terminal, mode=ExecutionMode.DEMO,
+            allow_order_send=False, ledger_path=db_path,
+        )
+        snapshot = adapter.account_snapshot(
+            expected_login="123456", expected_server="MetaQuotes-Demo"
+        )
+        assert (snapshot.balance, snapshot.equity) == (1000.0, 1002.5)
+        with pytest.raises(RuntimeError, match="ACCOUNT_IDENTITY_MISMATCH"):
+            adapter.account_snapshot(
+                expected_login="123456", expected_server="Wrong-Demo"
+            )
+        adapter.close()
     assert terminal.check_calls == 0
     assert terminal.send_calls == 0
