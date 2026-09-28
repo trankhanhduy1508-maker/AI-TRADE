@@ -76,3 +76,28 @@ No real Android visual/browser test and no actual published Google Site. Mark bo
 - Only after QA PASS checkpoint and publish public Site URL.
 
 FAIL → root cause → minimal diff → retest. No fake PASS.
+
+## 2026-09-28 — PWA delivery checkpoint
+
+Founder đổi ưu tiên: trước tiên làm **Web App cài như ứng dụng Android (PWA)**, chưa build APK.
+
+PWA URL:
+https://oziktadfeenydvgobudr.supabase.co/functions/v1/cws-ai-trade-site/app/
+
+Supabase Function: `cws-ai-trade-site` v7 ACTIVE.
+
+Đã tạo mới:
+- `google-sites/cws-ai-trade/manifest.webmanifest`
+- `google-sites/cws-ai-trade/sw.js`
+- `google-sites/cws-ai-trade/pwa.js`
+- `supabase/functions/cws-ai-trade-site/pwa-icon.ts`
+
+Đã sửa `index.html`, `styles.css`, `app.js` để có Android install button, biểu tượng, SW và tùy chọn IndexedDB lưu EPUB trên thiết bị.
+
+Quan trọng: Supabase gateway chuẩn hóa/không giữ đủ path suffix khi vào Edge Function. Dùng route `/app/?asset=manifest.webmanifest`, `/app/?asset=sw.js`, `/app/?asset=icon-192.png`, `/app/?asset=icon-512.png`; **không** quay lại `/app/sw.js` hoặc `/app/manifest.webmanifest` vì đã trả sai HTML trong runtime trước khi fix.
+
+Đã xác minh live: manifest JSON, SW JavaScript, icon 192/512 image, health. Static/mock install flow 13/13 PASS nhưng Android Chrome install E2E còn PENDING. SW cache chỉ public static + public Masterbook/JSZip tùy chọn; không cache broker position, token hoặc market feed.
+
+Không coi APK là hoàn thành. Nếu về sau cần APK, đánh giá Capacitor hoặc TWA, nhưng TWA cần root `/.well-known/assetlinks.json` thuộc origin CWS kiểm soát và signing-key validation.
+
+Giữ nguyên Founder Secure production, live-money/risk/The5ers gate. Không tự đổi Google Site chưa đăng nhập hoặc tự publish.
