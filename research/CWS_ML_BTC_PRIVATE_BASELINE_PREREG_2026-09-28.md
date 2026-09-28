@@ -1,5 +1,7 @@
 # CWS ML research preregistration — internal-only BTC-USD baseline
 
+> **ĐÍNH CHÍNH BẮT BUỘC 28-09-2026: KHÔNG ĐƯỢC TÁI SỬ DỤNG.** [Điều khoản Coinbase Market Data](https://www.coinbase.com/legal/market_data), cập nhật 07-08-2026, mục 3(5), cấm sử dụng dữ liệu của họ để phát triển, huấn luyện hoặc đánh giá AI/ML, kể cả nghiên cứu nội bộ, trừ khi có chấp thuận bằng văn bản trước đó. Nhận định “internal research only” trong protocol dưới đây là sai về quyền ML. Thử nghiệm BTC cũ đã bị loại; raw candles, trọng số và metrics đã được thay bằng tombstone tại cơ sở dữ liệu nghiên cứu. Không được chạy lại protocol này với Coinbase. Phần bên dưới chỉ lưu lịch sử kỹ thuật, không phải giấy phép hay hướng dẫn thực thi.
+
 Date: 2026-09-28. Repository branch: codex/p0-covel-knowledge-audit.
 This protocol is frozen **before reading model scores**; no parameter retuning against OOS.
 
