@@ -103,6 +103,16 @@ def build(output: Path, base: str = "/", *, android: bool = False) -> dict[str, 
         index = _require_replace(index,'<script src="./pwa.js" defer></script>',
                                  "<!-- Native Android includes the offline shell; no PWA registration. -->",
                                  "Android shell install")
+        index = _require_replace(index, "<title>CWS AI Trade · Founder</title>",
+                                 "<title>CWS AutoTrade · DEMO LOCKED</title>",
+                                 "Android-only app title")
+        index = _require_replace(index,
+                                 "<strong>CWS <em>AI TRADE</em></strong>",
+                                 "<strong>CWS <em>AUTOTRADE</em></strong>",
+                                 "Android-only app brand")
+        index = _require_replace(index, "<h1>CWS AI Trade</h1>",
+                                 "<h1>CWS AutoTrade</h1>",
+                                 "Android-only dashboard title")
     source["index.html"] = index
 
     pwa = source["pwa.js"]
@@ -133,6 +143,10 @@ def build(output: Path, base: str = "/", *, android: bool = False) -> dict[str, 
     manifest["id"] = base
     manifest["start_url"] = base
     manifest["scope"] = base
+    if android:
+        manifest["name"] = "CWS AutoTrade"
+        manifest["short_name"] = "CWS AutoTrade"
+        manifest["description"] = "CWS AutoTrade: quản lý danh mục, kết nối MT5 DEMO; Auto Trade chưa được phê duyệt."
     for icon in manifest.get("icons",[]):
         icon["src"] = base + "icon-" + icon["sizes"].split("x")[0] + ".png"
     for shortcut in manifest.get("shortcuts",[]):
