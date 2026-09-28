@@ -81,7 +81,9 @@ def main() -> int:
 
     kill = KillSwitchStore(state_dir / "kill_switch.sqlite")
     if kill.is_active() and args.enable_demo_send:
-        kill.deactivate("explicit --enable-demo-send DEMO runner start")
+        kill.close()
+        adapter.close()
+        raise SystemExit("KILL_SWITCH_ACTIVE: command-line flags cannot clear the persistent kill switch")
 
     risk = IndependentRiskEngine(
         RiskLimits(
