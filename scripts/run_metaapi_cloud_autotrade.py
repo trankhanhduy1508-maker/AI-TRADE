@@ -60,7 +60,9 @@ async def main() -> int:
 
     kill = KillSwitchStore(state_dir / "kill_switch.sqlite")
     if kill.is_active() and allow_send:
-        kill.deactivate("explicit AI_TRADE_ENABLE_DEMO_SEND=YES cloud start")
+        kill.close()
+        await adapter.close()
+        raise SystemExit("KILL_SWITCH_ACTIVE: environment flags cannot clear the persistent kill switch")
     position_state = PositionStateStore(state_dir / "positions.sqlite")
     risk = IndependentRiskEngine(
         RiskLimits(
