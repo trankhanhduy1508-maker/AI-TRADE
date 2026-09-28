@@ -20,3 +20,11 @@ Không bắt khách dùng TradingView. Tab `Biểu đồ nâng cao` mở khi kh�
 
 ## Định nghĩa DONE
 Không có APK bàn giao nếu chưa có DEMO execution qua gate thật; Android cài và nâng cấp tại chỗ theo cùng khóa ký; model/strategy recovery và native recovery được thử bằng phiên bản cao hơn mà vẫn giữ dữ liệu; có kiểm thử tình huống app đóng/mất mạng/broker timeout/đóng lệnh bên ngoài; mọi lệnh phải có audit và reconciled broker confirmation. Không có lời hứa lợi nhuận từ backtest lịch sử. Live-money duy trì LOCKED.
+
+## Yêu cầu xác thực MT5 được Founder nhấn mạnh (2026-09-28)
+
+**CWS AutoTrade APK phải kết nối MT5 từ màn hình đăng nhập với đủ 3 trường**: `Login` (số tài khoản), `Password` (mật khẩu), `Server` (máy chủ đúng của broker). Khi khách đăng nhập, APK chuyển thông tin qua HTTPS đến API đã xác thực người dùng; backend dùng adapter được hỗ trợ để **đăng nhập broker thật**, kiểm tra account ID/server/account mode và trả readback vừa xác minh gồm balance, equity, danh sách vị thế và thời gian kiểm tra. Chỉ chuyển sang `CONNECTED` sau xác nhận broker runtime; lỗi đăng nhập, server không hỗ trợ hoặc hết phiên => `DISCONNECTED` hoặc `BLOCKED`. Tuyệt đối không lấy so khớp password trong Vault hay `last_verified_at` cũ thay cho broker session hiện tại.
+
+**Bảo vệ credential**: không lưu mật khẩu hoặc service-role token trong APK, HTML, GitHub, log hay file xuất; chỉ xử lý qua API có quyền chủ tài khoản, TLS, rate limit, audit không có bí mật và Vault khi có consent hợp lệ. Tài khoản của khách A không được đọc hoặc sử dụng tài khoản của khách B. Quyền đóng lệnh thủ công, dừng khẩn cấp và đối chiếu vị thế phải gắn đúng chủ tài khoản, không có quyền quản trị chéo.
+
+**Hạn chế hiện tại (không được gọi DONE)**: API `ai-trade-founder-mt5` hiện chỉ chấp nhận `MetaQuotes-Demo` **đã liên kết trước** và chỉ kiểm broker DEMO theo yêu cầu; giao diện đăng nhập OAuth hiện yêu cầu origin GitHub Pages nên chưa có kênh callback Google native APK đã xác minh. API verifier hiện trả balance nhưng chưa có equity/vị thế được xác minh; chưa có generic broker adapter cho mọi server. Những phần đó phải được bổ sung và kiểm thử trên tài khoản DEMO được phép, sau đó thử Android Google login → submit 3 trường → account/positions readback → disconnect/reconnect → fail-closed mới đủ PASS. Không bật auto-trade và tuyệt đối không mở live-money chỉ vì login thành công.
