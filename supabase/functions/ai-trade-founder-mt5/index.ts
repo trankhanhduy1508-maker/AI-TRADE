@@ -160,6 +160,14 @@ async function verifyStoredDemo(req:Request,id:number){
     return {code:403,body:{ok:false,status:"BROKER_DEMO_NOT_VERIFIED",
       brokerOrders:false,liveMoneyLocked:true}};
   }
+  // Snapshot values must originate in the same fresh broker verifier response.
+  // Missing data stays BLOCKED; never substitute historical database fields.
+  if(typeof data.balance!=="number"||!Number.isFinite(data.balance)
+      ||typeof data.currency!=="string"
+      ||!/^[A-Z]{3,8}$/.test(data.currency)){
+    return {code:503,body:{ok:false,status:"BROKER_READBACK_INCOMPLETE",
+      brokerOrders:false,liveMoneyLocked:true}};
+  }
   const updated=await sql`
     update ai_trade.account_mt5_bindings set
       connection_state='CONNECTED',last_verified_at=now(),updated_at=now()
@@ -172,6 +180,8 @@ async function verifyStoredDemo(req:Request,id:number){
   return {code:200,body:{
     ok:true,status:"DEMO_VERIFIED_READ_ONLY",server:"MetaQuotes-Demo",
     login,verifiedAt:new Date().toISOString(),
+    balance:data.balance,currency:data.currency,readbackSource:"MT5_DEMO_VERIFIER",
+    equity:null,positions:null,
     passwordStoredOnDevice:false,passwordExposed:false,
     autoTradeActive:false,brokerOrders:false,liveMoneyLocked:true
   }};
