@@ -304,30 +304,77 @@ public final class DemoLoginActivity extends Activity {
 
     private void refresh() {
         final long generation = sessionGeneration;
+        refreshButton.setEnabled(false);
+        status.setText("Đang đọc MT5 DEMO mới từ broker. Không gửi lệnh.");
         network.execute(() -> {
             try {
                 if (generation != sessionGeneration) return;
                 String bearer = authorizedToken();
-                JSONObject response = request("GET", API + "status", null,
+                JSONObject current = request("GET", API + "status", null,
                     bearer, 18000);
-                if (!bearer.equals(accessToken) || generation != sessionGeneration) return;
-                if (!response.optBoolean("ok", false)) throw new IOException("STATUS_FAILED");
-                JSONObject a = response.optJSONObject("account");
-                String text = a == null ? "Chưa liên kết tài khoản DEMO."
-                    : "Login: " + a.optString("login", "—")
-                        + " | Server: " + a.optString("server", "—")
-                        + "\nXác minh gần đây: " + a.optBoolean("recentlyVerified", false)
-                        + "\nBalance: — | Equity: — | Positions: —"
-                        + "\nChưa có readback đủ từ broker trên API này.";
+                if (generation != sessionGeneration || !bearer.equals(accessToken)) return;
+                if (!current.optBoolean("ok", false)
+                    || !"GOOGLE_FOUNDER".equals(current.optString("auth", ""))) {
+                    throw new IOException("FOUNDER_SESSION_REQUIRED");
+                }
+                JSONObject linked = current.optJSONObject("account");
+                if (linked == null) {
+                    runOnUiThread(() -> {
+                        if (generation != sessionGeneration) return;
+                        account.setText("Chưa liên kết tài khoản MT5 DEMO.\n"
+                            + "Balance: — | Equity: — | Positions: —"
+                            + "\nAuto Trade: LOCKED | LIVE: LOCKED");
+                        status.setText("Nhập tài khoản DEMO đã được liên kết.");
+                    });
+                    return;
+                }
+                String linkedLogin = linked.optString("login", "");
+                String linkedServer = linked.optString("server", "");
+                if (!linkedLogin.matches("[1-9][0-9]{4,14}")
+                    || !"MetaQuotes-Demo".equals(linkedServer)) {
+                    throw new IOException("UNSUPPORTED_BROKER_BINDING");
+                }
+                // Caller cannot choose an account: backend resolves the bound
+                // Founder-owned DEMO account and fetches fresh broker data.
+                JSONObject broker = request("POST", API + "snapshot", null,
+                    bearer, 125000);
+                if (generation != sessionGeneration || !bearer.equals(accessToken)) return;
+                if (!broker.optBoolean("ok", false)
+                    || !"DEMO_SNAPSHOT_READ_ONLY".equals(broker.optString("status", ""))
+                    || !"DEMO".equals(broker.optString("mode", ""))
+                    || !linkedLogin.equals(broker.optString("login", ""))
+                    || !linkedServer.equals(broker.optString("server", ""))) {
+                    throw new IOException("BROKER_SNAPSHOT_INVALID");
+                }
+                double balance = broker.optDouble("balance", Double.NaN);
+                String currency = broker.optString("currency", "");
+                if (!Double.isFinite(balance) || !currency.matches("[A-Z]{3,8}")) {
+                    throw new IOException("BROKER_BALANCE_INVALID");
+                }
+                String asOf = broker.optString("asOf", "—");
+                final String display = "Login: " + linkedLogin + " | " + linkedServer
+                    + "\nBalance: " + balance + " " + currency
+                    + "\nEquity: — | Positions: —"
+                    + "\nĐọc từ broker lúc: " + asOf
+                    + "\nAuto Trade: LOCKED | LIVE: LOCKED";
                 runOnUiThread(() -> {
                     if (generation != sessionGeneration) return;
-                    account.setText(text + "\nAuto Trade: LOCKED | LIVE: LOCKED");
+                    account.setText(display);
+                    status.setText("MT5 DEMO được xác minh chỉ đọc.");
                 });
             } catch (Exception error) {
                 runOnUiThread(() -> {
                     if (generation != sessionGeneration) return;
-                    account.setText("Balance: — | Equity: — | Positions: —");
-                    status.setText("Không lấy được dữ liệu mới. Không đặt lệnh.");
+                    account.setText("Balance: — | Equity: — | Positions: —"
+                        + "\nKhông có dữ liệu broker mới."
+                        + "\nAuto Trade: LOCKED | LIVE: LOCKED");
+                    status.setText("Không thể đọc broker DEMO. Không gửi lệnh.");
+                });
+            } finally {
+                runOnUiThread(() -> {
+                    if (generation == sessionGeneration) {
+                        refreshButton.setEnabled(!accessToken.isEmpty());
+                    }
                 });
             }
         });
