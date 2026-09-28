@@ -51,3 +51,8 @@ Triple-check: (1) exact repo/branch/commit/hash, nguồn license và nguồn cre
 ## 6. Checkpoint source DEMO / Android bổ sung (2026-09-28)
 
 Đã thêm readback account/vị thế DEMO có so khớp login/server, kiểm số dư/equity, Lot từng vị thế và P/L; adapter kiểm account DEMO lại trước/sau order_check và lúc đọc vị thế. Evidence cùng trạng thái PASS/BLOCKED chính xác nằm tại [`reports/CWS_AUTOTRADE_ANDROID_DEMO_SOURCE_EVIDENCE_2026-09-28.md`](../reports/CWS_AUTOTRADE_ANDROID_DEMO_SOURCE_EVIDENCE_2026-09-28.md). **Chưa có broker runtime PASS, Android E2E PASS, Auto Trade approval hay APK release**. Không đổi các gate Supabase, không đọc/ghi mật khẩu và không thay nhánh.
+
+
+### Bổ sung readback connected check
+
+Commit `559fe83fd5bbb5bba21800536e89d6f38a6f30a4` buộc `terminal_info().connected` trước readback, không chấp nhận account cache khi terminal mất kết nối. Standalone fake-terminal unit 16 PASS; xem evidence trong `reports/CWS_AUTOTRADE_ANDROID_DEMO_SOURCE_EVIDENCE_2026-09-28.md` phần 5. Chưa chứng minh broker runtime, Android OAuth, auto-trade thực hoặc signed release. Workflow `6d2728fd068e5b2e877b786b6a2c295b30ae3d2b` cập nhật diễn đạt APK-first, vẫn không build APK.

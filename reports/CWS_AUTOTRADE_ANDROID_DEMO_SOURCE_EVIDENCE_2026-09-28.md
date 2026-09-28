@@ -41,3 +41,26 @@ Kiểm chứng đồng nhất file đã test với GitHub: SHA-1 Git blob module
 `BLOCKED`: native Google OAuth PKCE/callback trên Android, kênh nạp credential an toàn được xác thực chủ tài khoản, MT5-compatible runtime có khả năng đọc equity và positions thật, owner A/B isolation E2E, model/dataset có license và kết quả OOS/WF/cost/paper-forward đã duyệt, risk approval, broker-order DEMO audit và reconciliation, Android install/update/recovery cùng release signing identity. Supabase verifier hiện hữu chỉ có bằng chứng readback balance, không được gắn nhãn equity/positions PASS. The5ers không kích hoạt khi thiếu approval riêng.
 
 **Release gate: CLOSED. Live/funded: LOCKED. APK bàn giao: KHÔNG TẠO.** Không có lệnh DEMO mới hoặc quyền tự trade được bật bởi các commit này.
+
+## 5. Bổ sung gate BROKER_CONNECTED và bản chỉnh tài liệu APK-first
+
+Commit `559fe83fd5bbb5bba21800536e89d6f38a6f30a4`: `read_demo_snapshot` hiện **bắt buộc `terminal_info().connected is True`** trước khi đọc `account_info()`. Thiếu metadata, `None` hoặc `connected=false` trả `TERMINAL_INFO_UNAVAILABLE` / `BROKER_DISCONNECTED`, không trả số dư/vị thế cache rồi giả là trạng thái broker hiện tại. `tests/execution/test_mt5_adapter.py` fixture được cập nhật tương ứng; các test integration trong full repo **chưa chạy**.
+
+**PASS — standalone fake-terminal unit đã chạy lại sau sửa (không phải broker E2E):**
+
+```text
+PYTHONPATH=. pytest -q tests/execution/test_demo_readback.py
+................                                                         [100%]
+16 passed in 0.09s
+python -m compileall -q src/execution/demo_readback.py tests/execution/test_demo_readback.py
+```
+
+Các blob của **chính file đã chạy test** được đối chiếu GitHub readback:
+- Module: Git blob SHA-1 `51e74680767fa5968919ab45037d615163321bd2`, SHA-256 `4ca8fea6318092bb7faa78f0c32ce3c2e7b96f1342ec0fd9f0a5a77fdd046108`.
+- Test: Git blob SHA-1 `a74534bf74365bf624fac435af60440b9b14807a`, SHA-256 `ebe53ad20a5d2fad5f1cfc86614274a63f4e1dc39cd39419acb18baeff77d540`.
+
+Commit `6d2728fd068e5b2e877b786b6a2c295b30ae3d2b`: điều chỉnh tên và thông báo của workflow **chỉ kiểm gate**, loại mô tả cũ bắt Web App phải xong trước APK. Không có job build, upload artifact hay trigger push; không tạo APK.
+
+**Triple-check cuối trước khi ghi phụ lục:** (1) GitHub so với checkpoint ban đầu chỉ thêm/sửa 7 file trên nhánh duy nhất, không thay Main; (2) 16 standalone fake-terminal tests PASS và blob module/test khớp đúng bản trong GitHub; full repo, broker DEMO và Android E2E **NOT RUN**; (3) SQL đọc lại Supabase: `enabled=false`, `demo_send_enabled=false`, `risk_profile_approved=false`, `order_intents=0`, 2 model `REJECTED`. Không lấy `terminal_info().connected` ở unit test giả làm bằng chứng kết nối broker thật, không tự mở bất kỳ gate nào.
+
+**Release gate vẫn CLOSED.** Google native auth, runtime broker equity/positions thật, DEMO auto-order qua toàn bộ phê duyệt, update/recovery có chữ ký và Android E2E vẫn **BLOCKED / NOT RUN**. Không gửi APK.
