@@ -41,12 +41,15 @@ public final class DemoLoginActivity extends Activity {
     private Button refreshButton;
     private TextView status;
     private TextView account;
+    private final Object sessionLock = new Object();
+    private NativeEncryptedSession encryptedSession;
     private volatile String accessToken = "";
     private volatile long sessionGeneration = 0L;
     private volatile long accessTokenExpiresAt = 0L;
 
     @Override public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        encryptedSession = new NativeEncryptedSession(this);
         // Protect broker credential entry from screenshots and screen recordings.
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_SECURE);
         LinearLayout form = new LinearLayout(this);
@@ -81,14 +84,29 @@ public final class DemoLoginActivity extends Activity {
         Button logout = new Button(this);
         logout.setText("Đăng xuất");
         logout.setOnClickListener(view -> {
-            sessionGeneration++;
-            accessToken = "";
-            accessTokenExpiresAt = 0L;
+            final String oldBearer;
+            synchronized (sessionLock) {
+                sessionGeneration++;
+                oldBearer = accessToken;
+                accessToken = "";
+                accessTokenExpiresAt = 0L;
+                encryptedSession.clear();
+                pending().edit().clear().apply();
+            }
             password.setText("");
             verifyButton.setEnabled(false);
             refreshButton.setEnabled(false);
             account.setText("—");
-            status.setText("Đã xóa phiên trên ứng dụng. Auto Trade: LOCKED.");
+            status.setText("Đã xóa phiên trên máy. Auto Trade: LOCKED.");
+            if (!oldBearer.isEmpty()) {
+                network.execute(() -> {
+                    try {
+                        request("POST", "/auth/v1/logout", null, oldBearer, 12000);
+                    } catch (Exception ignored) {
+                        // Offline logout must still invalidate all locally held credentials.
+                    }
+                });
+            }
         });
         form.addView(logout);
         account = new TextView(this);
@@ -97,7 +115,12 @@ public final class DemoLoginActivity extends Activity {
         ScrollView scroll = new ScrollView(this);
         scroll.addView(form);
         setContentView(scroll);
-        handleCallback(getIntent());
+        Intent start = getIntent();
+        if (start != null && start.getData() != null) {
+            handleCallback(start);
+        } else {
+            restoreSession();
+        }
     }
 
     private EditText input(LinearLayout form, String hint, int type) {
@@ -114,9 +137,12 @@ public final class DemoLoginActivity extends Activity {
     }
 
     private void beginGoogleLogin() {
-        sessionGeneration++;
-        accessToken = "";
-        accessTokenExpiresAt = 0L;
+        synchronized (sessionLock) {
+            sessionGeneration++;
+            accessToken = "";
+            accessTokenExpiresAt = 0L;
+            encryptedSession.clear();
+        }
         verifyButton.setEnabled(false);
         refreshButton.setEnabled(false);
         account.setText("Balance: — | Equity: — | Positions: —");
@@ -169,36 +195,111 @@ public final class DemoLoginActivity extends Activity {
                 body.put("code_verifier", verifier);
                 JSONObject result = request("POST", "/auth/v1/token?grant_type=pkce",
                     body, null, 20000);
-                String bearer = result.optString("access_token", "");
-                long expires = result.optLong("expires_in", 0L);
-                if (bearer.isEmpty() || expires <= 0 || expires > 86400L) {
-                    throw new IOException("INVALID_AUTH_SESSION");
-                }
-                if (generation != sessionGeneration) return;
-                accessToken = bearer;
-                accessTokenExpiresAt = System.currentTimeMillis() + expires * 1000L;
+                String bearer = acceptTokens(result, generation);
+                if (bearer == null) return;
                 runOnUiThread(() -> {
+                    if (generation != sessionGeneration) return;
                     verifyButton.setEnabled(true);
                     refreshButton.setEnabled(true);
-                    status.setText("Google đã xác thực. Chỉ đọc MT5 DEMO.");
+                    status.setText("Google Founder đã xác thực. Chỉ đọc MT5 DEMO.");
                     refresh();
                 });
             } catch (Exception error) {
                 if (generation == sessionGeneration) {
-                    accessToken = "";
-                    runOnUiThread(() -> status.setText("Không hoàn tất Google OAuth. Đăng nhập lại."));
+                    synchronized (sessionLock) {
+                        if (generation == sessionGeneration) {
+                            accessToken = "";
+                            accessTokenExpiresAt = 0L;
+                            encryptedSession.clear();
+                        }
+                    }
+                    runOnUiThread(() -> {
+                        if (generation == sessionGeneration) {
+                            verifyButton.setEnabled(false);
+                            refreshButton.setEnabled(false);
+                            status.setText("Google OAuth/Founder không hợp lệ. Đăng nhập lại.");
+                        }
+                    });
                 }
             }
         });
     }
 
-    private String authorizedToken() {
-        String token = accessToken;
-        if (token.isEmpty() || System.currentTimeMillis() >= accessTokenExpiresAt) {
-            accessToken = "";
-            throw new IllegalStateException("GOOGLE_SESSION_EXPIRED");
+    /** Only a Google session with an active Founder entitlement is accepted. */
+    private String acceptTokens(JSONObject tokens, long generation) throws Exception {
+        String bearer = tokens.optString("access_token", "");
+        String rotated = tokens.optString("refresh_token", "");
+        long expires = tokens.optLong("expires_in", 0L);
+        if (bearer.length() < 32 || rotated.length() < 12 || expires <= 60
+            || expires > 86400L) throw new IOException("INVALID_GOOGLE_SESSION");
+        JSONObject identity = request("GET", API + "status", null, bearer, 18000);
+        if (!identity.optBoolean("ok", false)
+            || !"GOOGLE_FOUNDER".equals(identity.optString("auth", ""))) {
+            throw new IOException("FOUNDER_ENTITLEMENT_REQUIRED");
         }
-        return token;
+        synchronized (sessionLock) {
+            if (generation != sessionGeneration) return null;
+            // Save rotated token BEFORE publishing a valid in-memory access token.
+            encryptedSession.save(rotated);
+            accessToken = bearer;
+            accessTokenExpiresAt = System.currentTimeMillis() + expires * 1000L;
+        }
+        return bearer;
+    }
+
+    private void restoreSession() {
+        final String token = encryptedSession.load();
+        if (token == null) return;
+        final long generation = sessionGeneration;
+        status.setText("Đang khôi phục Google Founder…");
+        network.execute(() -> {
+            try {
+                JSONObject body = new JSONObject();
+                body.put("refresh_token", token);
+                JSONObject response = request("POST", "/auth/v1/token?grant_type=refresh_token",
+                    body, null, 20000);
+                String bearer = acceptTokens(response, generation);
+                if (bearer == null) return;
+                runOnUiThread(() -> {
+                    if (generation != sessionGeneration) return;
+                    verifyButton.setEnabled(true);
+                    refreshButton.setEnabled(true);
+                    status.setText("Đã khôi phục phiên Google Founder.");
+                    refresh();
+                });
+            } catch (Exception error) {
+                synchronized (sessionLock) {
+                    if (generation != sessionGeneration) return;
+                    encryptedSession.clear();
+                    accessToken = "";
+                    accessTokenExpiresAt = 0L;
+                }
+                runOnUiThread(() -> {
+                    if (generation == sessionGeneration) {
+                        verifyButton.setEnabled(false);
+                        refreshButton.setEnabled(false);
+                        status.setText("Không thể khôi phục phiên. Đăng nhập Google lại.");
+                    }
+                });
+            }
+        });
+    }
+
+    /** Invoked on the single network executor, never on the UI thread. */
+    private String authorizedToken() throws Exception {
+        String bearer = accessToken;
+        if (!bearer.isEmpty() && System.currentTimeMillis() + 60_000L
+            < accessTokenExpiresAt) return bearer;
+        final long generation = sessionGeneration;
+        String refresh = encryptedSession.load();
+        if (refresh == null) throw new IOException("GOOGLE_SESSION_EXPIRED");
+        JSONObject body = new JSONObject();
+        body.put("refresh_token", refresh);
+        JSONObject response = request("POST", "/auth/v1/token?grant_type=refresh_token",
+            body, null, 20000);
+        String renewed = acceptTokens(response, generation);
+        if (renewed == null) throw new IOException("GOOGLE_SESSION_CHANGED");
+        return renewed;
     }
 
     private void refresh() {
@@ -312,9 +413,11 @@ public final class DemoLoginActivity extends Activity {
     }
 
     @Override protected void onDestroy() {
-        sessionGeneration++;
-        accessToken = "";
-        accessTokenExpiresAt = 0L;
+        synchronized (sessionLock) {
+            sessionGeneration++;
+            accessToken = "";
+            accessTokenExpiresAt = 0L;
+        }
         if (password != null) password.setText("");
         network.shutdownNow();
         super.onDestroy();
