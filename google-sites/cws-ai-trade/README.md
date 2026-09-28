@@ -96,3 +96,14 @@ Kết quả: EURUSD hiển thị **3.00 lot**, P/L **+$15.00**, một dòng duy 
 ## Cập nhật
 
 Sau khi sửa `index.html`, `app.js`, `portfolio.js` hoặc `styles.css`, phải cập nhật bundle trong `supabase/functions/cws-ai-trade-site/index.ts` và deploy lại Edge Function có evidence thực tế. Git push không tự xuất bản site; đây là manual deploy có chủ đích.
+
+
+## Hướng nghiên cứu tiếp theo — CWS Trading Engine tự học
+
+Founder intent và form bàn giao mới nhất:
+- `knowledge/CWS_AI_TRADE_SELF_LEARNING_ENGINE_FOUNDER_INTENT_2026-09-28.md`
+- `product/CWS_AI_TRADE_SELF_LEARNING_WEBAPP_HANDOFF_2026-09-28.md`
+
+Mục tiêu: model học máy riêng do CWS kiểm soát, nạp kiến thức có provenance từ Masterbook và dữ liệu market/backtest/forward, không lấy GPT làm bộ não bắt buộc. Cập nhật knowledge → candidate dataset/model → OOS/WF/cost/stress → approval → promote; có lựa chọn `ABSTAIN` và risk gate độc lập.
+
+**Trạng thái:** đây là kiến trúc/Founder intent đã checkpoint, **chưa có bằng chứng model mới được train hoặc triển khai**. Google Sites thuộc tài khoản Founder vẫn chưa publish. Giữ live-money locked, không chạm broker/risk/The5ers và không biến trang public thành Founder Secure.
