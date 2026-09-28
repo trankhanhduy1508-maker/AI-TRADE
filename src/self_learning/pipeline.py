@@ -84,6 +84,9 @@ def build_labeled_bars(bars: list[dict[str, Any]], source: dict[str, Any],
         raise GateError("missing market-data provenance or cost assumption")
     if source["license"] not in LICENSES:
         raise GateError("market data license has not been cleared")
+    # Rights must cover AI/ML training itself, not merely reading public prices.
+    from .rights import require_ml_training_rights
+    require_ml_training_rights(source)
     if not isinstance(round_trip_cost_bps, (int, float)) or not 0 <= round_trip_cost_bps <= 500:
         raise GateError("invalid explicit round-trip cost")
     if len(bars) < 300:
@@ -115,7 +118,11 @@ def build_labeled_bars(bars: list[dict[str, Any]], source: dict[str, Any],
         rows.append({"as_of": ts, "feature_prev_return": cl / parsed[i-1][4] - 1,
                      "feature_bar_range": (hi-lo)/op, "target_next_bar_net_return": net,
                      "target_positive_after_cost": int(net > 0)})
-    signature = {"schema_version": 1, "source": {k: source[k] for k in required},
+    pinned_source = {k: source[k] for k in required}
+    for k in ("ml_training_rights_verified", "training_rights_evidence_ref", "source_sha256"):
+        if k in source:
+            pinned_source[k] = source[k]
+    signature = {"schema_version": 1, "source": pinned_source,
                  "round_trip_cost_bps": float(round_trip_cost_bps), "rows": rows}
     return {"dataset_version": "dv1-" + _digest(signature)[:20], "status": "RESEARCH_CANDIDATE",
             "market": source["market"], "timeframe": source["timeframe"],

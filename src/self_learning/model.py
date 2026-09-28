@@ -118,6 +118,8 @@ def train_candidate(dataset: dict[str, Any], code_sha: str,
     if dataset.get("cost_mode") != "RESEARCH_PROXY" or not str(dataset.get("dataset_version", "")).startswith("dv1-"):
         raise GateError("dataset is not a versioned, cost-declared research candidate")
     source, bps, rows = dataset.get("source"), dataset.get("round_trip_cost_bps"), dataset.get("rows")
+    from .rights import require_ml_training_rights
+    require_ml_training_rights(source)
     if not isinstance(source, dict) or not isinstance(rows, list) or not isinstance(bps, (int, float)) or not isfinite(bps) or not 0 <= bps <= 500:
         raise GateError("source metadata, rows or explicit cost are invalid")
     try:
