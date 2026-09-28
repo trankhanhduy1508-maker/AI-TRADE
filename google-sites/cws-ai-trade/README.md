@@ -156,3 +156,13 @@ Verified against the actual live URL `/functions/v1/cws-ai-trade-site/app/`:
 - Verified Supabase Edge deployment: `cws-ai-trade-site` v7 ACTIVE.
 
 This evidence **does not** establish Android Chrome installability end-to-end, offline EPUB IndexedDB persistence on the real phone, or published Google Sites. Those remain explicit pending checks.
+
+## 2026-09-28 — Supabase v8: trạng thái model trung thực, read-only
+
+- GitHub web/source checkpoint: `7798cc4abe4ad6a1e5adabc30e3267b120170765` trên đúng nhánh `codex/p0-covel-knowledge-audit`.
+- Supabase Edge Function `cws-ai-trade-site` **v8 ACTIVE**, lấy trực tiếp bản `supabase/functions/cws-ai-trade-site/index.ts` khớp `google-sites/cws-ai-trade/index.html`.
+- Giao diện bổ sung nhãn `MODEL_NOT_TRAINED`, `CHƯA HUẤN LUYỆN`, `ABSTAIN`, `LOCKED`, không tự phát tín hiệu khi chưa có model đã duyệt.
+- HTTP live GET trên v8: 4/4 đường dẫn được truy cập và trả nội dung thực tế gồm `?health=1`, `/app/`, `/app/?asset=manifest.webmanifest`, `/app/?asset=portfolio.js`. HTML live độc lập có `MODEL_NOT_TRAINED` và `ABSTAIN · Gate: LOCKED`; health báo `publicReadOnly=true` và `liveMoneyLocked=true`.
+- Giữ nguyên 16 cặp, mã nguồn aggregation Lot/P&L, biểu đồ, EPUB, PWA/SW/manifest và luật không cache private API. Không thay execution/broker/risk/The5ers; Supabase `ai_trade.runtime_config` đã đọc lại: `enabled=false`, `demo_send_enabled=false`, `risk_profile_approved=false`.
+- Kiểm thử Python nghiên cứu: 13/13 unit tests PASS trên fixture tạo riêng cho unit test, cùng `compileall` PASS. Không gọi đó là model thực trên dữ liệu thị trường.
+- **Chưa xác minh Android Chrome install/offline bằng thiết bị thật**, chưa publish Google Site dưới tài khoản Founder, chưa tạo APK, chưa triển khai production ML hay tích hợp broker. Không đánh dấu PASS các mục này.

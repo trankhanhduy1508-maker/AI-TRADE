@@ -56,3 +56,14 @@ Ingest a genuinely permitted closed-bar OHLCV snapshot with an explicit rights/r
 - Offline unit tests use explicitly synthetic TEST-market fixture bars to verify computation; these fixtures are **not evidence of trading or model profitability**.
 - Actual model weights on real data: **BLOCKED until source license, immutable licensed OHLC series, and cost provenance have been independently verified**. Yahoo-derived last-ten-per-market replay results are inadequate for this specific bar-level baseline.
 - Public website and PWA deployment remain unchanged by this Python research-code commit; model status stays NOT_TRAINED/ABSTAIN. All existing execution controls stay locked.
+
+## 2026-09-28 — verified Supabase PWA v8 read-only UI
+
+- Github source commit: `7798cc4abe4ad6a1e5adabc30e3267b120170765`. Manual deploy of `cws-ai-trade-site` returned ACTIVE v8, function bundle SHA-256 `b6f7ad751142d6e8ff5042bb2820d7e946f44a0318ea4aff006d3016c0ea6bf6`.
+- Pre-deploy check: v7 live edge source matched GitHub v7 bundle; GitHub v8 changed only bundled `index.html`. `styles.css`, `portfolio.js`, `app.js`, `pwa.js`, `sw.js`, manifest, icon code and Deno configuration unchanged.
+- Post-deploy independent Supabase function readback: ACTIVE v8 with source that includes `MODEL_NOT_TRAINED`; independent live HTML fetch confirms `MODEL_NOT_TRAINED`, `CHƯA HUẤN LUYỆN`, `ABSTAIN · Gate: LOCKED` in the CWS Trading Engine read-only panel.
+- Four live HTTP GETs had no fetch errors: health (publicReadOnly=true/liveMoneyLocked=true), app HTML, PWA manifest, portfolio.js. No Android physical-device test was performed.
+- Python research tests rerun: **13 passed**, `python -m compileall -q src/self_learning` passed. Tests are **synthetic fixture validation only**. NO model was trained on real licensed market OHLCV, no real-data OOS/WF/paper results and no broker-net claim.
+- Supabase read-only SQL after deployment: `enabled=false; demo_send_enabled=false; risk_profile_approved=false`.
+- Financial data rights remain an actual blocker to real ML training: FRED and broker/redistributor datasets cannot be assumed available for CWS model training solely because their prices can be downloaded; sample provider GitHub MIT software licenses do not independently establish rights over underlying broker-fed data. Do not turn an unverified market feed into `PERMISSION_GRANTED`.
+- Google Site Founder publish, Android hardware QA, APK build/signing and real-data candidate evaluation remain unverified; this checkpoint only marks completed, independently tested surfaces as PASS.
