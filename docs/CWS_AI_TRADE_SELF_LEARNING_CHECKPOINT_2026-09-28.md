@@ -76,3 +76,27 @@ Ingest a genuinely permitted closed-bar OHLCV snapshot with an explicit rights/r
 - Python self-learning tests: 13/13 PASS trên unit fixtures; model trên dữ liệu thực vẫn chưa được huấn luyện.
 - Sau triển khai `enabled=false`, `demo_send_enabled=false`, `risk_profile_approved=false` và giao diện vẫn thể hiện `MODEL_NOT_TRAINED`, `ABSTAIN`, `LOCKED`.
 - Google Sites publication, Android device installation và APK chưa có bằng chứng kiểm thử hoàn thành.
+
+
+## 2026-09-28 — Private EPUB and internal model-registry continuation
+
+Source code added:
+- \`src/self_learning/epub_ingest.py\`: EPUB3 ZIP integrity, size/traversal/doctype/manifest/spine checks; chapter-level source hashes, **private local quarantine** with immutable exclusive write, and a returned metadata-only manifest. Explicitly no training approval or broker route.
+- \`tests/self_learning/test_epub_ingest.py\`: harmless HTML doctype compatibility and fail-closed negative tests.
+- \`research/CWS_ML_BTC_PRIVATE_BASELINE_PREREG_2026-09-28.md\`: preregistered small research-only supervised baseline and strict provider rights restrictions; **not** a public/commercial data license.
+- \`supabase/migrations/20260928091859_ai_trade_private_ml_baseline_runs_v1.sql\`: tracks the applied remote Supabase migration for an append-only, RLS-protected research registry.
+
+Actual private book input was integrity-checked, its OPF author/title were verified, and its 31 extractable EPUB spine sections were staged to **private local quarantine** with source hashes. The full EPUB/chapter text was not committed to public GitHub, published in Google Sites, or used to train trading model weights. Staging does not establish rights clearance for any quoted third-party material. Local container quarantine is not claimed as durable cloud storage.
+
+Offline evidence:
+- \`PYTHONPATH=. pytest -q tests/self_learning\`: **20 passed** (pipeline, model candidate, EPUB validation).
+- \`node --test google-sites/cws-ai-trade/tests/portfolio.test.cjs\`: **8 passed**, including 16-market universe, position-level gross gain/loss, mixed directions, missing fields and rejection of paper R as broker P/L.
+- \`python -m compileall -q src/self_learning\` and default read-only \`ABSTAIN/LOCKED\` contract: PASS.
+- Exact locally tested EPUB source/test Git blob SHA-1 independently matched the files fetched from GitHub after commit.
+- Supabase confirmed private research registry RLS enabled, anon/authenticated SELECT denied and immutable mutation trigger present. The preregistered experiment was stored privately; external provider data, model artifact and evaluation are **not** redistributable public artifacts and are intentionally absent from this public checkpoint. **No model was promoted.**
+- Read-only SQL after research confirmed runtime execution gates still disabled and order-intent count unchanged at zero.
+- The public CWS Trading Engine stays fail-closed and read-only; no change to broker execution, kill-switch, Risk Engine or The5ers.
+
+The private provider license has a personal/internal research boundary and does **not** authorize making that provider's data or derived model available through a public/commercial Web App. Provider terms and permissions must be checked separately for any production use. The model, if any, cannot be represented as broker-net profitable or live validated.
+
+No Google Sites publish, Android install E2E or APK completion is asserted in this checkpoint.
