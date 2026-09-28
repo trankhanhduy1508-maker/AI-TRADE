@@ -101,3 +101,13 @@ Quan trọng: Supabase gateway chuẩn hóa/không giữ đủ path suffix khi v
 Không coi APK là hoàn thành. Nếu về sau cần APK, đánh giá Capacitor hoặc TWA, nhưng TWA cần root `/.well-known/assetlinks.json` thuộc origin CWS kiểm soát và signing-key validation.
 
 Giữ nguyên Founder Secure production, live-money/risk/The5ers gate. Không tự đổi Google Site chưa đăng nhập hoặc tự publish.
+
+## Verified final PWA v7 smoke
+
+Latest tested PWA URL: https://oziktadfeenydvgobudr.supabase.co/functions/v1/cws-ai-trade-site/app/
+
+- Live endpoint checks: **8/8 PASS** (HTML, manifest, SW, PWA JS, EPUB/IndexedDB JS, 192 and 512 icons, health).
+- Mock browser install logic: **13/13 PASS**.
+- Mock Service Worker install/activate/fetch: PASS, including offline public shell and no interception of private AI Trade API.
+- Google Sites actual publish and real Android Chrome install remain NOT TESTED/BLOCKED by lack of authorized device/browser session. Do not claim these as PASS.
+- No APK built and no APK release/signing key requested.
