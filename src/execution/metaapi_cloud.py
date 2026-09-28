@@ -12,7 +12,7 @@ import math
 from pathlib import Path
 from typing import Any
 
-from src.execution.metaapi_demo_guard import assert_metaapi_demo_context
+from src.execution.metaapi_demo_guard import MetaApiDemoBlocked, assert_metaapi_demo_context
 from src.execution.mt5_adapter import (
     MT5OrderRequest,
     MT5OrderResult,
@@ -183,7 +183,7 @@ class MetaApiCloudAdapter:
             return MT5OrderResult(
                 order.client_order_id,
                 "AMBIGUOUS",
-                message=f"{type(exc).__name__}: {exc}",
+                message=type(exc).__name__,
             )
         return self._record_response(order.client_order_id, response)
 
@@ -235,7 +235,7 @@ class MetaApiCloudAdapter:
                 client_order_id,
                 "AMBIGUOUS",
                 position.position_id,
-                message=f"{type(exc).__name__}: {exc}",
+                message=type(exc).__name__,
             )
         return self._record_response(client_order_id, response, position.position_id)
 
@@ -290,7 +290,7 @@ class MetaApiCloudAdapter:
                 client_order_id,
                 "AMBIGUOUS",
                 position.position_id,
-                message=f"{type(exc).__name__}: {exc}",
+                message=type(exc).__name__,
             )
         return self._record_response(client_order_id, response, position.position_id)
 
@@ -298,8 +298,13 @@ class MetaApiCloudAdapter:
         if not self._connected:
             await self.connect()
         else:
-            # Recheck every read/write: an earlier CONNECTED is historical.
-            assert_metaapi_demo_context(self.account, self.connection.terminal_state)
+            # A stale/changed broker identity invalidates this session until a
+            # complete re-synchronization, even if the old account returns.
+            try:
+                assert_metaapi_demo_context(self.account, self.connection.terminal_state)
+            except MetaApiDemoBlocked:
+                self._connected = False
+                raise
 
     def _ensure_mutation_allowed(self) -> None:
         if not self.allow_order_send:
