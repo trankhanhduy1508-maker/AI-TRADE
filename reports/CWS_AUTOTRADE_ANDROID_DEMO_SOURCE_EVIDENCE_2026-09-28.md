@@ -64,3 +64,31 @@ Commit `6d2728fd068e5b2e877b786b6a2c295b30ae3d2b`: điều chỉnh tên và thô
 **Triple-check cuối trước khi ghi phụ lục:** (1) GitHub so với checkpoint ban đầu chỉ thêm/sửa 7 file trên nhánh duy nhất, không thay Main; (2) 16 standalone fake-terminal tests PASS và blob module/test khớp đúng bản trong GitHub; full repo, broker DEMO và Android E2E **NOT RUN**; (3) SQL đọc lại Supabase: `enabled=false`, `demo_send_enabled=false`, `risk_profile_approved=false`, `order_intents=0`, 2 model `REJECTED`. Không lấy `terminal_info().connected` ở unit test giả làm bằng chứng kết nối broker thật, không tự mở bất kỳ gate nào.
 
 **Release gate vẫn CLOSED.** Google native auth, runtime broker equity/positions thật, DEMO auto-order qua toàn bộ phê duyệt, update/recovery có chữ ký và Android E2E vẫn **BLOCKED / NOT RUN**. Không gửi APK.
+
+## 6. APK-first native Google PKCE, DEMO balance và kiểm tra cập nhật (bổ sung 2026-09-28)
+
+**Thực hiện trên nhánh duy nhất `codex/p0-covel-knowledge-audit`.** Không thay Main/Production, không build hay phát hành APK chưa đủ gate.
+
+### Source đã cập nhật
+
+1. `android/app/src/main/java/vn/cws/aitrade/NativeDemoAuth.java`, `DemoLoginActivity.java`, `MainActivity.java` và `AndroidManifest.xml`: nút native MT5 DEMO trên Android mở trang Login/Password/Server. Google OAuth mở **trình duyệt Android bên ngoài WebView**, sinh PKCE SHA-256 và nonce dùng một lần, kiểm callback/TTL trước khi exchange. Màn hình bảo vệ screenshot, dùng HTTPS và chỉ key Supabase **publishable**. MT5 password chỉ xử lý tạm trong request, không ghi vào APK, GitHub, log hoặc lưu device. Không nhúng service-role key. Login demo giới hạn ở `MetaQuotes-Demo` đã liên kết; broker/server khác trả `UNSUPPORTED_SERVER`. Phiên Google hiện **chỉ giữ RAM**, chưa có refresh/session restore qua app restart, nên không được gọi UX production PASS.
+2. `supabase/functions/ai-trade-founder-mt5/index.ts`: sau khi upstream broker DEMO xác minh, yêu cầu balance hữu hạn và currency hợp lệ; trả balance/currency/as_of theo chính lần xác minh đó, **equity:null, positions:null** cho đến khi runtime hỗ trợ readback thực. Không lấy số dư lưu cũ thay broker, không tạo endpoint order hoặc bật auto-trade. Triển khai trên Supabase project hiện hữu với function `ai-trade-founder-mt5` **ACTIVE v2**; `verify_jwt=false` được giữ từ v1 vì handler vẫn bắt Supabase Google JWT và entitlement FOUNDER trước khi xử lý. Chưa có phiên Google/native E2E để chứng minh giao dịch hoặc xác thực broker trong lần chạy này.
+3. `NativeReleaseVerifier.java`: **source-only** xác minh metadata bản stable/recovery được ký bằng `SHA256withRSA`, SHA-256 của toàn bộ APK, applicationId cố định và `versionCode` mới luôn cao hơn. Recovery bản mã cũ phải phát hành thành một APK có versionCode mới, không cài lùi. Public key release phải được chủ sở hữu pin trong APK, APK phải được Android PackageManager xác minh cùng chứng chỉ ký, và người dùng phải đồng ý cài đặt. **Chưa có release signing key, signed manifest host, installer/auto-update UI, Android migration hay rollout E2E.**
+4. `android/qa/NativeDemoAuthCheck.java` và `NativeReleaseVerifierCheck.java`: Java QA độc lập cho PKCE RFC 7636, chống callback sai nonce, signed manifest và anti-downgrade; sử dụng key RSA được tạo tạm **chỉ trong phép thử**, không phải release key.
+
+### Evidence đã kiểm chứng
+
+- `javac` với JDK 21, chạy `NativeDemoAuthCheck`: **9 kiểm tra PASS** gồm test vector RFC 7636. Source/test Git blobs `1d1d19282c45111c95dc7aa1903f5861b8845f91` và `19a87ea69c6f0eab08830aa997bb737f8ba79587` trùng đúng file được thử.
+- `javac`, chạy `NativeReleaseVerifierCheck`: **9 phép thử PASS** cho stable/recovery, đổi hash, sai signer, sai applicationId, downgrade. Source/test Git blobs `c92d62f211ff1c3d907bb4be556e0f3b25534f40` và `0e77f48a3998fcd3203433d3722b054aea9433f1` trùng file được thử. Payload QA là chuỗi byte giả, **không phải APK thật**.
+- `DemoLoginActivity.java` kiểm tra cú pháp/kiểu bằng các stub Android giả lập tự tạo tại môi trường QA cục bộ. **Không tính là Android SDK/Gradle compile hay thiết bị E2E PASS.** SDK, Gradle và ADB không có trong môi trường QA lần này.
+- Supabase readback sau deploy: `ai-trade-founder-mt5` ACTIVE v2; SQL: `enabled=false`, `demo_send_enabled=false`, `risk_profile_approved=false`, `order_intents=0`. Không gửi bất cứ lệnh broker nào.
+
+### Gate còn chặn APK hoàn chỉnh
+
+- **OAuth Android thật**: chưa xác minh cấu hình `vn.cws.aitrade://auth/callback/**` trong Supabase Additional Redirect URLs, callback trên Android và Google FOUNDER consent E2E; plugin Supabase hiện không có hành động đổi Auth redirect setting. Không tự nhận login PASS.
+- **Broker thật và execution**: verifier hiện chỉ hỗ trợ `MetaQuotes-Demo` đã liên kết và readback balance; equity, positions, heartbeat/reconnect, account A/B isolation, runtime tương thích MT5 ổn định và DEMO order E2E theo approval vẫn chưa hoàn thành.
+- **Model/risk**: model private baseline `REJECTED`, chưa có model/chiến lược được duyệt bằng provenance/licensing, OOS/WF/cost/paper-forward; `risk_profile_approved=false`, `demo_send_enabled=false`. Không tự mở gate hay chạy The5ers khi thiếu approval riêng.
+- **Release**: thiếu signing identity chủ sở hữu, host manifest đã ký, cập nhật APK tại chỗ, installer consent, migration/restore và native recovery E2E trên Android thực. Library Google Drive có các APK debug **lịch sử**, không được dùng làm bản bàn giao.
+- **Auto-learning**: Masterbook cá nhân chỉ kiểm kê metadata; chưa tự train/promote model từ sách hoặc dữ liệu chưa được chứng minh giấy phép.
+
+**Trạng thái cuối: SOURCE PARTIAL; SUPABASE READ-ONLY v2 ACTIVE; DEMO AUTO-TRADE BLOCKED; LIVE LOCKED; APK RELEASE BLOCKED.** Không có bằng chứng runtime broker DEMO order/Android E2E hoặc APK release.

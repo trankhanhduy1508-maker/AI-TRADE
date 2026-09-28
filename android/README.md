@@ -39,3 +39,11 @@ Lịch sử build và đường dẫn debug APK ở trên **chỉ là kiểm th�
 ## Founder đổi trọng tâm: APK-first, update và rollback (mới nhất, 2026-09-28)
 
 Các đoạn ở trên chỉ mô tả trạng thái/hạn chế của artifact lịch sử. Từ nay ưu tiên mã nguồn Android và contract `product/CWS_AI_TRADE_ANDROID_CONTROL_LEARNING_UPDATE_SPEC_2026-09-28.md`; Web/PWA chỉ còn kênh phụ, việc GitHub Pages chưa kích hoạt **không chặn phát triển Android**. Vẫn không phát hành/bàn giao APK Debug khi DEMO auto-trade chưa được kiểm chứng. Chức năng auto-update + recovery **chưa được triển khai**: cần cùng signing identity release, kiểm SHA/kênh phân phối, versionCode tăng, rollback model/strategy bản được duyệt, native recovery build mới versionCode cao hơn và Android device E2E. Không cho model tự thay execution/risk/kill-switch. Nút can thiệp thủ công và TradingView được ghi nhận là đề xuất UX, không chạm broker execution trước khi chốt chi tiết.
+
+## Native MT5 DEMO / APK-first checkpoint (2026-09-28)
+
+Nhánh `codex/p0-covel-knowledge-audit` đã thêm `DemoLoginActivity` native, Google OAuth qua browser Android ngoài WebView với PKCE + callback nonce, form Login/Password/Server và hiển thị balance từ verifier read-only khi backend trả đủ thông tin. `MainActivity` có nút mở màn hình này. Chỉ `MetaQuotes-Demo` đã liên kết được chấp nhận; Equity/positions chưa có runtime readback nên giữ dấu `—`. Supabase endpoint Founder v2 trả balance được xác minh và giữ order disabled.
+
+Mã `NativeReleaseVerifier` mới chỉ là thư viện kiểm chữ ký metadata, SHA-256 và anti-downgrade, **không phải auto-update hoàn chỉnh**. Không có signer production, Android installer/update/recovery E2E. Java PKCE và verifier có tổng 18 phép thử offline PASS; lớp Activity chỉ compile trên stub giả (không phải Android SDK). Chi tiết và từng gate tại `reports/CWS_AUTOTRADE_ANDROID_DEMO_SOURCE_EVIDENCE_2026-09-28.md` phần 6.
+
+**Quy tắc chưa đổi:** APK-first nhưng **không tạo hay bàn giao APK** khi đăng nhập Google/broker thật, equity + positions, model/risk approvals, DEMO execution, update/recovery và Android QA chưa PASS. Không sử dụng debug APK trong Google Drive làm release.

@@ -56,3 +56,7 @@ Triple-check: (1) exact repo/branch/commit/hash, nguồn license và nguồn cre
 ### Bổ sung readback connected check
 
 Commit `559fe83fd5bbb5bba21800536e89d6f38a6f30a4` buộc `terminal_info().connected` trước readback, không chấp nhận account cache khi terminal mất kết nối. Standalone fake-terminal unit 16 PASS; xem evidence trong `reports/CWS_AUTOTRADE_ANDROID_DEMO_SOURCE_EVIDENCE_2026-09-28.md` phần 5. Chưa chứng minh broker runtime, Android OAuth, auto-trade thực hoặc signed release. Workflow `6d2728fd068e5b2e877b786b6a2c295b30ae3d2b` cập nhật diễn đạt APK-first, vẫn không build APK.
+
+## 7. Checkpoint native Android + Supabase DEMO read-only (2026-09-28)
+
+Đã bổ sung màn hình native MT5 DEMO dùng Google OAuth trên browser ngoài WebView (PKCE/nonce), trường Login/Password/Server, backend Founder v2 trả balance/currency chỉ sau xác minh broker mới; Equity/positions chưa có và không fake. Thư viện native release verifier bước đầu xác minh signed metadata, SHA-256 và versionCode monotonic, nhưng APK installer, signer production, migration/recovery và Android E2E vẫn chưa có. Java QA 18 phép thử PASS với mock; không phải thiết bị/broker PASS. Kiến thức và đường dẫn evidence chi tiết: `reports/CWS_AUTOTRADE_ANDROID_DEMO_SOURCE_EVIDENCE_2026-09-28.md` mục 6. **Release gate vẫn đóng; không phát hành APK.**
