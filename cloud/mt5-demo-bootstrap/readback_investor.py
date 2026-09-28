@@ -139,6 +139,22 @@ def main() -> int:
         result.update(accepted)
         result["ok"] = True
         result["status"] = "BROKER_DEMO_INVESTOR_READBACK_VERIFIED"
+    except InvestorReadbackBlocked as error:
+        # Only internal fixed-name gate codes are eligible for diagnostics.
+        reasons = {
+            "TRUSTED_ACTIONS_OIDC_REQUIRED", "UNTRUSTED_OIDC_ENDPOINT",
+            "OIDC_ISSUE_FAILED", "OIDC_TOKEN_MISSING",
+            "INVESTOR_LEASE_DENIED", "INVALID_INVESTOR_ONLY_LEASE",
+            "BROKER_ACCOUNT_NOT_AVAILABLE", "BROKER_NOT_DEMO",
+            "BROKER_POSITIONS_MISSING", "BROKER_ACCOUNT_CHANGED_DURING_READ",
+            "BROKER_NOT_EXACT_DEMO", "BROKER_LOGIN_MISMATCH",
+            "BROKER_CURRENCY_INVALID", "BROKER_POSITIONS_UNAVAILABLE",
+            "BROKER_POSITION_INCOMPLETE", "BROKER_POSITION_TICKET_INVALID",
+            "BROKER_POSITION_SYMBOL_INVALID", "BROKER_POSITION_SIDE_INVALID",
+            "BROKER_POSITION_VOLUME_INVALID", "BROKER_PROTECTIVE_PRICE_INVALID",
+        }
+        code = error.args[0] if error.args else ""
+        result["safeReason"] = code if code in reasons else "INTERNAL_DEMO_GATE_BLOCKED"
     except Exception as error:
         # Never log repr(error), HTTP bodies, URL query values, account info
         # or SDK exceptions. Only the exception *class* is safe for CI logs.
