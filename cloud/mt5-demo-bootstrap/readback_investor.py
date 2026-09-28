@@ -39,10 +39,13 @@ def investor_credentials() -> tuple[int, str, str]:
         raise InvestorReadbackBlocked("TRUSTED_ACTIONS_OIDC_REQUIRED")
     oidc_url = os.environ["ACTIONS_ID_TOKEN_REQUEST_URL"]
     parsed = urllib.parse.urlsplit(oidc_url)
-    if parsed.scheme != "https" or parsed.hostname not in (
-        "pipelines.actions.githubusercontent.com",
-        "token.actions.githubusercontent.com",
-    ):
+    host = (parsed.hostname or "").lower()
+    # GitHub uses runner/region-specific *.actions.githubusercontent.com
+    # endpoints; do not incorrectly pin one regional hostname.
+    if (parsed.scheme != "https"
+            or not (host == "actions.githubusercontent.com"
+                    or host.endswith(".actions.githubusercontent.com"))
+            or parsed.username is not None or parsed.password is not None):
         raise InvestorReadbackBlocked("UNTRUSTED_OIDC_ENDPOINT")
     delim = "&" if parsed.query else "?"
     target = oidc_url + delim + urllib.parse.urlencode({"audience": AUDIENCE})
