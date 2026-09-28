@@ -312,6 +312,7 @@ class MT5BrokerAdapter:
         getter = getattr(self._terminal, "positions_get", None)
         if not callable(getter):
             raise RuntimeError("positions_get is unavailable")
+        self._assert_demo_account()
         records = getter(symbol=symbol) if symbol is not None else getter()
         if records is None:
             raise RuntimeError("positions_get failed")

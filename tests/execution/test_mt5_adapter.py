@@ -382,3 +382,21 @@ def test_adapter_account_snapshot_requires_exact_demo_identity():
         adapter.close()
     assert terminal.check_calls == 0
     assert terminal.send_calls == 0
+
+
+def test_positions_read_is_blocked_after_switch_to_live_account():
+    terminal = FakeTerminal()
+    terminal.positions_get = lambda **kwargs: (_ for _ in ()).throw(
+        AssertionError("LIVE account positions must never be accessed")
+    )
+    with _ledger_path() as db_path:
+        adapter = MT5BrokerAdapter(
+            terminal, mode=ExecutionMode.DEMO,
+            allow_order_send=False, ledger_path=db_path,
+        )
+        assert adapter.connect()
+        terminal.account.trade_mode = 2
+        with pytest.raises(TradingDisabledError, match="DEMO"):
+            adapter.positions()
+        adapter.close()
+    assert terminal.send_calls == 0
