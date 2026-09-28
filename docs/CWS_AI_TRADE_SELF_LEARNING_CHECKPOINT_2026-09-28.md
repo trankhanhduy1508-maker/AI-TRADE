@@ -156,3 +156,9 @@ The public PWA is still read-only with no approved model and no direct broker ex
 ## 2026-09-28 — Coinbase ML rights correction
 
 Official [Coinbase Market Data Terms](https://www.coinbase.com/legal/market_data), updated 2026-08-07, section 3(5), prohibit using Coinbase market data for AI/ML development, training or validation even internally, without prior written permission. The earlier claim that internal research allowed training was incorrect. The BTC research protocol now carries an explicit historical erratum and MUST NOT be run with Coinbase market data. A targeted Supabase migration `ai_trade_coinbase_ml_rights_redaction_v1`, version `20260928110855`, removed the Coinbase raw candles, weights and derived evaluation from the private research row, retaining only a metadata tombstone (`PROHIBITED_FOR_ML`, `REJECTED`). Readback verified no retained raw array/weights/metrics, an intact separate ECB candidate, restored immutability trigger, private RLS/no anon access, execution gates still locked and zero broker intents. Treat all upstream price-feed ML rights as unverified until explicit documentary evidence supports the intended use.
+
+## Bàn giao chat mới — kinh nghiệm và prompt 28-09-2026
+
+- Bài học triển khai và cập nhật trạng thái: `product/CWS_AI_TRADE_KINH_NGHIEM_CHAT_2026-09-28.md` (phần 11).
+- Form chat mới: `prompts/CWS_AI_TRADE_CHAT_MOI_TIEP_TUC_2026-09-28.md`.
+- HEAD mới nhất phải đọc trực tiếp từ nhánh `codex/p0-covel-knowledge-audit`; không dùng SHA cũ làm HEAD mặc định. Hai model vẫn REJECTED (BTC `PROHIBITED_FOR_ML`). Google Sites và Android thiết bị thật chưa được đánh dấu PASS.
