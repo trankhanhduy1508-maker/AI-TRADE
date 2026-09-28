@@ -42,6 +42,7 @@ public final class DemoLoginActivity extends Activity {
     private TextView status;
     private TextView account;
     private volatile String accessToken = "";
+    private volatile long sessionGeneration = 0L;
     private volatile long accessTokenExpiresAt = 0L;
 
     @Override public void onCreate(Bundle savedInstanceState) {
@@ -80,6 +81,7 @@ public final class DemoLoginActivity extends Activity {
         Button logout = new Button(this);
         logout.setText("Đăng xuất");
         logout.setOnClickListener(view -> {
+            sessionGeneration++;
             accessToken = "";
             accessTokenExpiresAt = 0L;
             password.setText("");
@@ -112,6 +114,12 @@ public final class DemoLoginActivity extends Activity {
     }
 
     private void beginGoogleLogin() {
+        sessionGeneration++;
+        accessToken = "";
+        accessTokenExpiresAt = 0L;
+        verifyButton.setEnabled(false);
+        refreshButton.setEnabled(false);
+        account.setText("Balance: — | Equity: — | Positions: —");
         String verifier = NativeDemoAuth.randomUrlSafe(64);
         String nonce = NativeDemoAuth.randomUrlSafe(24);
         pending().edit().putString("verifier", verifier)
@@ -153,6 +161,7 @@ public final class DemoLoginActivity extends Activity {
             return;
         }
         status.setText("Đang xác minh Google trên máy chủ…");
+        final long generation = sessionGeneration;
         network.execute(() -> {
             try {
                 JSONObject body = new JSONObject();
@@ -165,6 +174,7 @@ public final class DemoLoginActivity extends Activity {
                 if (bearer.isEmpty() || expires <= 0 || expires > 86400L) {
                     throw new IOException("INVALID_AUTH_SESSION");
                 }
+                if (generation != sessionGeneration) return;
                 accessToken = bearer;
                 accessTokenExpiresAt = System.currentTimeMillis() + expires * 1000L;
                 runOnUiThread(() -> {
@@ -174,8 +184,10 @@ public final class DemoLoginActivity extends Activity {
                     refresh();
                 });
             } catch (Exception error) {
-                accessToken = "";
-                runOnUiThread(() -> status.setText("Không hoàn tất Google OAuth. Đăng nhập lại."));
+                if (generation == sessionGeneration) {
+                    accessToken = "";
+                    runOnUiThread(() -> status.setText("Không hoàn tất Google OAuth. Đăng nhập lại."));
+                }
             }
         });
     }
@@ -192,8 +204,10 @@ public final class DemoLoginActivity extends Activity {
     private void refresh() {
         network.execute(() -> {
             try {
+                String bearer = authorizedToken();
                 JSONObject response = request("GET", API + "status", null,
-                    authorizedToken(), 18000);
+                    bearer, 18000);
+                if (!bearer.equals(accessToken)) return;
                 if (!response.optBoolean("ok", false)) throw new IOException("STATUS_FAILED");
                 JSONObject a = response.optJSONObject("account");
                 String text = a == null ? "Chưa liên kết tài khoản DEMO."
@@ -230,15 +244,26 @@ public final class DemoLoginActivity extends Activity {
                 payload.put("login", id);
                 payload.put("server", host);
                 payload.put("password", secret);
+                String bearer = authorizedToken();
                 JSONObject reply = request("POST", API + "verify-demo", payload,
-                    authorizedToken(), 125000);
+                    bearer, 125000);
+                if (!bearer.equals(accessToken)) return;
                 if (!reply.optBoolean("ok", false)
                     || !"DEMO_VERIFIED_READ_ONLY".equals(reply.optString("status"))) {
                     throw new IOException("DEMO_NOT_VERIFIED");
                 }
+                String verifiedAt = reply.optString("verifiedAt", "—");
+                String currency = reply.optString("currency", "");
+                double balance = reply.optDouble("balance", Double.NaN);
+                String balanceText = Double.isFinite(balance) && !currency.isEmpty()
+                    ? String.valueOf(balance) + " " + currency : "—";
                 runOnUiThread(() -> {
                     status.setText("DEMO đã xác minh chỉ đọc. Auto Trade: LOCKED.");
-                    refresh();
+                    account.setText("Login: " + id + " | Server: " + host
+                        + "\nBalance: " + balanceText
+                        + " | Equity: — | Positions: —"
+                        + "\nBroker readback: " + verifiedAt
+                        + "\nAuto Trade: LOCKED | LIVE: LOCKED");
                 });
             } catch (Exception error) {
                 runOnUiThread(() -> status.setText("Không xác minh được MT5 DEMO. Không gửi lệnh."));
@@ -287,6 +312,7 @@ public final class DemoLoginActivity extends Activity {
     }
 
     @Override protected void onDestroy() {
+        sessionGeneration++;
         accessToken = "";
         accessTokenExpiresAt = 0L;
         if (password != null) password.setText("");
