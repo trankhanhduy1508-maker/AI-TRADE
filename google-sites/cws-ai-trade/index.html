@@ -5,6 +5,9 @@
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <meta name="theme-color" content="#0b1422">
   <meta name="referrer" content="no-referrer">
+  <link rel="manifest" href="/functions/v1/cws-ai-trade-site/app/manifest.webmanifest">
+  <link rel="icon" type="image/png" sizes="192x192" href="/functions/v1/cws-ai-trade-site/app/icon-192.png">
+  <link rel="apple-touch-icon" href="/functions/v1/cws-ai-trade-site/app/icon-192.png">
   <title>CWS AI Trade · Founder</title>
   <link rel="stylesheet" href="?asset=styles.css">
 </head>
@@ -18,7 +21,7 @@
       <button class="nav" data-view="book">▧ <span>Sách &amp; kiến thức</span></button>
       <button class="nav" data-view="chat">▣ <span>AI Chat</span></button>
     </nav>
-    <div class="top-right"><span class="status" id="overallStatus">● Chế độ đọc</span><button class="menu-btn" id="menuBtn" type="button" aria-label="Bật tắt bảng điều khiển">☰</button></div>
+    <div class="top-right"><button id="pwaInstallBtn" class="install-button" type="button" hidden>⬇ Cài ứng dụng</button><span class="status" id="overallStatus">● Chế độ đọc</span><button class="menu-btn" id="menuBtn" type="button" aria-label="Bật tắt bảng điều khiển">☰</button></div>
   </header>
 
   <div class="workspace">
@@ -58,6 +61,8 @@
         <div><h1>CWS AI Trade</h1><p id="sourceDescription">Dữ liệu giá công khai · Vị thế chưa kết nối</p></div>
         <span class="chip" id="dataChip">ĐỌC / PHÂN TÍCH</span>
       </div>
+
+      <div id="pwaInstallHint" class="pwa-install-hint" hidden>Trên Android, mở trực tiếp Web App bằng Chrome, chọn menu ⋮ → Cài đặt ứng dụng hoặc Thêm vào màn hình chính.</div>
 
       <section class="summary" aria-label="Tổng hợp P/L">
         <article class="metric gain"><span>Tổng lãi</span><strong id="totalGain">—</strong><small>Vị thế đang mở</small></article>
@@ -128,5 +133,6 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js" defer></script>
 <script src="?asset=portfolio.js" defer></script>
 <script src="?asset=app.js" defer></script>
+<script src="?asset=pwa.js" defer></script>
 </body>
 </html>
