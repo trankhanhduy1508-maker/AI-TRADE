@@ -146,3 +146,13 @@ Android APK có thể tạo sau qua Capacitor hoặc TWA/Bubblewrap. TWA chuẩn
 ### Giới hạn miễn phí
 
 PWA không cần AppDeploy và không dùng OpenAI API chỉ để hiển thị giao diện/tra cứu cục bộ. Hosting Supabase, tài nguyên trình duyệt, feed công khai, ChatGPT account và CDN có quota/chính sách thực tế. Không hứa chi phí bằng 0 hoặc unlimited vĩnh viễn. Full generative chatbot nhúng trong website cần inference backend có nguồn lực được duyệt; tính năng hiện tại là local search + ChatGPT plugin qua ứng dụng ChatGPT.
+
+### Final runtime smoke v7
+
+Verified against the actual live URL `/functions/v1/cws-ai-trade-site/app/`:
+- **8/8 live HTTP checks PASS**: HTML, manifest, worker v2, PWA client, EPUB/IndexedDB client, actual 192x192 icon, actual 512x512 icon, health.
+- **13/13 PWA static/mock install checks PASS**: manifest scope, icons, controls, no private cache, browser install prompt event and SW registration scope.
+- Service worker mock lifecycle additionally PASS: static shell precache, optional public Masterbook/JSZip cache, cache upgrade cleanup, no private API interception, navigation fallback while offline.
+- Verified Supabase Edge deployment: `cws-ai-trade-site` v7 ACTIVE.
+
+This evidence **does not** establish Android Chrome installability end-to-end, offline EPUB IndexedDB persistence on the real phone, or published Google Sites. Those remain explicit pending checks.
