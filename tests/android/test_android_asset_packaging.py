@@ -38,10 +38,9 @@ def test_webview_asset_allowlist_matches_built_distribution(tmp_path: Path):
     output = tmp_path / "www"
     build(output, "/assets/", android=True)
     source = WEBVIEW.read_text(encoding="utf-8")
-    marker = re.search(r"ALLOWED\\s*=\\s*new HashSet<>\\(Arrays.asList\\((.*?)\\)\\);",
-                       source, flags=re.S)
-    assert marker is not None
-    allowed = set(re.findall(r'"([^"]+)"', marker.group(1)))
+    values = source.split("private static final Set<String> ALLOWED", 1)[1]
+    values = values.split("Arrays.asList(", 1)[1].split("));", 1)[0]
+    allowed = set(re.findall(r'"([^"]+)"', values))
     assert allowed == BUNDLE
     # HTML auth bridge deliberately does not live in native WebView.
     assert "founder-mt5.js" not in allowed
