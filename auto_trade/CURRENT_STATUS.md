@@ -1,3 +1,63 @@
+## Founder Admin login hotfix + 3-round PASS rule — 2026-09-28
+
+### Founder instruction
+Từ checkpoint này, với CWS AI Trade:
+- không được báo PASS sau 1 vòng kiểm tra;
+- phải có **3 vòng độc lập** rồi mới dùng từ PASS;
+- vòng 1: backend/HTTP/header;
+- vòng 2: browser/runtime thật;
+- vòng 3: fresh session + reload/reopen/mobile regression;
+- nếu bất kỳ vòng nào FAIL thì sửa rồi chạy lại đủ chuỗi trước khi báo PASS.
+
+### Root cause
+Supabase Edge Functions hiện **không hỗ trợ serve HTML**: GET response `text/html` bị platform rewrite thành `text/plain`.
+Vì vậy Founder Login HTML từng bị browser hiển thị thành source code.
+
+### Fix
+- Supabase Edge Function chỉ giữ API/Auth + stable redirect.
+- Founder Login/Admin frontend chuyển sang host web:
+  `https://cws-ai-trade-founder-admin-j7mzf3.v2.appdeploy.ai/`
+- Stable entry của Founder vẫn là:
+  `https://oziktadfeenydvgobudr.supabase.co/functions/v1/ai-trade-dashboard?admin=1`
+- Supabase `?admin=1` dùng HTTP redirect sang frontend host.
+- OAuth `redirect_to` vẫn quay về stable Supabase Admin URL; browser giữ URL fragment qua redirect để callback token tới frontend.
+- Edge Function: **v32 ACTIVE**.
+- Git checkpoint backend redirect: `a89a4e84df95ec317980aca52ec94b08bba288cd`.
+
+### 3-round evidence
+**Round 1 / backend HTTP**
+- request id `189`;
+- stable admin route resolves to AppDeploy frontend;
+- final `content_type=text/html`;
+- redirect location đúng AppDeploy URL.
+
+**Round 2 / browser runtime**
+TinyFish run:
+`902ec958-1d3e-4b26-bca3-b8fe38f66911`
+
+Verified:
+- UI render thật, không raw HTML/source;
+- Founder Login / ADMIN LOGIN / Google button visible;
+- không expose runtime trước auth;
+- click Google mở OAuth;
+- redirect_to = stable Supabase Admin URL;
+- dừng trước account selection.
+
+**Round 3 / fresh mobile + reload**
+TinyFish run:
+`90c86f49-28df-4ece-b039-93c69950e2ee`
+
+Verified:
+- Supabase → AppDeploy redirect;
+- fragment `#probe=cws3` được giữ qua redirect;
+- UI render đúng trên mobile;
+- không horizontal overflow;
+- không runtime trước auth;
+- reload lại vẫn giữ toàn bộ điều kiện;
+- không raw HTML/source tái phát.
+
+Status: **PASS sau đủ 3 vòng**.
+
 ## Founder Google Login — stable Supabase entry — 2026-09-28
 
 Status: **PASS đến Google account selection / callback route configured**.
