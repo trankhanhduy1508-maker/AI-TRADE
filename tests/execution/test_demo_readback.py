@@ -111,3 +111,25 @@ def test_no_broker_connection_never_returns_cached_account_data(disconnect):
     with pytest.raises(RuntimeError, match="TERMINAL_INFO_UNAVAILABLE|BROKER_DISCONNECTED"):
         snapshot(terminal)
     assert terminal.send_calls == 0
+
+
+@pytest.mark.parametrize("switch,message", [
+    (lambda t: setattr(t, "connected", False), "BROKER_DISCONNECTED_DURING_READ"),
+    (lambda t: setattr(t.account, "server", "Other-Demo"), "ACCOUNT_CHANGED_DURING_READ"),
+    (lambda t: setattr(t.account, "login", 987654), "ACCOUNT_CHANGED_DURING_READ"),
+    (lambda t: setattr(t.account, "trade_mode", 2), "LIVE_OR_NON_DEMO_ACCOUNT_BLOCKED"),
+    (lambda t: setattr(t, "account", None), "ACCOUNT_DISCONNECTED_DURING_READ"),
+])
+def test_switch_during_positions_read_fails_closed(switch, message):
+    terminal = FakeTerminal()
+    existing_read = terminal.positions_get
+
+    def changing_read():
+        rows = existing_read()
+        switch(terminal)
+        return rows
+
+    terminal.positions_get = changing_read
+    with pytest.raises(RuntimeError, match=message):
+        snapshot(terminal)
+    assert terminal.send_calls == 0

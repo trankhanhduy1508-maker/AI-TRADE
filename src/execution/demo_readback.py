@@ -132,12 +132,25 @@ def read_demo_snapshot(
             stop_loss=_protective_price(getattr(position, "sl", None), "STOP_LOSS"),
             take_profit=_protective_price(getattr(position, "tp", None), "TAKE_PROFIT"),
         ))
+    # Reject an account switch or disconnect that happened while reading positions.
+    # A single pre-read check is insufficient for a shared MT5 terminal.
+    final_connection = terminal_info()
+    if final_connection is None or getattr(final_connection, "connected", None) is not True:
+        raise RuntimeError("BROKER_DISCONNECTED_DURING_READ")
+    final_account = account_info()
+    if final_account is None:
+        raise RuntimeError("ACCOUNT_DISCONNECTED_DURING_READ")
+    if getattr(final_account, "trade_mode", None) != 0:
+        raise RuntimeError("LIVE_OR_NON_DEMO_ACCOUNT_BLOCKED")
+    if (str(getattr(final_account, "login", "")) != login
+            or str(getattr(final_account, "server", "")) != server):
+        raise RuntimeError("ACCOUNT_CHANGED_DURING_READ")
     # This timestamp identifies the fresh terminal read, not a guaranteed
     # broker heartbeat or proof that the Android client remains connected.
     return DemoAccountSnapshot(
         login=login, server=server, currency=currency,
         balance=balance, equity=equity, positions=tuple(result),
-        trade_allowed=(getattr(account, "trade_allowed", None) is True
-                       and getattr(account, "trade_expert", None) is True),
+        trade_allowed=(getattr(final_account, "trade_allowed", None) is True
+                       and getattr(final_account, "trade_expert", None) is True),
         as_of=datetime.now(timezone.utc),
     )
