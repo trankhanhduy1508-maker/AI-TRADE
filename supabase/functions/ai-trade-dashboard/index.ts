@@ -158,7 +158,7 @@ function badgeClass(kind:string){
 
 const SUPABASE_URL="https://oziktadfeenydvgobudr.supabase.co";
 const SUPABASE_AUTH_API_KEY=Deno.env.get("SUPABASE_ANON_KEY")??"";
-const APPDEPLOY_FOUNDER_VERIFY_URL="https://cws-ai-trade-founder-secure-sm4gs9.v2.appdeploy.ai/api/verify-founder";
+const APPDEPLOY_FOUNDER_VERIFY_URL="https://api-v2.appdeploy.ai/app/cws-ai-trade-founder-secure-sm4gs9/api/verify-founder";
 
 async function accessContext(req:Request,token:string){
   if(!token){
