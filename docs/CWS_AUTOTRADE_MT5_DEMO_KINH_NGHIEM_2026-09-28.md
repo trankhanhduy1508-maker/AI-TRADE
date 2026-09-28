@@ -46,3 +46,8 @@ Repo `trankhanhduy1508-maker/AI-TRADE`; **chỉ nhánh `codex/p0-covel-knowledge
 Triple-check: (1) exact repo/branch/commit/hash, nguồn license và nguồn credential (chỉ metadata), (2) unit/static/smoke + runtime broker DEMO thật có log đã lọc bí mật, (3) GitHub HEAD/Supabase gates/broker state/action audit readback. Mỗi PASS phải chỉ được artifact/test ID thực chứng; ERROR/UNKNOWN là BLOCKED. Không cam kết tính năng Auto Trade hoàn tất chỉ từ file source hoặc workflow PASS.
 
 **Canonical chính sách:** `docs/CWS_AI_TRADE_RELEASE_AND_AUTOUPDATE_POLICY_2026-09-28.md`; spec MT5 Login/Password/Server: `product/CWS_AI_TRADE_ANDROID_CONTROL_LEARNING_UPDATE_SPEC_2026-09-28.md`. Các mốc cũ “Web App first” đã bị quyết định APK-first mới nhất thay thế.
+
+
+## 6. Checkpoint source DEMO / Android bổ sung (2026-09-28)
+
+Đã thêm readback account/vị thế DEMO có so khớp login/server, kiểm số dư/equity, Lot từng vị thế và P/L; adapter kiểm account DEMO lại trước/sau order_check và lúc đọc vị thế. Evidence cùng trạng thái PASS/BLOCKED chính xác nằm tại [`reports/CWS_AUTOTRADE_ANDROID_DEMO_SOURCE_EVIDENCE_2026-09-28.md`](../reports/CWS_AUTOTRADE_ANDROID_DEMO_SOURCE_EVIDENCE_2026-09-28.md). **Chưa có broker runtime PASS, Android E2E PASS, Auto Trade approval hay APK release**. Không đổi các gate Supabase, không đọc/ghi mật khẩu và không thay nhánh.
