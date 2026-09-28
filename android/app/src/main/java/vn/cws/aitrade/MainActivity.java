@@ -1,6 +1,9 @@
 package vn.cws.aitrade;
 
+import android.annotation.SuppressLint;
 import android.app.Activity;
+import android.os.Build;
+import android.window.OnBackInvokedDispatcher;
 import android.content.ActivityNotFoundException;
 import android.content.Intent;
 import android.graphics.Color;
@@ -83,6 +86,15 @@ public final class MainActivity extends Activity {
                 return true;
             }
         });
+        // API 33+ consumes back gestures here; the legacy override below is only for API 26–32.
+        if (Build.VERSION.SDK_INT >= 33) {
+            getOnBackInvokedDispatcher().registerOnBackInvokedCallback(
+                OnBackInvokedDispatcher.PRIORITY_DEFAULT,
+                () -> {
+                    if (web != null && web.canGoBack()) web.goBack();
+                    else finish();
+                });
+        }
         web.loadUrl("https://" + HOST + APP_PATH);
     }
 
@@ -94,6 +106,7 @@ public final class MainActivity extends Activity {
         }
     }
 
+    @SuppressLint("GestureBackNavigation") // API 26–32 fallback; modern API uses OnBackInvokedCallback.
     @Override public void onBackPressed() {
         if (web != null && web.canGoBack()) web.goBack();
         else super.onBackPressed();
