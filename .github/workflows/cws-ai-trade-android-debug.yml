@@ -1,4 +1,4 @@
-name: CWS AI Trade APK release gate (no build until Web App + auto-trade approved)
+name: CWS AutoTrade APK-first DEMO release gate (no build)
 
 # Founder rule 2026-09-28: never create APK on push.
 # This manual workflow checks release evidence only. It CANNOT build an APK.
@@ -18,4 +18,4 @@ jobs:
       - name: Fail closed when full release evidence is absent
         run: python3 scripts/check_android_release_gate.py
       - name: No package build or artifact publishing
-        run: echo "Policy requires Web App, verified DEMO auto-trade, stable signing and update E2E before creating APK."
+        run: echo "APK-first policy requires verified DEMO auto-trade, broker and Android E2E, stable signing and update/recovery checks before creating APK."
