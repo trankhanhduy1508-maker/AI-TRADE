@@ -4,6 +4,8 @@ public class NativeDemoAuthCheck {
     String verifier=NativeDemoAuth.randomUrlSafe(64);
     String nonce=NativeDemoAuth.randomUrlSafe(24);
     String challenge=NativeDemoAuth.challenge(verifier);
+    if(!NativeDemoAuth.challenge("dBjftJeZ4CVP-mB92K27uhbUJU1p1r_wW1gFWFOEjXk")
+       .equals("E9Melhoa2OwvFrEMTJguCHaoeK1t8URWbuGJSstw-cM")) throw new AssertionError("RFC 7636 PKCE vector");
     if(verifier.length()!=86 || nonce.length()!=32 || challenge.length()!=43)throw new AssertionError();
     String u=NativeDemoAuth.authorizeUrl(nonce,verifier);
     if(!u.startsWith("https://oziktadfeenydvgobudr.supabase.co/auth/v1/authorize?provider=google")|| !u.contains("code_challenge_method=s256"))throw new AssertionError();
@@ -14,6 +16,6 @@ public class NativeDemoAuthCheck {
     boolean blocked=false;
     try{NativeDemoAuth.challenge("short");}catch(IllegalArgumentException e){blocked=true;}
     if(!blocked)throw new AssertionError("invalid PKCE not blocked");
-    System.out.println("PASS: Java PKCE verifier, SHA-256 challenge, URL and callback nonce checks (8 assertions)");
+    System.out.println("PASS: Java PKCE verifier, SHA-256 challenge, URL and callback nonce checks (9 assertions)");
   }
 }
