@@ -1,0 +1,44 @@
+# CWS AI Trade — Self-Learning Research Checkpoint
+
+Date: 2026-09-28
+Branch: codex/p0-covel-knowledge-audit
+Starting handoff checkpoint: 6ba79fdc7395419a2511ae4e54eb689ff2c38b5e
+
+## Verified grounding
+
+- Read the canonical Founder intent, Web App handoff, Masterbook V3 distilled, research corpus, Google Sites/Web App README, and the multi-asset report.
+- Supabase project oziktadfeenydvgobudr reports ACTIVE_HEALTHY. Edge Function cws-ai-trade-site reports ACTIVE v7; presence is **not** a substitute for a fresh HTTP or Android-device test.
+- Read-only SQL against ai_trade.runtime_config confirmed: enabled=false, demo_send_enabled=false, risk_profile_approved=false. No execution, risk or The5ers setting was changed.
+- ai_trade.training_replay_trades contains 140 historical replay trades (2019-10-02 through 2026-09-23). This is **not** a versioned, approved closed-bar OHLCV training dataset.
+- 14-market historical backtest reports exist. Reported GROSS_ONLY and RESEARCH_PROXY metrics must not be represented as realized broker-net performance.
+- Google Drive search for "Trading Masterbook", "AI TRADE" and "Trading" returned no available file. The public distilled Markdown is **not** the complete Founder EPUB.
+- Google Sites owned by Founder is not verified as published. Source README already reports PWA v7; actual Android install/offline end-to-end remains pending.
+
+## Implemented in this checkpoint
+
+Files:
+- src/self_learning/pipeline.py
+- src/self_learning/__init__.py
+- tests/self_learning/test_pipeline.py
+
+Research-only offline gates:
+1. Stage licensed, source-hashed text metadata in exclusive-write QUARANTINED records. Each item records source path, rights reference, license, kind, timestamp, market, timeframe and evidence level. No automatic approval or production promotion.
+2. Validate closed chronological OHLC bars and source/cost provenance. Fail closed on duplicate times, invalid prices, incomplete bars, unknown rights or missing cost assumption.
+3. Construct versioned research-only dataset; features use information at closed bar t; label uses the NEXT bar's open-to-close return after an explicit research cost assumption. Do not call the result broker-net P/L.
+4. Chronological train/validation/OOS partitions with one-sample purge at each boundary for the one-bar label horizon. No random shuffle.
+5. Default inference contract returns MODEL_NOT_TRAINED, ABSTAIN and LOCKED. It contains no broker/order route.
+
+## Test evidence and limitations
+
+Command in an isolated cloud/container workspace reproducing the committed source and tests:
+PYTHONPATH=. python -m pytest -q tests/self_learning/test_pipeline.py
+
+Result: **9 passed**. Tests exercise synthetic fixtures **only** to test validation, chronology, quarantine, missing values and fail-closed behavior. No simulated fixture result is a model performance result. GitHub CI and production deployment were not run by these tests.
+
+**BLOCKED: model training, calibrated scores, OOS/WF model evaluation and paper-trading comparison** until an actual licensed OHLCV snapshot with price provider, complete timestamps, version and cost evidence is available and validated. Do not use replay trade count as a substitute for bar-level provenance. No candidate model artifact or production model was created.
+
+**PENDING: fresh live HTTP/Android visual verification**, Google Sites publication with authorized editing session, broker-aligned transaction-cost evidence, independently approved model and paper-forward evidence. The Edge Function was not redeployed by this change.
+
+## Next exact action
+
+Ingest a genuinely permitted closed-bar OHLCV snapshot with an explicit rights/reference and cost profile, then build a fixed chronological research dataset and separately train a lightweight candidate. Pre-register baseline, OOS, walk-forward and costs before inspecting holdout results. Keep production inference ABSTAIN and all execution gates locked until independently approved.
