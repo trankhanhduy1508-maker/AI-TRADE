@@ -9,9 +9,9 @@ const CORE=[
   ROOT+"?asset=portfolio.js",
   ROOT+"?asset=app.js",
   ROOT+"?asset=pwa.js",
-  ROOT+"manifest.webmanifest",
-  ROOT+"icon-192.png",
-  ROOT+"icon-512.png"
+  ROOT+"?asset=manifest.webmanifest",
+  ROOT+"?asset=icon-192.png",
+  ROOT+"?asset=icon-512.png"
 ];
 self.addEventListener("install",event=>{
   event.waitUntil((async()=>{
@@ -62,8 +62,8 @@ self.addEventListener("fetch",event=>{
     return;
   }
   const asset=u.searchParams.get("asset");
-  const safeAsset=["styles.css","portfolio.js","app.js","pwa.js"].includes(asset);
-  const safePath=[ROOT+"manifest.webmanifest",ROOT+"icon-192.png",ROOT+"icon-512.png"].includes(u.pathname);
+  const safeAsset=["styles.css","portfolio.js","app.js","pwa.js","manifest.webmanifest","icon-192.png","icon-512.png"].includes(asset);
+  const safePath=false;
   if(!safeAsset&&!safePath)return;
   event.respondWith((async()=>{
     const cache=await caches.open(CACHE);
