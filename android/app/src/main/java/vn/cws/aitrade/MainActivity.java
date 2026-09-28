@@ -22,6 +22,7 @@ import android.view.WindowInsets;
 import android.widget.FrameLayout;
 import android.widget.LinearLayout;
 import android.widget.Button;
+import android.widget.TextView;
 import android.window.OnBackInvokedDispatcher;
 
 import java.io.ByteArrayInputStream;
@@ -56,6 +57,7 @@ public final class MainActivity extends Activity {
         + "base-uri 'none'; object-src 'none'; form-action 'self'";
     private WebView web;
     private ValueCallback<Uri[]> fileCallback;
+    private NativeUpdateCoordinator updates;
 
     private boolean isApp(Uri uri) {
         return "https".equalsIgnoreCase(uri.getScheme())
@@ -131,6 +133,19 @@ public final class MainActivity extends Activity {
             LinearLayout.LayoutParams.MATCH_PARENT,
             LinearLayout.LayoutParams.WRAP_CONTENT
         ));
+        if (NativeUpdateCoordinator.configured()) {
+            Button check = new Button(this);
+            check.setText("Kiểm tra cập nhật");
+            Button install = new Button(this);
+            install.setText("Cài bản cập nhật");
+            TextView updateStatus = new TextView(this);
+            updates = new NativeUpdateCoordinator(this, check, install, updateStatus);
+            check.setOnClickListener(view -> updates.check());
+            install.setOnClickListener(view -> updates.install());
+            chrome.addView(check);
+            chrome.addView(install);
+            chrome.addView(updateStatus);
+        }
         chrome.addView(web, new LinearLayout.LayoutParams(
             LinearLayout.LayoutParams.MATCH_PARENT, 0, 1f
         ));
@@ -227,6 +242,10 @@ public final class MainActivity extends Activity {
     }
 
     @Override protected void onDestroy() {
+        if (updates != null) {
+            updates.close();
+            updates = null;
+        }
         if (fileCallback != null) {
             fileCallback.onReceiveValue(null);
             fileCallback = null;
