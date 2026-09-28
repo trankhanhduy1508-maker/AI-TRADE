@@ -32,7 +32,7 @@ Require >= 400 real published observations; strictly increasing dates, valid fin
 - Train/validation/OOS = chronological 60/20/20 and purge one observation at each boundary, for the one-step-ahead target. Initial model fits training only. Never train on validation/OOS.
 - Three expanding development-only walk-forward folds: training fractions 50%, 60%, 70% of train+validation; one-sample purge, next 40 observations as test per fold, all before sealed OOS.
 - Report row counts, timespan, class balance, Brier vs training-prevalence Brier, log loss, 10-bps research-only selected-sample proxy returns and another 10-bps cost-stress. Do not call these paper trades, broker-net P/L or actual performance.
-- Reject the candidate if data/provenance fail, OOS Brier is not strictly better than naïve train-prevalence baseline, fold evidence conflicts or cost-stressed findings are poor. Even a favorable candidate cannot auto-promote: next gate requires a separate execution-aligned, approved feed and true forward paper validation.
+- Fixed reject gates: data/provenance invalid; OOS Brier **not strictly below** naïve train-prevalence Brier; fewer than **2 of 3** development-only walk-forward folds with Brier improvement over their own training-prevalence baseline; fewer than **5 OOS selected observations**; or OOS selected-sample return sum after **20-bps total** research friction not strictly positive. No threshold, features, cost or parameters may be changed after observing results. Even a favorable candidate cannot auto-promote: next gate requires a separate execution-aligned, approved feed and true forward paper validation.
 
 ## Irreversible safety boundaries and triple check
 
