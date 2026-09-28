@@ -52,6 +52,12 @@ jobs:
       - name: Check standalone native security contracts
         run: python3 scripts/check_native_autotrade_contract.py
 
+      - name: Run all isolated execution and Android contract tests
+        run: |
+          python3 -m venv "$RUNNER_TEMP/cws-py"
+          "$RUNNER_TEMP/cws-py/bin/python" -m pip install --disable-pip-version-check --quiet "pytest>=8,<9" "cryptography>=44,<47"
+          PYTHONPATH=. "$RUNNER_TEMP/cws-py/bin/python" -m pytest -q tests/execution tests/android --maxfail=1
+
       - name: Build exact offline Android assets and merge (no APK)
         run: gradle --no-daemon -p android :app:prepareCwsAndroidAssets :app:mergeDebugAssets --stacktrace
 
