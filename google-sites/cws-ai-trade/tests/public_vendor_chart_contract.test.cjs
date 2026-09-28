@@ -28,13 +28,14 @@ test("frozen Edge API bundle retains unchanged assets while canonical Web App mo
   assert.ok(start>anchor.length&&end>start);
   const bundle=JSON.parse(site.slice(start,end));
   for(const name of ["styles.css","portfolio.js","tradingview.js",
-                     "app.js","pwa.js","manifest.webmanifest"]){
+                     "pwa.js","manifest.webmanifest"]){
     assert.equal(bundle[name],src("google-sites/cws-ai-trade/"+name),name);
   }
   // The legacy Edge HTML/SW are deliberately frozen at v11. Their HTML
   // response is text/plain, so new Web App changes belong to static hosting.
   assert.notEqual(bundle["index.html"],src("google-sites/cws-ai-trade/index.html"));
   assert.notEqual(bundle["sw.js"],src("google-sites/cws-ai-trade/sw.js"));
+  assert.notEqual(bundle["app.js"],src("google-sites/cws-ai-trade/app.js"));
   assert.match(bundle["index.html"],/MODEL_NOT_APPROVED/);
   assert.match(src("google-sites/cws-ai-trade/index.html"),/mt5-login\.html/);
   assert.match(src("google-sites/cws-ai-trade/sw.js"),/u\.pathname===ROOT/);
