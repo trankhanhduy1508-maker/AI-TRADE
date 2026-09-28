@@ -25,3 +25,7 @@ Cloud build command: python3 scripts/build_cws_trade_static.py --base /assets/ -
 Cloud QA then runs Android lint, assembles the debug APK, checks its APK signature and confirms that the actual package contains first-party HTML, chart module, portfolio module and icons. The native shell deliberately omits browser-PWA service-worker installation; its packaged resources already provide the offline shell. No market prices, broker credentials, model weights, private EPUB contents or broker orders are embedded.
 
 This is a debug QA APK with a temporary signing key. Physical-device E2E and stable release signing remain required. Two independently debug-signed packages generally cannot update each other in place.
+
+## 2026-09-28 — Android 15/16 system-bar fix (source pending cloud/device QA)
+
+Founder screenshot of the first-party Android shell shows the OS clock/battery overlapping the CWS logo/topbar. The native activity now wraps the unchanged WebView in a FrameLayout and applies system-bar + display-cutout insets on API 35+, preserving the safe rendering area. This is a UI/layout fix only; no permission change, broker secret, order API or model promotion. VersionCode 3 / versionName 0.3.0-debug forces an identifiable QA artifact. A successful cloud lint/build and a separate physical Android visual check are still required before reporting the layout fixed on-device.

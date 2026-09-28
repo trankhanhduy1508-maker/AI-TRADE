@@ -4,15 +4,17 @@ Ngày cập nhật: 2026-09-28
 Branch: `codex/p0-covel-knowledge-audit`  
 Chủ sở hữu mã nguồn: CWS / Duy Trần
 
-## Link website đã triển khai
+## Trạng thái URL web — không dùng Edge Function làm frontend HTML
 
-**Website độc lập, sẵn sàng nhúng vào Google Sites:**
+**BLOCKED (hosting web):** Supabase Edge Functions viết lại `text/html` thành `text/plain` trên domain chia sẻ. URL cũ dưới đây trả mã HTML thô trên Android và **không phải website trình duyệt chạy được**. Không gửi URL này cho người dùng như một website hoàn chỉnh:
 
 https://oziktadfeenydvgobudr.supabase.co/functions/v1/cws-ai-trade-site
 
-Health: https://oziktadfeenydvgobudr.supabase.co/functions/v1/cws-ai-trade-site?health=1
+Health/API hiện vẫn hoạt động: https://oziktadfeenydvgobudr.supabase.co/functions/v1/cws-ai-trade-site?health=1
 
-**Lưu ý:** website ở URL trên đã được triển khai qua Supabase. Google Site riêng của Founder **chưa được tạo/xuất bản**, vì không có phiên chỉnh sửa Google Sites của đúng tài khoản trong connector hiện tại. Đừng gọi việc dựng website độc lập là Google Site đã publish.
+**Khắc phục đã có trong mã nguồn:** `scripts/build_cws_trade_static.py --base / --output site-dist` tạo đúng HTML/JS/CSS và icon tĩnh để triển khai lên static hosting có MIME `text/html`. APK hiện tại đóng gói cùng nội dung vào `assets/www`, không gọi HTML từ Edge; ảnh Founder đã xác nhận hiển thị được biểu đồ. **URL web công khai mới chưa có bằng chứng deploy hoặc GET trình duyệt; Google Sites chưa publish.** Chỉ đưa link cho khách sau khi hosting tĩnh thực sự trả HTML đúng MIME và đã qua visual QA.
+
+Các đoạn dưới của tài liệu là nhật ký các phiên bản trước; nếu mô tả Supabase Edge là website HTML đã chạy, hãy hiểu trạng thái đó **đã bị thay thế bởi ghi chú này**.
 
 ## Cách nhúng vào Google Sites
 
