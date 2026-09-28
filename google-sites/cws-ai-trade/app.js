@@ -21,7 +21,7 @@ function show(view){
 function renderPortfolio(){
   const v=S.aggregate(positions),map=new Map(v.groups.map(g=>[g.symbol,g]));
   text("totalGain",money(v.gain));text("totalLoss",money(v.loss,false));text("netPL",money(v.net));
-  text("portfolioNet",money(v.net));text("pairCount",positions.length?String(v.pairCount):"—");text("totalLot",lot(v.totalLot));
+  text("portfolioNet",money(v.net));text("pairCount",positions.length?String(v.pairCount):"—");
   $("netPL").className=sign(v.net);$("portfolioNet").className=sign(v.net);
   const label=mode==="demo"?"MINH HỌA":mode==="manual"?"NHẬP THỦ CÔNG":"CHƯA KẾT NỐI";
   text("portfolioSource",label);text("portfolioModeTag",label);text("dataChip",label);
