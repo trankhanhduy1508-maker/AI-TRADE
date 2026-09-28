@@ -67,3 +67,12 @@ Ingest a genuinely permitted closed-bar OHLCV snapshot with an explicit rights/r
 - Supabase read-only SQL after deployment: `enabled=false; demo_send_enabled=false; risk_profile_approved=false`.
 - Financial data rights remain an actual blocker to real ML training: FRED and broker/redistributor datasets cannot be assumed available for CWS model training solely because their prices can be downloaded; sample provider GitHub MIT software licenses do not independently establish rights over underlying broker-fed data. Do not turn an unverified market feed into `PERMISSION_GRANTED`.
 - Google Site Founder publish, Android hardware QA, APK build/signing and real-data candidate evaluation remain unverified; this checkpoint only marks completed, independently tested surfaces as PASS.
+
+## 2026-09-28 — Supabase v9 xác minh
+
+- GitHub source: `23b22ab8e1ab3a0c195895ad68fdd928cb1e95c1`; Supabase `cws-ai-trade-site` v9 ACTIVE; SHA-256 `046222b77d1520b45dba4e475d107e876b8961f307e245d6b24281f917cc8e1b`.
+- Sửa đúng phép cộng lãi dương và lỗ âm theo từng vị thế trước khi gộp thành một dòng cho mỗi symbol. Kiểm thử hồi quy Node: 8/8 PASS trên fixture riêng; các trường thiếu trả null.
+- Nâng bộ nhớ đệm static PWA lên `cws-ai-trade-static-v3`; live HTTP có dữ liệu thật cho 5 endpoint: health, HTML, JS danh mục, service worker và manifest.
+- Python self-learning tests: 13/13 PASS trên unit fixtures; model trên dữ liệu thực vẫn chưa được huấn luyện.
+- Sau triển khai `enabled=false`, `demo_send_enabled=false`, `risk_profile_approved=false` và giao diện vẫn thể hiện `MODEL_NOT_TRAINED`, `ABSTAIN`, `LOCKED`.
+- Google Sites publication, Android device installation và APK chưa có bằng chứng kiểm thử hoàn thành.
