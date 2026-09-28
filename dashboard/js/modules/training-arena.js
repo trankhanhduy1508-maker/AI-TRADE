@@ -5,11 +5,10 @@ export function renderTrainingArena(arena={positions:[],trades:[],journal:[]}){
  const totalPnl=numericPnls.length?numericPnls.reduce((a,b)=>a+b,0):null;
  const rows=ps.map(p=>{
    const pnlUsd=p.floatingPL==null?null:Number(p.floatingPL);
-   const r=Number(p.unrealizedR??0);
-   const pnlLabel=Number.isFinite(pnlUsd)?`${pnlUsd>=0?"+":""}${pnlUsd.toFixed(2)} USD`:`${r>=0?"+":""}${r.toFixed(2)}R`;
+   const pnlLabel=Number.isFinite(pnlUsd)?`${pnlUsd>=0?"+":""}${pnlUsd.toFixed(2)} USD`:"—";
    const lotNum=Number(p.lot);
    const lot=Number.isFinite(lotNum)&&lotNum>0?lotNum.toFixed(2):"—";
-   const pnlClass=Number.isFinite(pnlUsd)?(pnlUsd>=0?"pos":"neg"):(r>=0?"pos":"neg");
+   const pnlClass=Number.isFinite(pnlUsd)?(pnlUsd>=0?"pos":"neg"):"";
    return `<div class="arena-row arena-row-simple">
      <div class="pair-cell">${p.symbol}<small>${p.assetClass}</small></div>
      <div>${badge(p.side,p.side==="BUY"?"green":"red")}</div>
