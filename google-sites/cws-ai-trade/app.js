@@ -92,6 +92,52 @@ function search(q,n=3){
 function renderResults(items){
   $("bookResults").innerHTML=items.length?items.map(b=>"<article class='result-card'><h3>"+escape(b.title)+"</h3><p>"+escape(b.body.slice(0,1200))+"</p><small>Nguồn: "+escape(b.source)+"</small></article>").join(""):"<div class='result-card'>Không thấy bằng chứng phù hợp. Thử từ khóa khác hoặc nạp EPUB đầy đủ.</div>";
 }
+
+/* Optional local EPUB knowledge store. No remote upload or cookies. */
+function openBookStore(){
+  if(!("indexedDB" in window))return Promise.reject(Error("Trình duyệt không hỗ trợ lưu sách ngoại tuyến"));
+  return new Promise((resolve,reject)=>{
+    const request=indexedDB.open("cws-ai-trade-local-book-v1",1);
+    request.onupgradeneeded=()=>{
+      const db=request.result;
+      if(!db.objectStoreNames.contains("books"))db.createObjectStore("books",{keyPath:"id"});
+    };
+    request.onsuccess=()=>resolve(request.result);
+    request.onerror=()=>reject(request.error||Error("Không mở được bộ nhớ"));
+    request.onblocked=()=>reject(Error("Bộ nhớ đang được sử dụng ở tab khác"));
+  });
+}
+async function bookTransaction(mode,action){
+  const db=await openBookStore();
+  return new Promise((resolve,reject)=>{
+    let result;
+    try{
+      const tx=db.transaction("books",mode);
+      const request=action(tx.objectStore("books"));
+      request.onsuccess=()=>{result=request.result;};
+      tx.oncomplete=()=>{db.close();resolve(result);};
+      tx.onerror=()=>{db.close();reject(tx.error||Error("Lỗi lưu sách"));};
+      tx.onabort=()=>{db.close();reject(tx.error||Error("Thao tác bị hủy"));};
+    }catch(error){db.close();reject(error);}
+  });
+}
+async function restoreBookFromDevice(){
+  try{
+    const saved=await bookTransaction("readonly",store=>store.get("masterbook"));
+    if(!saved||!Array.isArray(saved.sections)||saved.sections.length>10000)return;
+    const sections=saved.sections.filter(s=>s&&typeof s.title==="string"&&typeof s.body==="string"&&typeof s.source==="string");
+    if(!sections.length)return;
+    book=sections.concat(book);
+    $("saveBookOnDevice").checked=true;
+    $("clearSavedBook").hidden=false;
+    text("bookBadge","Sách ngoại tuyến");
+    text("bookUploadStatus","Đã mở "+saved.name+" từ bộ nhớ trên thiết bị: "+sections.length+" đoạn. Không gửi sách lên máy chủ.");
+  }catch(error){
+    // Some embedded browsers block third-party storage; the public book still works.
+    console.warn("CWS local book unavailable",error);
+  }
+}
+
 async function loadBook(){
   try{
     const r=await fetch(BOOK,{cache:"force-cache",credentials:"omit"});if(!r.ok)throw Error("book "+r.status);
@@ -102,6 +148,7 @@ async function loadBook(){
     text("bookBadge",chunks.length+" đoạn");
     text("bookUploadStatus","Đã nạp bản đúc kết. Nạp EPUB để có đủ chương.");
   }catch{text("bookBadge","Bản cơ bản");text("bookUploadStatus","Bản cơ bản sẵn dùng. Có thể nạp EPUB đầy đủ.");}
+  await restoreBookFromDevice();
 }
 async function importEpub(file){
   if(!file)return;if(file.size>15*1024*1024)throw Error("EPUB vượt 15 MB");if(!window.JSZip)throw Error("Thư viện đọc EPUB không khả dụng");
@@ -119,7 +166,15 @@ async function importEpub(file){
   }
   if(!sections.length)throw Error("Không trích được chữ EPUB");
   book=sections.concat(book);text("bookBadge","EPUB "+paths.length+" chương");
-  text("bookUploadStatus","Đã nạp "+paths.length+" chương / "+sections.length+" đoạn. Không tải sách lên máy chủ.");renderResults(sections.slice(0,3));
+  let status="Đã nạp "+paths.length+" chương / "+sections.length+" đoạn. Sách không được gửi lên máy chủ.";
+  if($("saveBookOnDevice").checked){
+    try{
+      await bookTransaction("readwrite",store=>store.put({id:"masterbook",name:file.name,sections:sections,updatedAt:Date.now()}));
+      $("clearSavedBook").hidden=false;
+      status+=" Đã lưu trên thiết bị để dùng khi ngoại tuyến.";
+    }catch(error){status+=" Không lưu offline được: "+String(error.message||error)+". Vẫn dùng được trong phiên này.";}
+  }else status+=" Chưa lưu ngoại tuyến; tải lại trang sẽ cần nạp EPUB lại.";
+  text("bookUploadStatus",status);renderResults(sections.slice(0,3));
 }
 function addMessage(body,role,sources=[]){
   const msg=document.createElement("div");msg.className="message "+role;msg.textContent=body;
@@ -140,6 +195,15 @@ function bind(){
   $("positionInput").addEventListener("change",async e=>{try{await readPositions(e.target.files[0]);}catch(err){alert("JSON lỗi: "+err.message);}e.target.value="";});
   $("sampleToggle").addEventListener("click",()=>{if(mode==="demo"){positions=[];mode="none";text("sampleToggle","Xem thử bằng dữ liệu MINH HỌA");}else{positions=sample();mode="demo";text("sampleToggle","Tắt dữ liệu MINH HỌA");}renderPortfolio();});
   $("bookInput").addEventListener("change",async e=>{try{await importEpub(e.target.files[0]);}catch(err){text("bookUploadStatus","Lỗi EPUB: "+err.message);}e.target.value="";});
+  $("clearSavedBook").addEventListener("click",async()=>{
+    try{
+      await bookTransaction("readwrite",store=>store.delete("masterbook"));
+      book=book.filter(section=>!String(section.source||"").startsWith("EPUB:"));
+      $("saveBookOnDevice").checked=false;$("clearSavedBook").hidden=true;
+      text("bookBadge","Bản đúc kết");text("bookUploadStatus","Đã xóa EPUB lưu trên thiết bị. Bản đúc kết công khai vẫn dùng được.");
+      $("bookResults").innerHTML="";
+    }catch(error){text("bookUploadStatus","Không xóa được EPUB: "+String(error.message||error));}
+  });
   $("bookSearch").addEventListener("click",()=>renderResults(search($("bookQuery").value,7)));
   $("bookQuery").addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();renderResults(search(e.target.value,7));}});
   $("chatForm").addEventListener("submit",e=>{e.preventDefault();const q=$("chatInput").value.trim();if(!q)return;$("chatInput").value="";lastQuestion=q;addMessage(q,"user");lastHits=search(q);if(!lastHits.length){addMessage("Không tìm thấy bằng chứng phù hợp. Nạp EPUB đầy đủ hoặc thay từ khóa; tôi không bịa tín hiệu.","bot");return;}addMessage("Các đoạn liên quan trong Masterbook:\n\n"+lastHits.map((s,i)=>(i+1)+". "+s.title+"\n"+s.body.slice(0,680)).join("\n\n")+"\n\nĐây là tra cứu sách, không phải xác nhận lệnh giao dịch.","bot",lastHits);});
