@@ -175,3 +175,13 @@ This evidence **does not** establish Android Chrome installability end-to-end, o
 - Python self-learning tests: 13/13 PASS trên unit fixtures; model trên dữ liệu thực vẫn chưa được huấn luyện.
 - Sau triển khai `enabled=false`, `demo_send_enabled=false`, `risk_profile_approved=false` và giao diện vẫn thể hiện `MODEL_NOT_TRAINED`, `ABSTAIN`, `LOCKED`.
 - Google Sites publication, Android device installation và APK chưa có bằng chứng kiểm thử hoàn thành.
+
+## 2026-09-28 — Supabase PWA v10: model không được duyệt, không phụ thuộc AppDeploy
+
+- GitHub Web App source: `773722edc6055936b592025cd628f2db14fe76db`; Supabase Edge Function `cws-ai-trade-site` **v10 ACTIVE**, deployment digest `cf6c0ba8166ff1348e0bf69728666e001fde5a729d8ff086e2565168376557ab`.
+- Điều chỉnh thông báo UI từ “chưa huấn luyện” sang **`MODEL_NOT_APPROVED`**, vì nghiên cứu nội bộ đã thực sự train nhưng hai candidate bị loại, không có model production. Tín hiệu sản phẩm tiếp tục `ABSTAIN` và `LOCKED`.
+- Loại liên kết Founder Secure AppDeploy cũ khỏi Web App. Hướng dẫn nhập JSON chỉ đọc không còn phụ thuộc phiên đăng nhập tên miền cũ. Footer ghi rõ Google Sites **chưa xuất bản** thay vì gọi bản web hiện hành là Google Sites.
+- Nâng cache static PWA lên `cws-ai-trade-static-v4`; chỉ có `index.html` và `sw.js` thay đổi trong bundle so với v9; không chỉnh bộ tính 16 cặp, Lot/P&L, biểu đồ, EPUB hay broker.
+- Ba lớp kiểm tra: (1) GitHub index/worker trùng chính xác bundle, so với deployed v9 trước khi sửa; (2) deployed v10 source đọc lại trùng chính xác GitHub bundle, HTTP live GET health/HTML/worker/manifest không lỗi, HTML thể hiện `MODEL_NOT_APPROVED`, `ABSTAIN · Gate: LOCKED`, không còn AppDeploy; footer live xác nhận `Google Sites chưa xuất bản`; (3) SQL sau triển khai: `enabled=false`, `demo_send_enabled=false`, `risk_profile_approved=false`, order intents = 0, hai private model vẫn không có public inference.
+- Kiểm thử hồi quy không đổi mã nguồn Python/portfolio: **29/29 Python** và **8/8 Node** PASS; không gọi các bài fixture là kết quả thị trường.
+- **Không khẳng định** Android Chrome cài/khởi động offline E2E trên điện thoại, Google Sites Founder đã publish, hoặc APK đã build/ký. Chưa có model đủ chuẩn OOS, broker-net cost và forward paper để mở sản phẩm trading.
