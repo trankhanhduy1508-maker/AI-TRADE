@@ -300,3 +300,19 @@ Bản xuất bản hiện tại:
 
 Mục tiêu khi đọc xong:
 Founder phải rút được rule hành động, biết phản biện backtest đẹp, biết phân biệt good loss với bad trade, và biết cách biến một ý tưởng từ sách thành hypothesis có thể kiểm chứng.
+
+
+## Final publishing QA — 2026-09-28
+
+Final artifacts were regenerated after navigation polish.
+
+Verified:
+- DOCX: 49 pages rendered; every page visually reviewed; Vietnamese glyphs clean.
+- PDF: 49 pages; A4; author metadata = `Duy Trần - Founder CWS`; 201 outline items; 59 annotations.
+- Visible DOCX/PDF TOC: 29 Heading-1 chapter/appendix entries with internal hyperlinks.
+- EPUB3: zip integrity PASS; no U+FFFD replacement characters; 147 internal TOC hrefs checked; 0 missing file/fragment targets.
+- Displayed byline: `Duy Trần - Founder CWS`.
+- Final TOC heading is Vietnamese: `Mục lục`.
+- Removed a LibreOffice rendering artifact that appended `X` to linked TOC entries by changing TOC entry paragraph style from Compact to BodyText. Re-render after fix PASS.
+
+No live-money, broker execution, risk, or The5ers gate was changed by this publishing work.
