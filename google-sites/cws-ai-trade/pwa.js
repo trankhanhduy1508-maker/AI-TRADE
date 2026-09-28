@@ -34,7 +34,7 @@ if(button)button.addEventListener("click",async()=>{
 if("serviceWorker" in navigator){
   window.addEventListener("load",async()=>{
     try{
-      const reg=await navigator.serviceWorker.register(BASE+"sw.js",{scope:BASE,updateViaCache:"none"});
+      const reg=await navigator.serviceWorker.register(BASE+"?asset=sw.js",{scope:BASE,updateViaCache:"none"});
       if(reg?.update)reg.update().catch(()=>{});
     }catch(error){
       if(hint)hint.textContent="Chưa lưu ngoại tuyến được. Vẫn có thể sử dụng website khi có mạng.";
