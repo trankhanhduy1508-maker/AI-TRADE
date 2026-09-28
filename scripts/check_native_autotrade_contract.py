@@ -16,6 +16,7 @@ SOURCE = ROOT / "android/app/src/main/java/vn/cws/aitrade"
 CHECKS = (
     ("NativeDemoAuth", "NativeDemoAuthCheck", "PKCE"),
     ("NativeReleaseVerifier", "NativeReleaseVerifierCheck", "signed-update"),
+    ("NativeSessionCodec", "NativeSessionCodecCheck", "encrypted-session"),
 )
 
 
