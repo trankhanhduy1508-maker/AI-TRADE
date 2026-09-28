@@ -1,7 +1,7 @@
 /* CWS AI Trade PWA: public static shell only. No caching of private data, market API or position files. */
 "use strict";
 const ROOT="/functions/v1/cws-ai-trade-site/app/";
-const CACHE="cws-ai-trade-static-v3";
+const CACHE="cws-ai-trade-static-v4";
 const BOOK="https://raw.githubusercontent.com/trankhanhduy1508-maker/AI-TRADE/2e9ae2e17e449f1b1574963103454f4a38226b94/knowledge/CWS_TRADING_MASTERBOOK_V3_DISTILLED_2026-09-28.md";
 const CDN="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js";
 const CORE=[
