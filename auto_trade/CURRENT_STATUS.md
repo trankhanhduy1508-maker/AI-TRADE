@@ -1,3 +1,97 @@
+## Founder checkpoint — UI positions + Google Auth rescue + e-book intent — 2026-09-28
+
+### Founder UI intent just reconfirmed
+Không clone nguyên MT5.
+
+Open position UI trước mắt chỉ cần:
+- Symbol / cặp giao dịch;
+- BUY / SELL;
+- Lot thật của lệnh;
+- P/L của từng lệnh;
+- Tổng P/L của tất cả lệnh đang mở.
+
+Không cần hiển thị ở position list/card hiện tại:
+- Entry;
+- Stop Loss;
+- Take Profit.
+
+Không được lấy paper/synthetic volume giả làm Lot thật.
+Thiếu Lot/P&L thật thì hiển thị `—`.
+
+### Code checkpoint
+Đã sửa:
+- `dashboard/js/modules/admin-positions.js`
+- `dashboard/js/modules/current-trade.js`
+- `dashboard/js/modules/training-arena.js`
+- `dashboard/styles/components.css`
+
+Git HEAD hiện tại:
+`5394f0029d444859f9b5c50ec7900114a6f08631`
+
+UI changes:
+- current/open positions → Symbol / Side / Lot / P&L;
+- thêm Tổng P/L;
+- Arena bỏ Entry/Stop khỏi row chính;
+- mobile layout giữ P/L visible;
+- không fake lot.
+
+**Chưa được gọi PASS** cho UI mới cho tới khi chạy đủ Founder rule 3 vòng sau deploy mới.
+
+### Google Auth rescue
+Root cause mới nhất:
+Supabase OAuth cũ vẫn fallback về:
+`https://cws-lab-frontend.onrender.com`
+→ Render service bị suspend / callback fail → `bad_oauth_state`.
+
+Đã chuyển sang AppDeploy Auth mới:
+`https://cws-ai-trade-founder-secure-sm4gs9.v2.appdeploy.ai/`
+
+Founder Google account được Founder xác nhận:
+`trankhanhduy1508@gmail.com`
+
+AppDeploy:
+- Google-only auth;
+- Founder allowlist bằng email phía backend;
+- backend verifier:
+  `https://api-v2.appdeploy.ai/app/cws-ai-trade-founder-secure-sm4gs9/api/verify-founder`
+- health:
+  `.../api/_healthcheck`
+
+Supabase Edge:
+- v34 ACTIVE;
+- stable Admin URL:
+  `https://oziktadfeenydvgobudr.supabase.co/functions/v1/ai-trade-dashboard?admin=1`
+- stable route redirect sang AppDeploy Secure;
+- invalid Bearer vào Supabase → 403;
+- invalid Bearer vào Founder verifier → 401;
+- AppDeploy health → 200.
+
+Auth verification status:
+- Round 1/3 sau fix v34: PASS.
+- Round 2/3: PASS bằng fresh browser, không còn `onrender.com`, không `bad_oauth_state`.
+- Round 3/3: **chưa hoàn tất** vì cần Founder đăng nhập thật bằng Google account và reload/reopen để xác minh post-login runtime.
+Không báo PASS 3/3 trước khi bước này xong.
+
+### Mandatory PASS rule
+Mọi thay đổi CWS AI Trade từ đây:
+1. Round 1 = backend/HTTP/data contract;
+2. Round 2 = browser/runtime thật;
+3. Round 3 = fresh session + reload/reopen/mobile regression.
+Bất kỳ round nào FAIL → sửa → chạy lại chuỗi cần thiết. Không báo PASS sớm.
+
+### Founder e-book / knowledge intent
+Sau khi UI này hoàn tất:
+1. truy lại toàn bộ evidence backtest/history/research mà AI-TRADE đã tích lũy;
+2. gom kinh nghiệm từ strategy research, market studies, books/research notes đã thực sự có evidence trong repo;
+3. không được biến inference thành fact;
+4. ghi cả chiến lược thất bại, overfit, spread/slippage sensitivity, OOS/walk-forward failures;
+5. phân tích theo market/cặp giao dịch trong phạm vi dữ liệu đã backtest;
+6. tạo e-book tiếng Việt để Founder học;
+7. e-book phải có hình/biểu đồ minh họa: trend, breakout, false breakout, ATR stop, trailing stop, drawdown, equity curve, OOS/walk-forward, spread/slippage và các case market cụ thể;
+8. không viết kiểu “bí kíp thắng chắc”, không hứa lợi nhuận.
+
+Founder đặc biệt muốn hiểu **kinh nghiệm mà AI đã đúc kết từ lịch sử/backtest**, không chỉ xem kết quả cuối cùng.
+
 ## Founder Admin login hotfix + 3-round PASS rule — 2026-09-28
 
 ### Founder instruction
