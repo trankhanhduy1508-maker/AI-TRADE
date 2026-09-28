@@ -492,6 +492,7 @@ Deno.serve(async(req)=>{
         stopPrice:Number(p.stop_price),riskPrice:Number(p.risk_price),
         lastMarkTs:new Date(p.last_mark_ts).toISOString(),
         lastMarkPrice:Number(p.last_mark_price),unrealizedR:Number(p.unrealized_r),
+        paperLot:0.01,paperLotSource:"FIXED_PAPER_SIMULATION",
         openedReason:String(p.opened_reason)
       })),
       trades:trades.map((t:any)=>({
