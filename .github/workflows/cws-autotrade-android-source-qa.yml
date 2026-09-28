@@ -52,8 +52,43 @@ jobs:
       - name: Check standalone native security contracts
         run: python3 scripts/check_native_autotrade_contract.py
 
-      - name: Compile Android Java source, do not assemble or sign
-        run: gradle --no-daemon -p android :app:compileDebugJavaWithJavac --stacktrace
+      - name: Build exact offline Android assets and merge (no APK)
+        run: gradle --no-daemon -p android :app:prepareCwsAndroidAssets :app:mergeDebugAssets --stacktrace
+
+      - name: Verify packaged first-party assets and WebView whitelist
+        run: |
+          python3 - <<'PY'
+          import hashlib
+          import json
+          from pathlib import Path
+          base = Path("android/app/src/main/assets/www")
+          required = {"index.html", "styles.css", "portfolio.js", "tradingview.js",
+                      "app.js", "pwa.js", "sw.js", "manifest.webmanifest",
+                      "icon-192.png", "icon-512.png", "mt5-login.html", "founder-mt5.js",
+                      ".nojekyll"}
+          assert {p.name for p in base.iterdir()} == required, "Asset whitelist mismatch"
+          assert all((base/name).is_file() for name in required), "Missing asset"
+          index = (base/"index.html").read_text(encoding="utf-8")
+          assert "<title>CWS AutoTrade · DEMO LOCKED</title>" in index
+          assert '<script src="./pwa.js" defer></script>' not in index
+          assert "/functions/v1/cws-ai-trade-site/app/" not in index
+          manifest = json.loads((base/"manifest.webmanifest").read_text(encoding="utf-8"))
+          assert manifest["name"] == "CWS AutoTrade"
+          java = Path("android/app/src/main/java/vn/cws/aitrade/MainActivity.java").read_text()
+          import re
+          allowed = java.split("private static final Set<String> ALLOWED",1)[1]
+          allowed = allowed.split("Arrays.asList(",1)[1].split("));",1)[0]
+          exposed = set(re.findall(r'"([^"]+)"', allowed))
+          assert exposed == required - {"mt5-login.html", "founder-mt5.js", ".nojekyll"}
+          digests = {p.name:hashlib.sha256(p.read_bytes()).hexdigest()
+                     for p in base.iterdir() if p.is_file()}
+          assert len(digests) == len(required)
+          print("PASS: Android offline assets and WebView whitelist:",len(digests),"files")
+          PY
+
+      - name: Compile debug and release Java and lint without packaging an APK
+        run: |
+          gradle --no-daemon -p android :app:compileDebugJavaWithJavac :app:compileReleaseJavaWithJavac :app:lintDebug --stacktrace
 
       - name: Verify production packaging is blocked without Founder approval
         run: |
