@@ -158,6 +158,7 @@ function badgeClass(kind:string){
 
 const SUPABASE_URL="https://oziktadfeenydvgobudr.supabase.co";
 const SUPABASE_AUTH_API_KEY=Deno.env.get("SUPABASE_ANON_KEY")??"";
+const APPDEPLOY_FOUNDER_VERIFY_URL="https://cws-ai-trade-founder-secure-sm4gs9.v2.appdeploy.ai/api/verify-founder";
 
 async function accessContext(req:Request,token:string){
   if(!token){
@@ -168,23 +169,43 @@ async function accessContext(req:Request,token:string){
       headers:{apikey:SUPABASE_AUTH_API_KEY,Authorization:"Bearer "+bearer},
       cache:"no-store"
     });
-    if(!userRes.ok)return null;
-    const user=await userRes.json().catch(()=>null);
-    const userId=String(user?.id??"");
-    if(!userId)return null;
-    const rows=await sql`
-      select d.id,d.access_role,d.entitlement_state,d.subject_label,d.tester_expires_at,d.expires_at
-      from ai_trade.dashboard_google_access g
-      join ai_trade.dashboard_access_tokens d on d.id=g.access_token_id
-      where g.user_id=${userId}
-        and g.active=true
-        and d.revoked_at is null
-        and d.expires_at>now()
+
+    if(userRes.ok){
+      const user=await userRes.json().catch(()=>null);
+      const userId=String(user?.id??"");
+      if(userId){
+        const rows=await sql`
+          select d.id,d.access_role,d.entitlement_state,d.subject_label,d.tester_expires_at,d.expires_at
+          from ai_trade.dashboard_google_access g
+          join ai_trade.dashboard_access_tokens d on d.id=g.access_token_id
+          where g.user_id=${userId}
+            and g.active=true
+            and d.revoked_at is null
+            and d.expires_at>now()
+          limit 1
+        `;
+        if(rows[0])return rows[0];
+      }
+    }
+
+    const appDeployVerify=await fetch(APPDEPLOY_FOUNDER_VERIFY_URL,{
+      headers:{Authorization:"Bearer "+bearer},
+      cache:"no-store"
+    }).catch(()=>null);
+    if(!appDeployVerify?.ok)return null;
+    const verified=await appDeployVerify.json().catch(()=>null);
+    if(!verified?.founder)return null;
+
+    const founderRows=await sql`
+      select id,access_role,entitlement_state,subject_label,tester_expires_at,expires_at
+      from ai_trade.dashboard_access_tokens
+      where access_role='FOUNDER'
+        and revoked_at is null
+        and expires_at>now()
+      order by id
       limit 1
     `;
-    const row=rows[0];
-    if(!row)return null;
-    return row;
+    return founderRows[0]??null;
   }
   const rows=await sql`
     select id,access_role,entitlement_state,subject_label,tester_expires_at,expires_at
@@ -223,14 +244,14 @@ Deno.serve(async(req)=>{
   const url=new URL(req.url);
   if(url.searchParams.get("admin")==="1"){
     return new Response(null,{status:302,headers:{
-      "location":"https://cws-ai-trade-founder-admin-j7mzf3.v2.appdeploy.ai/",
+      "location":"https://cws-ai-trade-founder-secure-sm4gs9.v2.appdeploy.ai/",
       "cache-control":"no-store, max-age=0",
       "referrer-policy":"no-referrer"
     }});
   }
   if(url.searchParams.get("admin_app")==="1"){
     return new Response(null,{status:302,headers:{
-      "location":"https://cws-ai-trade-founder-admin-j7mzf3.v2.appdeploy.ai/?mode=admin",
+      "location":"https://cws-ai-trade-founder-secure-sm4gs9.v2.appdeploy.ai/",
       "cache-control":"no-store, max-age=0",
       "referrer-policy":"no-referrer"
     }});
