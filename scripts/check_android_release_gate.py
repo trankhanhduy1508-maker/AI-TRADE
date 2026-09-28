@@ -1,8 +1,8 @@
-"""Fail closed before any Android package task.
+"""Fail closed before Android package/release.
 
-This is a policy gate, NOT proof that a release is safe. The workflow intentionally
-contains no APK build/publish steps until the Founder has accepted all gates and
-the implementation has been independently verified on the Web App.
+APK-first policy: Web/Pages hosting is no longer a release prerequisite. This
+shape-only checker cannot authorize APK build, model promotion or trading.
+Runtime, secure release signing, in-place updates and recovery require real QA.
 """
 from __future__ import annotations
 import json
@@ -12,15 +12,18 @@ import sys
 ROOT = Path(__file__).resolve().parents[1]
 APPROVAL = ROOT / "product" / "CWS_AI_TRADE_RELEASE_APPROVAL.json"
 REQUIRED = (
-    "web_app_html_mime_qa",
-    "web_app_mobile_e2e",
+    "android_authenticated_ui_e2e",
+    "android_offline_and_reconnect_e2e",
     "founder_google_login_e2e",
     "mt5_authenticated_demo_readback",
     "model_approved_with_provenance_oos_wf_costs",
+    "customer_broker_exit_path_and_reconciliation_e2e",
     "independent_risk_and_kill_switch_e2e",
     "the5ers_gate_if_applicable",
     "demo_auto_trade_forward_e2e",
     "stable_release_signing_and_update_e2e",
+    "approved_strategy_and_native_recovery_e2e",
+    "data_migration_and_restore_e2e",
     "founder_release_approval",
     "live_money_locked",
 )
@@ -36,7 +39,7 @@ def evaluate(payload: dict) -> tuple[bool, tuple[str,...]]:
 
 def main() -> int:
     if not APPROVAL.is_file():
-        print("BLOCKED: No approved Web App / demo auto-trade / Android update evidence. NO APK BUILD.")
+        print("BLOCKED: No approved Android / demo auto-trade / update and recovery evidence. NO APK BUILD.")
         return 1
     try:
         value=json.loads(APPROVAL.read_text(encoding="utf-8"))

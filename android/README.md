@@ -34,3 +34,8 @@ Founder screenshot of the first-party Android shell shows the OS clock/battery o
 ## CHÍNH SÁCH MỚI 2026-09-28 — DỪNG TẠO APK TRƯỚC KHI AUTO-TRADE HOÀN THÀNH
 
 Lịch sử build và đường dẫn debug APK ở trên **chỉ là kiểm thử đã có trong quá khứ**, không phải hàng cần Founder cài hiện tại. Founder đã chốt Web App trước, MT5 DEMO auto-trade sau khi toàn bộ gate PASS, rồi **duy nhất một APK phát hành hoàn chỉnh, có cập nhật tại chỗ**. Workflow `.github/workflows/cws-ai-trade-android-debug.yml` không còn push trigger hay Gradle/build/upload job. `scripts/check_android_release_gate.py` từ chối khi thiếu approval. Từ nay tuyệt đối không upload/gửi APK debug mỗi commit; mọi sửa UI/runtime thực hiện và test trên Web App/cloud trước. Điều kiện ký và tự cập nhật chi tiết: `docs/CWS_AI_TRADE_RELEASE_AND_AUTOUPDATE_POLICY_2026-09-28.md`.
+
+
+## Founder đổi trọng tâm: APK-first, update và rollback (mới nhất, 2026-09-28)
+
+Các đoạn ở trên chỉ mô tả trạng thái/hạn chế của artifact lịch sử. Từ nay ưu tiên mã nguồn Android và contract `product/CWS_AI_TRADE_ANDROID_CONTROL_LEARNING_UPDATE_SPEC_2026-09-28.md`; Web/PWA chỉ còn kênh phụ, việc GitHub Pages chưa kích hoạt **không chặn phát triển Android**. Vẫn không phát hành/bàn giao APK Debug khi DEMO auto-trade chưa được kiểm chứng. Chức năng auto-update + recovery **chưa được triển khai**: cần cùng signing identity release, kiểm SHA/kênh phân phối, versionCode tăng, rollback model/strategy bản được duyệt, native recovery build mới versionCode cao hơn và Android device E2E. Không cho model tự thay execution/risk/kill-switch. Nút can thiệp thủ công và TradingView được ghi nhận là đề xuất UX, không chạm broker execution trước khi chốt chi tiết.

@@ -141,3 +141,8 @@ Chặng đầu được ủy quyền cho chat tiếp theo: **ground tối thiể
 ## 9. Founder chốt lại quy trình (2026-09-28, thay thế thứ tự APK trước đó)
 
 Quy tắc có hiệu lực ở `docs/CWS_AI_TRADE_RELEASE_AND_AUTOUPDATE_POLICY_2026-09-28.md`: **làm và nghiệm thu Web App đầy đủ trước → xác minh MT5 demo + dữ liệu hợp pháp + auto-trade và toàn bộ gate → chỉ sau đó mới tạo một APK release hoàn chỉnh có cập nhật tại chỗ**. Không build hay chuyển APK debug cho Founder từng checkpoint. Tự cập nhật APK cần cùng package ID, khóa ký release ổn định, versionCode tăng và kênh Play In-App Updates hoặc manifest HTTPS đã kiểm chứng với xác nhận cài đặt Android. Không đổi quyết định live-money LOCKED.
+
+
+## 10. Founder chuyển hướng APK-first (2026-09-28, MỚI NHẤT, thay thế §5/§9 về thứ tự)
+
+Founder yêu cầu chuyển trọng tâm từ Web App/Google Pages sang **APK Android do CWS kiểm soát**, vẫn không bàn giao APK debug từng checkpoint và **chỉ phát hành khi DEMO auto-trade, update, rollback và QA đạt gate thật**. App phải có auto-update giữ dữ liệu và cơ chế cho khách phục hồi phiên bản model/strategy đã được duyệt; native APK recovery tuân thủ Android versionCode + khóa ký. Cho AI thường xuyên nạp/đối chiếu kiến thức đã cấp quyền, chạy thử ứng viên ngoài production và không tự promote REJECTED. Vấn đề quyền đóng lệnh thủ công và TradingView là câu hỏi sản phẩm đang cân nhắc; phương án được phân tích tại `product/CWS_AI_TRADE_ANDROID_CONTROL_LEARNING_UPDATE_SPEC_2026-09-28.md`, **chưa được hiểu là quyền sửa broker execution**. Chính sách canonical mới ở `docs/CWS_AI_TRADE_RELEASE_AND_AUTOUPDATE_POLICY_2026-09-28.md`; nếu tài liệu cũ nói Web-first thì áp dụng cập nhật mục này.
