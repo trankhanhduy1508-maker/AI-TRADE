@@ -21,19 +21,26 @@ test("public CWS app does not request or redistribute Yahoo candle JSON",()=>{
   assert.match(route,/broker_orders:false/);
 });
 
-test("each served asset matches independently committed source and CSP is scoped",()=>{
+test("frozen Edge API bundle retains unchanged assets while canonical Web App moves to static hosting",()=>{
   const site=src("supabase/functions/cws-ai-trade-site/index.ts");
   const anchor="const ASSETS=",start=site.indexOf(anchor)+anchor.length;
-  const end=site.indexOf(";\n",start);
+  const end=site.indexOf(";\\n",start);
   assert.ok(start>anchor.length&&end>start);
   const bundle=JSON.parse(site.slice(start,end));
-  for(const name of ["index.html","styles.css","portfolio.js",
-                     "tradingview.js","app.js","pwa.js","sw.js","manifest.webmanifest"]){
+  for(const name of ["styles.css","portfolio.js","tradingview.js",
+                     "app.js","pwa.js","manifest.webmanifest"]){
     assert.equal(bundle[name],src("google-sites/cws-ai-trade/"+name),name);
   }
-  assert.match(site,/https:\/\/s3\.tradingview\.com/);
-  assert.match(site,/frame-src https:\/\/\*\.tradingview\.com/);
-  assert.match(site,/"tradingview\.js":"application\/javascript; charset=utf-8"/);
+  // The legacy Edge HTML/SW are deliberately frozen at v11. Their HTML
+  // response is text/plain, so new Web App changes belong to static hosting.
+  assert.notEqual(bundle["index.html"],src("google-sites/cws-ai-trade/index.html"));
+  assert.notEqual(bundle["sw.js"],src("google-sites/cws-ai-trade/sw.js"));
+  assert.match(bundle["index.html"],/MODEL_NOT_APPROVED/);
+  assert.match(src("google-sites/cws-ai-trade/index.html"),/mt5-login\\.html/);
+  assert.match(src("google-sites/cws-ai-trade/sw.js"),/u\\.pathname===ROOT/);
+  assert.match(site,/https:\\/\\/s3\\.tradingview\\.com/);
+  assert.match(site,/frame-src https:\\/\\/\\*\\.tradingview\\.com/);
+  assert.match(site,/"tradingview\\.js":"application\\/javascript; charset=utf-8"/);
 });
 
 test("PWA caches first-party widget shell, never third-party market stream",()=>{
