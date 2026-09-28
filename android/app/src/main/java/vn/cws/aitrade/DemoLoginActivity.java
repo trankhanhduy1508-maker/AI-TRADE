@@ -286,14 +286,14 @@ public final class DemoLoginActivity extends Activity {
         c.setRequestProperty("Accept", "application/json");
         c.setRequestProperty("Cache-Control", "no-store");
         if (bearer != null) c.setRequestProperty("Authorization", "Bearer " + bearer);
-        if (body != null) {
-            c.setDoOutput(true);
+        try {
+            if (body != null) {
+                c.setDoOutput(true);
             c.setRequestProperty("Content-Type", "application/json");
             try (OutputStream out = c.getOutputStream()) {
                 out.write(body.toString().getBytes(StandardCharsets.UTF_8));
             }
-        }
-        try {
+            }
             int statusCode = c.getResponseCode();
             if (statusCode < 200 || statusCode >= 300) throw new IOException("HTTP_ERROR");
             try (InputStream stream = c.getInputStream();
