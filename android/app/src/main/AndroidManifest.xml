@@ -14,5 +14,19 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+        <!-- External Android browser OAuth callback only; never use WebView for Google OAuth. -->
+        <activity android:name=".DemoLoginActivity"
+                  android:exported="true"
+                  android:launchMode="singleTask"
+                  android:windowSoftInputMode="adjustResize">
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="vn.cws.aitrade"
+                      android:host="auth"
+                      android:pathPrefix="/callback/" />
+            </intent-filter>
+        </activity>
     </application>
 </manifest>

@@ -20,6 +20,8 @@ import android.webkit.WebView;
 import android.webkit.WebViewClient;
 import android.view.WindowInsets;
 import android.widget.FrameLayout;
+import android.widget.LinearLayout;
+import android.widget.Button;
 import android.window.OnBackInvokedDispatcher;
 
 import java.io.ByteArrayInputStream;
@@ -117,7 +119,22 @@ public final class MainActivity extends Activity {
         // of letting the phone clock and battery cover the CWS header.
         FrameLayout root = new FrameLayout(this);
         root.setBackgroundColor(Color.rgb(8, 17, 30));
-        root.addView(web, new FrameLayout.LayoutParams(
+        LinearLayout chrome = new LinearLayout(this);
+        chrome.setOrientation(LinearLayout.VERTICAL);
+        Button demo = new Button(this);
+        demo.setText("MT5 DEMO · Đăng nhập");
+        demo.setAllCaps(false);
+        demo.setOnClickListener(view ->
+            startActivity(new Intent(this, DemoLoginActivity.class))
+        );
+        chrome.addView(demo, new LinearLayout.LayoutParams(
+            LinearLayout.LayoutParams.MATCH_PARENT,
+            LinearLayout.LayoutParams.WRAP_CONTENT
+        ));
+        chrome.addView(web, new LinearLayout.LayoutParams(
+            LinearLayout.LayoutParams.MATCH_PARENT, 0, 1f
+        ));
+        root.addView(chrome, new FrameLayout.LayoutParams(
             FrameLayout.LayoutParams.MATCH_PARENT,
             FrameLayout.LayoutParams.MATCH_PARENT
         ));
