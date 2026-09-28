@@ -11,7 +11,9 @@ const REPOSITORY="trankhanhduy1508-maker/AI-TRADE";
 const ACTOR="trankhanhduy1508-maker";
 const WORKFLOW="MT5 Demo Protocol Probe";
 const PR_REF_PREFIX="refs/pull/2/";
-const ALLOWED_PURPOSES=new Set(["preflight","technical_smoke","demo_forward"]);
+// A preflight lease can never authorize order submission. A future DEMO
+// execution lane needs a separate Founder-approved, server-enforced Risk Engine.
+const ALLOWED_PURPOSES=new Set(["preflight"]);
 
 const json=(body:unknown,status=200)=>new Response(JSON.stringify(body),{
   status,headers:{"content-type":"application/json; charset=utf-8"}
@@ -48,15 +50,19 @@ Deno.serve(async(req)=>{
 
     const rows=await sql`
       select a.account_login,a.server,a.account_type,
-             ds.decrypted_secret as password
+             investor.decrypted_secret as investor_password
       from ai_trade.mt5_demo_accounts a
-      join vault.decrypted_secrets ds on ds.id=a.password_secret_id
+      left join vault.decrypted_secrets investor
+        on investor.id=a.investor_password_secret_id
       where a.is_active=true and a.account_type='DEMO'
       order by a.last_verified_at desc nulls last,a.created_at desc
       limit 1
     `;
     const row=rows[0];
-    if(!row || !row.password) return json({ok:false,status:"NO_ACTIVE_DEMO_CREDENTIAL"},404);
+    if(!row || !row.investor_password) return json({
+      ok:false,status:"NO_READ_ONLY_DEMO_CREDENTIAL",
+      brokerOrdersAllowed:false,liveMoneyLocked:true
+    },404);
     const server=String(row.server??"");
     if(!server.toLowerCase().includes("demo")) return json({ok:false,status:"SERVER_NOT_DEMO"},403);
 
@@ -67,8 +73,9 @@ Deno.serve(async(req)=>{
       login:Number(row.account_login),
       server,
       accountType:"DEMO",
-      password:String(row.password),
-      brokerOrdersAllowed:purpose!=="preflight",
+      password:String(row.investor_password),
+      credentialScope:"INVESTOR_READ_ONLY",
+      brokerOrdersAllowed:false,
       liveMoneyLocked:true
     });
   }catch(error){
