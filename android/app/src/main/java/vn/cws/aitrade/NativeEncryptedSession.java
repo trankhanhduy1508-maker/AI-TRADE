@@ -4,28 +4,19 @@ import android.content.Context;
 import android.content.SharedPreferences;
 import android.security.keystore.KeyGenParameterSpec;
 import android.security.keystore.KeyProperties;
-import android.util.Base64;
 
-import java.nio.charset.StandardCharsets;
 import java.security.GeneralSecurityException;
 import java.security.Key;
 import java.security.KeyStore;
-import java.util.Arrays;
 
-import javax.crypto.Cipher;
 import javax.crypto.KeyGenerator;
 import javax.crypto.SecretKey;
-import javax.crypto.spec.GCMParameterSpec;
 
 /** Persist only the rotated Google refresh token using this app's Android Keystore. */
 public final class NativeEncryptedSession {
     private static final String ALIAS = "vn.cws.aitrade.auth.refresh.v1";
     private static final String PREF = "cws_auth_encrypted_v1";
     private static final String FIELD = "refresh";
-    private static final byte[] AAD =
-        "vn.cws.aitrade|google_refresh|v1".getBytes(StandardCharsets.US_ASCII);
-    private static final int IV_SIZE = 12;
-    private static final int MAX_TOKEN_LENGTH = 4096;
     private final SharedPreferences storage;
 
     public NativeEncryptedSession(Context context) {
@@ -55,52 +46,19 @@ public final class NativeEncryptedSession {
     }
 
     public void save(String token) throws GeneralSecurityException {
-        if (token == null || token.length() < 12 || token.length() > MAX_TOKEN_LENGTH
-            || !token.matches("[A-Za-z0-9_.-]+")) {
-            throw new GeneralSecurityException("Invalid refresh token format");
+        // AES-GCM ciphertext only. The AndroidKeyStore SecretKey cannot be
+        // serialized or exported; this preference survives in-place updates.
+        String sealed = NativeSessionCodec.seal(token, key());
+        if (!storage.edit().putString(FIELD, sealed).commit()) {
+            throw new GeneralSecurityException("Encrypted session write failed");
         }
-        Cipher cipher = Cipher.getInstance("AES/GCM/NoPadding");
-        cipher.init(Cipher.ENCRYPT_MODE, key());
-        cipher.updateAAD(AAD);
-        byte[] iv = cipher.getIV();
-        if (iv == null || iv.length != IV_SIZE) {
-            throw new GeneralSecurityException("Invalid Android Keystore IV");
-        }
-        byte[] ciphertext = cipher.doFinal(token.getBytes(StandardCharsets.UTF_8));
-        byte[] packed = new byte[1 + IV_SIZE + ciphertext.length];
-        packed[0] = 1;
-        System.arraycopy(iv, 0, packed, 1, IV_SIZE);
-        System.arraycopy(ciphertext, 0, packed, 1 + IV_SIZE, ciphertext.length);
-        boolean saved = storage.edit().putString(
-            FIELD, Base64.encodeToString(packed, Base64.NO_WRAP)).commit();
-        Arrays.fill(packed, (byte) 0);
-        Arrays.fill(ciphertext, (byte) 0);
-        if (!saved) throw new GeneralSecurityException("Encrypted session write failed");
     }
 
     public String load() {
         String encoded = storage.getString(FIELD, null);
-        if (encoded == null || encoded.length() > 6000) return null;
+        if (encoded == null) return null;
         try {
-            byte[] packed = Base64.decode(encoded, Base64.NO_WRAP);
-            if (packed.length < 1 + IV_SIZE + 16 || packed[0] != 1) {
-                throw new GeneralSecurityException("Invalid encrypted session");
-            }
-            byte[] iv = Arrays.copyOfRange(packed, 1, 1 + IV_SIZE);
-            byte[] ciphertext = Arrays.copyOfRange(packed, 1 + IV_SIZE, packed.length);
-            Cipher cipher = Cipher.getInstance("AES/GCM/NoPadding");
-            cipher.init(Cipher.DECRYPT_MODE, key(), new GCMParameterSpec(128, iv));
-            cipher.updateAAD(AAD);
-            byte[] plaintext = cipher.doFinal(ciphertext);
-            String token = new String(plaintext, StandardCharsets.UTF_8);
-            Arrays.fill(plaintext, (byte) 0);
-            Arrays.fill(ciphertext, (byte) 0);
-            Arrays.fill(packed, (byte) 0);
-            if (token.length() < 12 || token.length() > MAX_TOKEN_LENGTH
-                || !token.matches("[A-Za-z0-9_.-]+")) {
-                throw new GeneralSecurityException("Decrypted session invalid");
-            }
-            return token;
+            return NativeSessionCodec.open(encoded, key());
         } catch (Exception error) {
             clear();
             return null;
@@ -108,6 +66,8 @@ public final class NativeEncryptedSession {
     }
 
     public void clear() {
-        storage.edit().remove(FIELD).commit();
+        if (!storage.edit().remove(FIELD).commit()) {
+            throw new SecurityException("Failed to clear encrypted local session");
+        }
     }
 }
