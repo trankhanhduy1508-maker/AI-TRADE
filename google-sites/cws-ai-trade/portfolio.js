@@ -35,6 +35,7 @@
   }
   function aggregate(positions) {
     var bySymbol = new Map();
+    var positionGain = 0, positionLoss = 0;
     for (var i = 0; i < positions.length; i++) {
       var p = positionOf(positions[i]);
       var g = bySymbol.get(p.symbol);
@@ -45,7 +46,11 @@
       if (g.side !== p.side) g.mixed = true;
       g.count++;
       if (p.lot !== null) { g.lotKnown++; g.totalLot += p.lot; }
-      if (p.floatingPL !== null) { g.plKnown++; g.totalPL += p.floatingPL; }
+      if (p.floatingPL !== null) {
+        g.plKnown++; g.totalPL += p.floatingPL;
+        positionGain += Math.max(0,p.floatingPL);
+        positionLoss += Math.min(0,p.floatingPL);
+      }
     }
     var groups = Array.from(bySymbol.values()).map(function (g) {
       return {
@@ -66,8 +71,8 @@
     var completeLot = positions.length > 0 && groups.every(function (g) { return g.lot !== null; });
     var gain = null, loss = null, net = null, totalLot = null;
     if (completePL) {
-      gain = groups.reduce(function (sum,g) { return sum + Math.max(0,g.floatingPL); },0);
-      loss = groups.reduce(function (sum,g) { return sum + Math.min(0,g.floatingPL); },0);
+      gain = positionGain;
+      loss = positionLoss;
       net = gain + loss;
       gain = Math.round(gain * 100) / 100;
       loss = Math.round(loss * 100) / 100;
