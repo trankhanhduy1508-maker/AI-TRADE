@@ -33,6 +33,8 @@ def _parser() -> argparse.ArgumentParser:
 
 def main() -> int:
     args = _parser().parse_args()
+    if args.enable_demo_send:
+        raise SystemExit("CONFIG_BLOCKED: DEMO send requires verified server-side model/risk/kill authority, not only a CLI flag")
     try:
         import MetaTrader5 as mt5
     except ImportError as exc:
@@ -73,7 +75,7 @@ def main() -> int:
     adapter = MT5BrokerAdapter(
         mt5,
         mode=ExecutionMode.DEMO,
-        allow_order_send=args.enable_demo_send,
+        allow_order_send=False,  # broker mutations blocked pending server authority
         ledger_path=state_dir / "order_intents.sqlite",
     )
     if not adapter.connect():
