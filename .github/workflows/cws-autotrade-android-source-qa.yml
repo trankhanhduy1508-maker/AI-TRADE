@@ -1,0 +1,62 @@
+name: CWS AutoTrade Android source-only QA
+
+# Internal compile and unit tests only. NO assemble, signing, APK upload,
+# workflow_dispatch to production, broker connection or deployment.
+# No live/funded trading and no secret values used by this workflow.
+on:
+  push:
+    branches:
+      - codex/p0-covel-knowledge-audit
+    paths:
+      - '.github/workflows/cws-autotrade-android-source-qa.yml'
+      - 'android/**'
+      - 'google-sites/cws-ai-trade/**'
+      - 'scripts/build_cws_trade_static.py'
+      - 'scripts/check_native_autotrade_contract.py'
+      - 'tests/android/**'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: autotrade-source-qa-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  source-only:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout committed source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Set up Gradle 8.13 (AGP 8.13.2)
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.13'
+
+      - name: Set up Android SDK 36 without an APK build
+        uses: android-actions/setup-android@v3
+      - name: Install compile-only Android SDK platform
+        run: |
+          sdkmanager --install "platforms;android-36" "build-tools;35.0.0"
+
+      - name: Check standalone native security contracts
+        run: python3 scripts/check_native_autotrade_contract.py
+
+      - name: Compile Android Java source, do not assemble or sign
+        run: gradle --no-daemon -p android :app:compileDebugJavaWithJavac --stacktrace
+
+      - name: Verify no APK was created
+        run: |
+          if find android/app/build/outputs -name '*.apk' -print -quit 2>/dev/null | grep -q .; then
+            echo "FAIL: source-only workflow must not create an APK"
+            exit 1
+          fi
+          echo "PASS: Java source compiled; no APK assembled or delivered."
