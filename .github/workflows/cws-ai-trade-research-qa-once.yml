@@ -24,11 +24,27 @@ jobs:
           PYTHONPATH=. python3 -m pytest -q tests/self_learning
       - name: Portfolio contract regression
         run: node --test google-sites/cws-ai-trade/tests/*.test.cjs
+      - name: Build renderable static PWA at root and repo base
+        run: |
+          python3 scripts/build_cws_trade_static.py --base / --output site-dist
+          python3 scripts/build_cws_trade_static.py --base /AI-TRADE/ --output site-pages
+          test -s site-dist/index.html
+          test -s site-dist/icon-512.png
+          test -s site-pages/sw.js
+          grep -q 'href="./styles.css"' site-dist/index.html
+          ! grep -q '?asset=' site-dist/index.html
+      - name: Upload deployable static PWA (no private data)
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # verified v7
+        with:
+          name: cws-ai-trade-static-pwa-root
+          path: site-dist/
+          if-no-files-found: error
+          retention-days: 1
       - name: Immutable QA source snapshot
         if: always()
         run: |
           mkdir -p /tmp/cws-qa
-          tar -czf /tmp/cws-qa/cws-ai-trade-tested-source.tar.gz src/self_learning scripts/run_ecb_reference_research.py tests/self_learning google-sites/cws-ai-trade supabase/functions/cws-ai-trade-site/index.ts supabase/functions/ai-trade-dashboard/index.ts
+          tar -czf /tmp/cws-qa/cws-ai-trade-tested-source.tar.gz src/self_learning scripts/run_ecb_reference_research.py scripts/build_cws_trade_static.py tests/self_learning google-sites/cws-ai-trade supabase/functions/cws-ai-trade-site/index.ts supabase/functions/ai-trade-dashboard/index.ts
           sha256sum /tmp/cws-qa/cws-ai-trade-tested-source.tar.gz
           git rev-parse HEAD
       - name: Upload temporary source artifact
