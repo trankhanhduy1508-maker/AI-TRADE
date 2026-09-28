@@ -13,6 +13,7 @@ class FakeTerminal:
     POSITION_TYPE_SELL = 1
 
     def __init__(self):
+        self.connected = True
         self.account = NS(
             login=123456, server="MetaQuotes-Demo", trade_mode=0,
             currency="USD", balance=1000.0, equity=1012.5,
@@ -25,6 +26,9 @@ class FakeTerminal:
                profit=-2.5, sl=0.0, tp=0.0),
         ]
         self.send_calls = 0
+
+    def terminal_info(self):
+        return NS(connected=self.connected)
 
     def account_info(self):
         return self.account
@@ -93,3 +97,17 @@ def test_missing_account_fails_closed():
     terminal.account = None
     with pytest.raises(RuntimeError, match="ACCOUNT_READ_FAILED"):
         snapshot(terminal)
+
+
+@pytest.mark.parametrize("disconnect", [
+    lambda t: setattr(t, "connected", False),
+    lambda t: setattr(t, "terminal_info", None),
+    lambda t: setattr(t, "terminal_info", lambda: None),
+    lambda t: setattr(t, "terminal_info", lambda: NS(connected=None)),
+])
+def test_no_broker_connection_never_returns_cached_account_data(disconnect):
+    terminal = FakeTerminal()
+    disconnect(terminal)
+    with pytest.raises(RuntimeError, match="TERMINAL_INFO_UNAVAILABLE|BROKER_DISCONNECTED"):
+        snapshot(terminal)
+    assert terminal.send_calls == 0

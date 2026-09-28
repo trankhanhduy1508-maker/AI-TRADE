@@ -80,6 +80,12 @@ def read_demo_snapshot(
     """
     if not expected_login or not expected_server:
         raise ValueError("EXPECTED_DEMO_IDENTITY_REQUIRED")
+    terminal_info = getattr(terminal, "terminal_info", None)
+    if not callable(terminal_info):
+        raise RuntimeError("TERMINAL_INFO_UNAVAILABLE")
+    connection = terminal_info()
+    if connection is None or getattr(connection, "connected", None) is not True:
+        raise RuntimeError("BROKER_DISCONNECTED")
     account_info = getattr(terminal, "account_info", None)
     if not callable(account_info):
         raise RuntimeError("ACCOUNT_INFO_UNAVAILABLE")

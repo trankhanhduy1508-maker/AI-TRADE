@@ -55,6 +55,9 @@ class FakeTerminal:
     def symbol_info(self, symbol):
         return self.contract
 
+    def terminal_info(self):
+        return SimpleNamespace(connected=True)
+
     def account_info(self):
         return self.account
 
