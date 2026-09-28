@@ -171,3 +171,35 @@ def test_cloud_disconnection_rejects_position_read_without_broker_call():
         with pytest.raises(MetaApiDemoBlocked, match="BROKER_DISCONNECTED"):
             run(adapter.positions())
         run(adapter.close())
+
+def test_cloud_account_snapshot_requires_complete_broker_data():
+    conn = Connection()
+    conn.terminal_state.account_information.update({
+        "balance": 1000.0, "equity": 1025.5, "currency": "USD",
+    })
+    conn.terminal_state.positions = [{
+        "id": "42", "type": "POSITION_TYPE_BUY", "symbol": "EURUSD",
+        "volume": .02, "profit": 25.5, "stopLoss": 1.10, "takeProfit": 1.13,
+        "openPrice": 1.11,
+    }]
+    with ledger() as path:
+        adapter = MetaApiCloudAdapter(Account(), conn, ledger_path=path)
+        snap = run(adapter.account_snapshot())
+        assert snap.login == "123456"
+        assert snap.server == "Broker-Demo"
+        assert snap.balance == 1000.0
+        assert snap.equity == 1025.5
+        assert snap.positions[0].floating_pnl == 25.5
+        assert ("sync",) in conn.calls
+        assert not any(call[0] in {"buy", "modify", "close_position"} for call in conn.calls)
+        run(adapter.close())
+
+
+def test_cloud_unknown_positions_are_not_silently_treated_as_empty():
+    conn = Connection()
+    conn.terminal_state.positions = None
+    with ledger() as path:
+        adapter = MetaApiCloudAdapter(Account(), conn, ledger_path=path)
+        with pytest.raises(MetaApiDemoBlocked, match="BROKER_POSITIONS_INCOMPLETE"):
+            run(adapter.positions())
+        run(adapter.close())
