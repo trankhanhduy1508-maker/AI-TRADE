@@ -170,4 +170,3 @@ def stage_epub_private(epub: Path, *, source_id: str, private_quarantine: Path) 
             path.unlink(missing_ok=True)
         raise
     return public_metadata
-
