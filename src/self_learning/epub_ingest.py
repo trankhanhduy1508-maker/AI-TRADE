@@ -8,6 +8,7 @@ from __future__ import annotations
 
 from hashlib import sha256
 import json
+import os
 from pathlib import Path, PurePosixPath
 import posixpath
 import re
@@ -135,17 +136,38 @@ def inspect_epub(epub: Path, *, source_id: str) -> dict:
 def stage_epub_private(epub: Path, *, source_id: str, private_quarantine: Path) -> dict:
     """Exclusive local staging. Does not grant rights, approve lessons or train ML."""
     audit = inspect_epub(epub, source_id=source_id)
-    private_quarantine.mkdir(parents=True, exist_ok=True)
+    if private_quarantine.is_symlink():
+        raise GateError("private quarantine must not be a symlink")
+    private_quarantine.mkdir(mode=0o700, parents=True, exist_ok=True)
+    if private_quarantine.is_symlink():
+        raise GateError("private quarantine must not be a symlink")
+    # mkdir's default permissions can be 0755; extracted book text must stay private.
+    private_quarantine.chmod(0o700)
     manifest = private_quarantine / (source_id + "-" + audit["source_sha256"][:12] + ".manifest.json")
     corpus = private_quarantine / (source_id + "-" + audit["source_sha256"][:12] + ".chapters.jsonl")
-    if manifest.exists() or corpus.exists():
+    if manifest.exists() or corpus.exists() or manifest.is_symlink() or corpus.is_symlink():
         raise GateError("source already staged; immutable quarantine prevents overwrite")
     public_metadata = {k: v for k, v in audit.items() if k != "chapters"}
     public_metadata["chapters"] = [{k: v for k, v in c.items() if k != "text"} for c in audit["chapters"]]
-    with corpus.open("x", encoding="utf-8") as out:
-        for c in audit["chapters"]:
-            out.write(json.dumps(c, ensure_ascii=False, sort_keys=True) + "\n")
-    with manifest.open("x", encoding="utf-8") as out:
-        json.dump(public_metadata, out, ensure_ascii=False, indent=2, sort_keys=True)
-        out.write("\n")
+    def private_open(path: Path):
+        flags = os.O_WRONLY | os.O_CREAT | os.O_EXCL | getattr(os, "O_NOFOLLOW", 0)
+        fd = os.open(path, flags, 0o600)
+        return os.fdopen(fd, "w", encoding="utf-8")
+
+    created = []
+    try:
+        with private_open(corpus) as out:
+            created.append(corpus)
+            for c in audit["chapters"]:
+                out.write(json.dumps(c, ensure_ascii=False, sort_keys=True) + "\n")
+        with private_open(manifest) as out:
+            created.append(manifest)
+            json.dump(public_metadata, out, ensure_ascii=False, indent=2, sort_keys=True)
+            out.write("\n")
+    except Exception:
+        # An incomplete metadata/chapters pair is not a usable audit checkpoint.
+        for path in created:
+            path.unlink(missing_ok=True)
+        raise
     return public_metadata
+

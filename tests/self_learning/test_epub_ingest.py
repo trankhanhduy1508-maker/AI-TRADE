@@ -1,5 +1,6 @@
 """EPUB fixtures are invented for input validation, never training evidence."""
 import json
+import os
 from pathlib import Path
 from zipfile import ZipFile, ZIP_STORED
 import pytest
@@ -31,6 +32,9 @@ def test_stage_metadata_only_and_immutable(tmp_path):
     manifest=json.loads(next((tmp_path/'private').glob('*.manifest.json')).read_text())
     assert 'Research ideas' not in json.dumps(manifest)
     assert 'Research ideas' in next((tmp_path/'private').glob('*.chapters.jsonl')).read_text()
+    if os.name == 'posix':
+        assert (tmp_path/'private').stat().st_mode & 0o077 == 0
+        assert all(p.stat().st_mode & 0o077 == 0 for p in (tmp_path/'private').iterdir())
     with pytest.raises(GateError,match='already staged'):
         stage_epub_private(p,source_id='unit_masterbook',private_quarantine=tmp_path/'private')
 
@@ -54,3 +58,18 @@ def test_benign_html_doctype_is_supported(tmp_path):
     p=fixture(tmp_path,chapter=harmless)
     result=inspect_epub(p,source_id='test_book')
     assert result['chapter_count']==1
+
+
+def test_restrict_existing_directory_and_reject_symlink(tmp_path):
+    p=fixture(tmp_path)
+    existing=tmp_path/'existing'; existing.mkdir(mode=0o755)
+    stage_epub_private(p,source_id='private_source',private_quarantine=existing)
+    if os.name=='posix':
+        assert existing.stat().st_mode & 0o077 == 0
+    alias=tmp_path/'alias'
+    try:
+        alias.symlink_to(existing, target_is_directory=True)
+    except (OSError, NotImplementedError):
+        pytest.skip('symlinks unavailable')
+    with pytest.raises(GateError,match='symlink'):
+        stage_epub_private(p,source_id='another_source',private_quarantine=alias)
