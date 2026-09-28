@@ -345,7 +345,7 @@ async function load(){
     const adminPromise=overview.viewer?.founder?api.getFeature("admin-testers").catch(()=>({testers:[]})):Promise.resolve(null);
     const journalPromise=overview.viewer?.founder?api.getFeature("journal",{limit:12}).catch(()=>({journal:[]})):Promise.resolve({journal:[]});
 
-    const [googleUser,current,trades,arena,testerAdmin,journal]=await Promise.all([
+    const [resolvedGoogleUser,current,trades,arena,testerAdmin,journal]=await Promise.all([
       googlePromise,currentPromise,tradesPromise,arenaPromise,adminPromise,journalPromise
     ]);
     const currentState=store.get();
@@ -353,7 +353,7 @@ async function load(){
     const symbol=current.currentTrade?.symbol||currentState.selectedSymbol||CONFIG.defaultSymbol;
 
     store.set({
-      googleUser,testerAdmin,currentTrade:current.currentTrade??null,shadowPositions,
+      googleUser:resolvedGoogleUser,testerAdmin,currentTrade:current.currentTrade??null,shadowPositions,
       trades:trades.trades??[],journal:journal.journal??[],arena,selectedSymbol:symbol
     });
     render();
