@@ -72,3 +72,25 @@ def test_unsafe_path_rejected_without_output(base,tmp_path):
     with pytest.raises(ValueError,match="base"):
         build(output,base)
     assert not output.exists()
+
+
+def test_android_local_shell_excludes_browser_service_worker(tmp_path):
+    target=tmp_path/"android-assets"
+    manifest=build(target,"/assets/",android=True)
+    assert len(manifest)==len(ALLOWLIST)+2
+    html=(target/"index.html").read_text()
+    assert "Native Android includes the offline shell" in html
+    assert 'src="./pwa.js"' not in html
+    assert 'src="./tradingview.js"' in html
+    assert 'src="./app.js"' in html
+    assert 'href="/assets/manifest.webmanifest"' in html
+    data=json.loads((target/"manifest.webmanifest").read_text())
+    assert data["start_url"]=="/assets/"
+    assert all(i["src"].startswith("/assets/icon-") for i in data["icons"])
+    assert "preview-candles" not in (target/"app.js").read_text()
+    assert (target/"icon-512.png").read_bytes().startswith(bytes((137,80,78,71)))
+
+
+def test_android_requires_fixed_internal_asset_base(tmp_path):
+    with pytest.raises(ValueError,match="Android asset base"):
+        build(tmp_path/"invalid","/",android=True)

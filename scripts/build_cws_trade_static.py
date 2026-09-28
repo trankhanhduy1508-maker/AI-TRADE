@@ -68,10 +68,12 @@ def _icon(size: int) -> bytes:
         b"IDAT",zlib.compress(scan,9)) + chunk(b"IEND",b"")
 
 
-def build(output: Path, base: str = "/") -> dict[str, str]:
+def build(output: Path, base: str = "/", *, android: bool = False) -> dict[str, str]:
     """Whitelist public source assets and emit direct URLs (no API HTML)."""
     if not re.fullmatch(r"/(?:[A-Za-z0-9_-]+/)*", base):
         raise ValueError("base must be a safe root-relative directory")
+    if android and base != "/assets/":
+        raise ValueError("Android asset base must be /assets/")
     if not SOURCE.is_dir():
         raise ValueError("verified first-party source directory is missing")
     if output.resolve() == SOURCE.resolve():
@@ -86,6 +88,10 @@ def build(output: Path, base: str = "/") -> dict[str, str]:
     index = _require_replace(index,'"?asset=', '"./',"static CSS and scripts")
     if "?asset=" in index or APP_OLD_ROOT in index:
         raise ValueError("nonstatic asset URL remains in HTML")
+    if android:
+        index = _require_replace(index,'<script src="./pwa.js" defer></script>',
+                                 "<!-- Native Android includes the offline shell; no PWA registration. -->",
+                                 "Android shell install")
     source["index.html"] = index
 
     pwa = source["pwa.js"]
@@ -151,6 +157,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--base",default="/")
     parser.add_argument("--output",default="site-dist")
+    parser.add_argument("--android",action="store_true",help="Native assets without SW registration")
     args = parser.parse_args()
-    result = build(Path(args.output),args.base)
+    result = build(Path(args.output),args.base,android=args.android)
     print(json.dumps({"base":args.base,"files":result},sort_keys=True))
