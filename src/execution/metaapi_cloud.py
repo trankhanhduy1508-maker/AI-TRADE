@@ -12,6 +12,7 @@ import math
 from pathlib import Path
 from typing import Any
 
+from src.execution.metaapi_demo_guard import assert_metaapi_demo_context
 from src.execution.mt5_adapter import (
     MT5OrderRequest,
     MT5OrderResult,
@@ -78,6 +79,9 @@ class MetaApiCloudAdapter:
             raise TradingDisabledError("account trading is disabled")
         if _get(info, "investorMode", _get(info, "investor_mode", False)) is True:
             raise TradingDisabledError("investor/read-only account cannot trade")
+        # DEMO-looking broker names are not evidence: confirm the actual mode,
+        # login and server from the synchronized MT5 broker account.
+        assert_metaapi_demo_context(self.account, terminal)
 
         self._connected = True
         return True
@@ -152,6 +156,7 @@ class MetaApiCloudAdapter:
         if rejection is not None:
             return MT5OrderResult(order.client_order_id, "CONTRACT_REJECTED", message=rejection)
 
+        await self._ensure_connected()
         self._ledger.record(order.client_order_id, "SUBMITTING")
         client_id = self._broker_client_id(order.client_order_id)
         options = {"clientId": client_id, "magic": order.magic}
@@ -217,6 +222,7 @@ class MetaApiCloudAdapter:
             if position.direction == "DOWN" and stop_loss > position.stop_loss:
                 return MT5OrderResult(client_order_id, "RISK_REJECTED", message="STOP_WOULD_INCREASE_RISK")
 
+        await self._ensure_connected()
         self._ledger.record(client_order_id, "SUBMITTING", position.position_id)
         try:
             response = await self.connection.modify_position(
@@ -272,6 +278,7 @@ class MetaApiCloudAdapter:
         if partial and not contract.valid_volume(close_volume):
             return MT5OrderResult(client_order_id, "CONTRACT_REJECTED", message="CLOSE_VOLUME_STEP_INVALID")
 
+        await self._ensure_connected()
         self._ledger.record(client_order_id, "SUBMITTING", position.position_id)
         try:
             if partial:
@@ -290,6 +297,9 @@ class MetaApiCloudAdapter:
     async def _ensure_connected(self) -> None:
         if not self._connected:
             await self.connect()
+        else:
+            # Recheck every read/write: an earlier CONNECTED is historical.
+            assert_metaapi_demo_context(self.account, self.connection.terminal_state)
 
     def _ensure_mutation_allowed(self) -> None:
         if not self.allow_order_send:

@@ -4,7 +4,9 @@ from pathlib import Path
 from types import SimpleNamespace
 import tempfile
 
+import pytest
 from src.execution.metaapi_cloud import MetaApiCloudAdapter
+from src.execution.metaapi_demo_guard import MetaApiDemoBlocked
 from src.execution.mt5_adapter import MT5OrderRequest, TradingDisabledError
 
 
@@ -12,7 +14,8 @@ class TerminalState:
     def __init__(self):
         self.connected = True
         self.connected_to_broker = True
-        self.account_information = {"tradeAllowed": True, "investorMode": False}
+        self.account_information = {"tradeAllowed": True, "investorMode": False,
+            "type": "ACCOUNT_TRADE_MODE_DEMO", "server": "Broker-Demo", "login": 123456}
         self.positions = []
         self._price = {"bid": 1.1050, "ask": 1.1052, "time": "2026-09-27T01:00:00+00:00"}
         self._spec = {
@@ -49,6 +52,7 @@ class Connection:
 
 class Account:
     platform = "mt5"
+    login = "123456"
     server = "Broker-Demo"
     state = "DEPLOYED"
     connection_status = "CONNECTED"
@@ -135,3 +139,35 @@ def test_cloud_intents_are_duplicate_safe_after_restart():
         result = run(second.submit(request))
         assert result.status == "DUPLICATE_SUPPRESSED"
         assert not [call for call in second_conn.calls if call[0] == "buy"]
+
+@pytest.mark.parametrize("field,value", [
+    ("type", "ACCOUNT_TRADE_MODE_REAL"),
+    ("type", None),
+    ("server", "Other-Demo"),
+    ("login", 654321),
+])
+def test_cloud_rechecks_broker_identity_before_any_demo_order(field, value):
+    connection = Connection()
+    with ledger() as path:
+        adapter = MetaApiCloudAdapter(
+            Account(), connection, allow_order_send=True, ledger_path=path
+        )
+        assert run(adapter.connect())
+        connection.terminal_state.account_information[field] = value
+        with pytest.raises(MetaApiDemoBlocked):
+            run(adapter.submit(MT5OrderRequest(
+                "changed-account", "EURUSD", "UP", .01, 1.1052, 1.10
+            )))
+        assert not [call for call in connection.calls if call[0] == "buy"]
+        run(adapter.close())
+
+
+def test_cloud_disconnection_rejects_position_read_without_broker_call():
+    connection = Connection()
+    with ledger() as path:
+        adapter = MetaApiCloudAdapter(Account(), connection, ledger_path=path)
+        assert run(adapter.connect())
+        connection.terminal_state.connected_to_broker = False
+        with pytest.raises(MetaApiDemoBlocked, match="BROKER_DISCONNECTED"):
+            run(adapter.positions())
+        run(adapter.close())
