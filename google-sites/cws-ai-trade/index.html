@@ -75,10 +75,11 @@
       <div id="view-dashboard" class="view active">
         <div class="dashboard-grid">
           <section class="panel chart-panel">
-            <div class="panel-heading"><h2>Biểu đồ <span id="chartSymbol">EURUSD</span></h2><div class="heading-right"><span class="pill" id="chartTf">H1</span><span class="pill source-pill">Nguồn công khai</span></div></div>
-            <div id="chartMessage" class="chart-message">Đang lấy nến thực…</div>
-            <canvas id="priceChart" role="img" aria-label="Biểu đồ nến của cặp đang chọn"></canvas>
-            <div class="chart-footer"><span id="chartUpdated">Chưa có dữ liệu</span><span>Nến đóng · Chỉ tham khảo</span></div>
+            <div class="panel-heading"><h2>Biểu đồ <span id="chartSymbol">EURUSD</span></h2><div class="heading-right"><span class="pill" id="chartTf">H1</span><span class="pill source-pill">TradingView</span></div></div>
+            <div id="chartMessage" class="chart-message">Đang kết nối TradingView…</div>
+            <canvas id="priceChart" role="img" aria-label="Biểu đồ dự phòng" style="display:none"></canvas>
+            <div id="hostedChart" class="hosted-chart" aria-label="Biểu đồ TradingView, dữ liệu của bên thứ ba">Biểu đồ tương tác cần kết nối mạng.</div>
+            <div class="chart-footer"><span id="chartUpdated">Chưa có dữ liệu</span><span>Widget bên thứ ba · Không phải tín hiệu giao dịch</span></div>
           </section>
           <section class="panel portfolio-panel">
             <div class="panel-heading"><h2>Danh mục giao dịch (16 cặp)</h2><span class="pill" id="portfolioSource">Chưa kết nối</span></div>
@@ -140,6 +141,7 @@
 </div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js" defer></script>
 <script src="?asset=portfolio.js" defer></script>
+<script src="?asset=tradingview.js" defer></script>
 <script src="?asset=app.js" defer></script>
 <script src="?asset=pwa.js" defer></script>
 </body>

@@ -1,13 +1,14 @@
 /* CWS AI Trade PWA: public static shell only. No caching of private data, market API or position files. */
 "use strict";
 const ROOT="/functions/v1/cws-ai-trade-site/app/";
-const CACHE="cws-ai-trade-static-v4";
+const CACHE="cws-ai-trade-static-v5";
 const BOOK="https://raw.githubusercontent.com/trankhanhduy1508-maker/AI-TRADE/2e9ae2e17e449f1b1574963103454f4a38226b94/knowledge/CWS_TRADING_MASTERBOOK_V3_DISTILLED_2026-09-28.md";
 const CDN="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js";
 const CORE=[
   ROOT,
   ROOT+"?asset=styles.css",
   ROOT+"?asset=portfolio.js",
+  ROOT+"?asset=tradingview.js",
   ROOT+"?asset=app.js",
   ROOT+"?asset=pwa.js",
   ROOT+"?asset=manifest.webmanifest",
@@ -74,7 +75,7 @@ self.addEventListener("fetch",event=>{
     return;
   }
   const asset=u.searchParams.get("asset");
-  const safeAsset=["styles.css","portfolio.js","app.js","pwa.js","manifest.webmanifest","icon-192.png","icon-512.png"].includes(asset);
+  const safeAsset=["styles.css","portfolio.js","tradingview.js","app.js","pwa.js","manifest.webmanifest","icon-192.png","icon-512.png"].includes(asset);
   const safePath=false;
   if(!safeAsset&&!safePath)return;
   event.respondWith((async()=>{

@@ -1,11 +1,9 @@
 (function(){
 "use strict";
 const S=window.CWSPortfolio;
-const API="https://oziktadfeenydvgobudr.supabase.co/functions/v1/ai-trade-dashboard";
 const BOOK="https://raw.githubusercontent.com/trankhanhduy1508-maker/AI-TRADE/2e9ae2e17e449f1b1574963103454f4a38226b94/knowledge/CWS_TRADING_MASTERBOOK_V3_DISTILLED_2026-09-28.md";
-const SUPPORTED=new Set(["EURUSD","GBPUSD","USDJPY","AUDUSD","USDCAD","USDCHF","NZDUSD","XAUUSD","BTCUSD","ETHUSD","USOIL","US30","NAS100","US500"]);
 const $=id=>document.getElementById(id);
-let positions=[], mode="none", symbol="EURUSD", tf="1h", candles=[], lastQuestion="", lastHits=[];
+let positions=[], mode="none", symbol="EURUSD", tf="1h", candles=[], lastQuestion="", lastHits=[], chartGeneration=0;
 let book=[{title:"Quản lý rủi ro",body:"Trước khi entry phải xác định setup, trigger, invalidation, stop distance, số tiền có thể mất và portfolio exposure. Không nới stop để gỡ lỗ.",source:"Masterbook - kiến thức cốt lõi"},{title:"Expectancy",body:"Expectancy = win rate × average win − loss rate × average loss. Không nhìn win rate một mình, phải đo payoff, chi phí và drawdown.",source:"Masterbook - kiến thức cốt lõi"},{title:"Bài học Gold từ CWS",body:"Historical OOS của Gold từng +116.17R, best trade +112.57R, bỏ ba winner lớn còn -14.22R. Next-open gap-aware: OOS -99.15R và walk-forward -160.51R. Không dùng headline thay cho kiểm chứng execution.",source:"Bằng chứng nghiên cứu CWS"}];
 const escape=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const money=(n,plus=true)=>n==null||!Number.isFinite(n)?"—":(plus&&n>0?"+":n<0?"-":"")+"$"+Math.abs(n).toLocaleString("en-US",{minimumFractionDigits:2,maximumFractionDigits:2});
@@ -45,23 +43,24 @@ async function readPositions(file){
   renderPortfolio();show("portfolio");
 }
 function message(s){text("chartMessage",s);$("chartMessage").classList.toggle("hidden",!s);}
-async function loadChart(){
-  text("chartSymbol",symbol);text("chartTf",tf.toUpperCase());message("Đang tải nến thực…");
-  text("sidePrice","—");text("sideMarketStatus","Đang tải feed");candles=[];draw([]);
-  if(!SUPPORTED.has(symbol)){message("Chưa có feed công khai cho "+symbol+". Không dùng nến giả.");text("sideMarketStatus","Feed chưa hỗ trợ");return;}
-  const url=new URL(API);url.searchParams.set("format","preview-candles");url.searchParams.set("symbol",symbol);url.searchParams.set("timeframe",tf);
-  const oldSymbol=symbol,oldTf=tf,ctrl=new AbortController(),timeout=setTimeout(()=>ctrl.abort(),23000);
-  try{
-    const r=await fetch(url,{signal:ctrl.signal,cache:"no-store",credentials:"omit"});
-    if(!r.ok)throw Error("HTTP "+r.status);
-    const result=await r.json();
-    const data=(Array.isArray(result.candles)?result.candles:[]).map(c=>({time:c.time||c.date,open:Number(c.open),high:Number(c.high),low:Number(c.low),close:Number(c.close),volume:Number(c.volume||0)})).filter(c=>[c.open,c.high,c.low,c.close].every(Number.isFinite)&&c.high>=Math.max(c.open,c.close)&&c.low<=Math.min(c.open,c.close));
-    if(!data.length)throw Error("Không có nến");
-    if(oldSymbol!==symbol||oldTf!==tf)return;
-    candles=data;text("sidePrice",data[data.length-1].close.toLocaleString("en-US",{maximumFractionDigits:5}));
-    text("sideMarketStatus","Giá công khai · Có thể trễ");const timeRaw=data[data.length-1].time;const timeMs=typeof timeRaw==="number"?(timeRaw<1e12?timeRaw*1000:timeRaw):Date.parse(String(timeRaw));text("chartUpdated","Nến công khai: "+(Number.isFinite(timeMs)?new Date(timeMs).toLocaleString("vi-VN"):String(timeRaw)));message("");draw(data);
-  }catch(e){if(oldSymbol===symbol&&oldTf===tf){message("Không lấy được nến thực. Chưa vẽ dữ liệu giả.");text("sideMarketStatus","Feed tạm không khả dụng");text("chartUpdated","Chưa có dữ liệu");}}
-  finally{clearTimeout(timeout);}
+function loadChart(){
+  const ticket=++chartGeneration;
+  text("chartSymbol",symbol);text("chartTf",tf.toUpperCase());
+  text("sidePrice","—");text("sideMarketStatus","Biểu đồ do TradingView cung cấp");
+  text("chartUpdated","TradingView · Dữ liệu có thể trễ · Không phải giá khớp lệnh của broker");
+  candles=[];draw([]);
+  const canvas=$("priceChart"),host=$("hostedChart"),widget=window.CWSTradingView;
+  canvas.style.display="none";
+  if(!widget||!host){
+    message("Không tải được mô-đun biểu đồ. Không dùng dữ liệu thị trường không có quyền hiển thị.");
+    return;
+  }
+  message("Đang tải biểu đồ TradingView…");
+  const options=widget.mount(host,symbol,tf,()=>{
+    if(ticket===chartGeneration)message("TradingView đang không khả dụng hoặc thiết bị ngoại tuyến. Mở liên kết TradingView ngay dưới biểu đồ.");
+  });
+  if(!options){message("TradingView chưa có mapping cho cặp/khung này. Không hiển thị nến giả.");return;}
+  message("");
 }
 function draw(data){
   const c=$("priceChart"),ctx=c.getContext("2d"),bounds=c.getBoundingClientRect(),w=Math.max(240,Math.floor(bounds.width)),h=Math.max(200,Math.floor(bounds.height)),ratio=Math.min(window.devicePixelRatio||1,2);

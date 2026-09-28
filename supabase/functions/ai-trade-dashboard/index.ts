@@ -271,12 +271,13 @@ Deno.serve(async(req)=>{
     if(!YAHOO_SYMBOLS[symbol]||!["15m","30m","1h","4h","1d"].includes(timeframe)){
       return new Response(JSON.stringify({ok:false,error:"UNSUPPORTED_MARKET_OR_TIMEFRAME"}),{status:400,headers:{"content-type":"application/json","cache-control":"no-store"}});
     }
-    const candles=await yahooCandles(symbol,timeframe,220);
-    return new Response(JSON.stringify({ok:true,symbol,timeframe,candles,publicMarketData:true}),{status:200,headers:{
-      "content-type":"application/json; charset=utf-8",
-      "cache-control":"public, max-age=30",
-      "access-control-allow-origin":"*",
-      "referrer-policy":"no-referrer"
+    // Public quote access does not establish redistribution rights.
+    // The Web App uses TradingView's own officially hosted widget instead.
+    return new Response(JSON.stringify({ok:false,error:"PUBLIC_MARKET_DATA_REDISPLAY_LICENSE_UNVERIFIED",
+      symbol,timeframe,publicMarketData:false,broker_orders:false,
+      alternative:"TRADINGVIEW_HOSTED_WIDGET"}),{status:451,headers:{
+      "content-type":"application/json; charset=utf-8","cache-control":"no-store",
+      "access-control-allow-origin":"*","referrer-policy":"no-referrer"
     }});
   }
   const token=url.searchParams.get("t")??"";
