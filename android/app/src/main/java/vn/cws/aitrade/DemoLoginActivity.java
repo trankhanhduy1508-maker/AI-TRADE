@@ -303,12 +303,14 @@ public final class DemoLoginActivity extends Activity {
     }
 
     private void refresh() {
+        final long generation = sessionGeneration;
         network.execute(() -> {
             try {
+                if (generation != sessionGeneration) return;
                 String bearer = authorizedToken();
                 JSONObject response = request("GET", API + "status", null,
                     bearer, 18000);
-                if (!bearer.equals(accessToken)) return;
+                if (!bearer.equals(accessToken) || generation != sessionGeneration) return;
                 if (!response.optBoolean("ok", false)) throw new IOException("STATUS_FAILED");
                 JSONObject a = response.optJSONObject("account");
                 String text = a == null ? "Chưa liên kết tài khoản DEMO."
@@ -317,9 +319,13 @@ public final class DemoLoginActivity extends Activity {
                         + "\nXác minh gần đây: " + a.optBoolean("recentlyVerified", false)
                         + "\nBalance: — | Equity: — | Positions: —"
                         + "\nChưa có readback đủ từ broker trên API này.";
-                runOnUiThread(() -> account.setText(text + "\nAuto Trade: LOCKED | LIVE: LOCKED"));
+                runOnUiThread(() -> {
+                    if (generation != sessionGeneration) return;
+                    account.setText(text + "\nAuto Trade: LOCKED | LIVE: LOCKED");
+                });
             } catch (Exception error) {
                 runOnUiThread(() -> {
+                    if (generation != sessionGeneration) return;
                     account.setText("Balance: — | Equity: — | Positions: —");
                     status.setText("Không lấy được dữ liệu mới. Không đặt lệnh.");
                 });
@@ -339,8 +345,10 @@ public final class DemoLoginActivity extends Activity {
         }
         verifyButton.setEnabled(false);
         status.setText("Đang xác minh MT5 DEMO trên máy chủ. Không gửi lệnh.");
+        final long generation = sessionGeneration;
         network.execute(() -> {
             try {
+                if (generation != sessionGeneration) return;
                 JSONObject payload = new JSONObject();
                 payload.put("login", id);
                 payload.put("server", host);
@@ -348,7 +356,7 @@ public final class DemoLoginActivity extends Activity {
                 String bearer = authorizedToken();
                 JSONObject reply = request("POST", API + "verify-demo", payload,
                     bearer, 125000);
-                if (!bearer.equals(accessToken)) return;
+                if (!bearer.equals(accessToken) || generation != sessionGeneration) return;
                 if (!reply.optBoolean("ok", false)
                     || !"DEMO_VERIFIED_READ_ONLY".equals(reply.optString("status"))) {
                     throw new IOException("DEMO_NOT_VERIFIED");
@@ -359,6 +367,7 @@ public final class DemoLoginActivity extends Activity {
                 String balanceText = Double.isFinite(balance) && !currency.isEmpty()
                     ? String.valueOf(balance) + " " + currency : "—";
                 runOnUiThread(() -> {
+                    if (generation != sessionGeneration) return;
                     status.setText("DEMO đã xác minh chỉ đọc. Auto Trade: LOCKED.");
                     account.setText("Login: " + id + " | Server: " + host
                         + "\nBalance: " + balanceText
@@ -367,9 +376,17 @@ public final class DemoLoginActivity extends Activity {
                         + "\nAuto Trade: LOCKED | LIVE: LOCKED");
                 });
             } catch (Exception error) {
-                runOnUiThread(() -> status.setText("Không xác minh được MT5 DEMO. Không gửi lệnh."));
+                runOnUiThread(() -> {
+                    if (generation == sessionGeneration) {
+                        status.setText("Không xác minh được MT5 DEMO. Không gửi lệnh.");
+                    }
+                });
             } finally {
-                runOnUiThread(() -> verifyButton.setEnabled(!accessToken.isEmpty()));
+                runOnUiThread(() -> {
+                    if (generation == sessionGeneration) {
+                        verifyButton.setEnabled(!accessToken.isEmpty());
+                    }
+                });
             }
         });
     }
