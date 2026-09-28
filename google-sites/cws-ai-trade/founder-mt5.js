@@ -21,7 +21,7 @@ function authUrl(loc){
 }
 function demoPayload(login,server,password){
   const id=String(login??"").trim();
-  const s=String(server??"").trim();
+  const s=String(server??"");
   const p=String(password??"");
   if(!/^[1-9][0-9]{4,14}$/.test(id)||s!=="MetaQuotes-Demo"||
      p.length<4||p.length>32)return null;
