@@ -99,8 +99,8 @@ function selectedTrade(state){
     if(p)trade={
       symbol:p.symbol,side:p.side,direction:p.direction,entryTs:p.entryTs,
       entryPrice:p.entryPrice,currentPrice:p.lastMarkPrice,stopPrice:p.stopPrice,
-      takeProfit:p.takeProfit??null,floatingR:p.unrealizedR,
-      volumeLabel:p.volumeLabel??"Paper",mode:"PAPER_TRAINING_ARENA"
+      takeProfit:p.takeProfit??null,floatingR:p.unrealizedR,paperLot:p.paperLot??null,
+      volumeLabel:p.paperLot!=null?"Paper "+Number(p.paperLot).toFixed(2):"Paper",mode:"PAPER_TRAINING_ARENA"
     };
   }
   if(!trade)return null;
