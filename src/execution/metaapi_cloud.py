@@ -129,6 +129,10 @@ class MetaApiCloudAdapter:
             positions = tuple(position for position in positions if position.magic == magic)
         return {position.position_id for position in positions}
 
+    def unresolved_intents(self) -> tuple[str, ...]:
+        """Durable pending broker mutations must be reconciled, never resent."""
+        return self._ledger.unresolved_intents()
+
     async def quote(self, symbol: str) -> tuple[float, float, Any]:
         await self._ensure_connected()
         terminal = self.connection.terminal_state

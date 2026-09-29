@@ -265,6 +265,9 @@ class CloudAutoTradeEngine:
         gate = self.gate.evaluate(snapshot)
         if not gate.allowed:
             return CloudAutoTradeOutcome("GATE_BLOCKED", ",".join(gate.reasons))
+        # A stale safety snapshot cannot clear a crash-ambiguous order.
+        if self.adapter.unresolved_intents():
+            return CloudAutoTradeOutcome("GATE_BLOCKED", "UNRECONCILED_ORDER_INTENTS")
         decision = self.risk_engine.evaluate(order, context)
         if not decision.allowed:
             return CloudAutoTradeOutcome("RISK_BLOCKED", ",".join(decision.reasons))

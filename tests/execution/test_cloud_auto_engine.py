@@ -21,9 +21,13 @@ class Signal:
 
 
 class FakeCloudAdapter:
-    def __init__(self, position=None, partial_representable=True):
+    def __init__(self, position=None, partial_representable=True, pending=()):
         self.position = position
         self.partial_representable = partial_representable
+        self.pending = tuple(pending)
+
+    def unresolved_intents(self):
+        return self.pending
         self.submit_calls = []
         self.modify_calls = []
         self.close_calls = []
@@ -175,3 +179,16 @@ def test_cloud_broker_snapshot_closes_stale_local_position_state():
         engine = build(adapter, kill, state)
         assert run(engine.reconcile_owned_positions()) == ()
         assert state.get("old").status == "CLOSED"
+
+
+def test_cloud_engine_blocks_new_risk_on_ambiguous_order_intent():
+    with stores() as (kill, state):
+        adapter = FakeCloudAdapter(pending=("cloud-broker-timeout",))
+        engine = build(adapter, kill, state)
+        result = run(engine.on_closed_bar(
+            bars(), bid=1.1050, ask=1.1052,
+            snapshot=snapshot(), risk_context=risk_context(),
+        ))
+        assert result.status == "GATE_BLOCKED"
+        assert result.detail == "UNRECONCILED_ORDER_INTENTS"
+        assert adapter.submit_calls == []

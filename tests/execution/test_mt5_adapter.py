@@ -633,3 +633,44 @@ def test_positions_read_fails_closed_when_account_switches_during_broker_call():
         adapter.positions()
     assert terminal.send_calls == 0
     adapter.close()
+
+
+def test_timeout_intent_blocks_new_risk_after_restart_until_broker_reconciliation():
+    with _ledger_path() as db_path:
+        terminal = FakeTerminal()
+
+        def timeout(*args):
+            terminal.send_calls += 1
+            raise TimeoutError("broker acknowledgement unknown")
+
+        terminal.order_send = timeout
+        first = MT5BrokerAdapter(
+            terminal, mode=ExecutionMode.DEMO,
+            allow_order_send=True, ledger_path=db_path,
+        )
+        with pytest.raises(TimeoutError, match="acknowledgement unknown"):
+            first.submit(_request("mt5-timeout"))
+        assert first.unresolved_intents() == ("mt5-timeout",)
+        first.close()
+
+        restarted_terminal = FakeTerminal()
+        restarted = MT5BrokerAdapter(
+            restarted_terminal, mode=ExecutionMode.DEMO,
+            allow_order_send=True, ledger_path=db_path,
+        )
+        assert restarted.unresolved_intents() == ("mt5-timeout",)
+        outcome = restarted.submit(_request("mt5-timeout"))
+        assert outcome.status == "DUPLICATE_SUPPRESSED"
+        assert restarted_terminal.send_calls == 0
+        restarted.close()
+
+
+def test_finished_broker_intent_is_not_pending():
+    with _ledger_path() as db_path:
+        adapter = MT5BrokerAdapter(
+            FakeTerminal(), mode=ExecutionMode.DEMO,
+            allow_order_send=True, ledger_path=db_path,
+        )
+        assert adapter.submit(_request("mt5-confirmed")).status == "FILLED"
+        assert adapter.unresolved_intents() == ()
+        adapter.close()

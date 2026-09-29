@@ -200,6 +200,14 @@ class OrderIntentLedger:
         ).fetchone()
         return row if row is not None else None
 
+    def unresolved_intents(self) -> tuple[str, ...]:
+        """Unacknowledged broker mutations; never auto-resend on restart."""
+        rows = self._connection.execute(
+            "SELECT client_order_id FROM order_intents "
+            "WHERE status = 'SUBMITTING' ORDER BY updated_at, client_order_id"
+        ).fetchall()
+        return tuple(str(row[0]) for row in rows)
+
     def claim(self, client_order_id: str, broker_order_id: str | None = None) -> bool:
         """Atomically reserve a mutation for processes sharing this SQLite file.
 
@@ -398,6 +406,10 @@ class MT5BrokerAdapter:
         if magic is not None:
             positions = tuple(position for position in positions if position.magic == magic)
         return {position.position_id for position in positions}
+
+    def unresolved_intents(self) -> tuple[str, ...]:
+        """Expose unresolved mutations to the entry gate, never retry them."""
+        return self._ledger.unresolved_intents()
 
     def modify_position(
         self,

@@ -50,6 +50,26 @@ class ExecutionCoordinator:
                 )
             return ExecutionOutcome(status="GATE_BLOCKED", reasons=decision.reasons)
 
+        # A snapshot flag alone cannot establish that every order intent was
+        # resolved after a timeout/restart. Inspect the durable adapter ledger.
+        unresolved = getattr(self._adapter, "unresolved_intents", None)
+        if not callable(unresolved):
+            reasons = ("ORDER_LEDGER_UNAVAILABLE",)
+        elif unresolved():
+            reasons = ("UNRECONCILED_ORDER_INTENTS",)
+        else:
+            reasons = ()
+        if reasons:
+            if self._audit_log is not None:
+                self._audit_log.append(
+                    AuditEvent(
+                        "execution_blocked", "REJECTED",
+                        {"reasons": list(reasons)},
+                        client_order_id=order.client_order_id,
+                    )
+                )
+            return ExecutionOutcome(status="GATE_BLOCKED", reasons=reasons)
+
         # A true SafetySnapshot.risk_allowed flag is never a substitute for
         # the independent Risk Engine and a complete live risk context.
         if self._risk_engine is None:

@@ -14,8 +14,12 @@ from src.execution.safety import KillSwitchStore, SafetyGate, SafetySnapshot
 
 
 class FakeAdapter:
-    def __init__(self):
+    def __init__(self, pending=()):
         self.calls = 0
+        self.pending = tuple(pending)
+
+    def unresolved_intents(self):
+        return self.pending
 
     def submit(self, order):
         self.calls += 1
@@ -213,4 +217,34 @@ def test_coordinator_passes_valid_order_through_independent_risk_engine():
 
         assert outcome.status == "FILLED"
         assert adapter.calls == 1
+        store.close()
+
+
+def test_coordinator_blocks_new_risk_with_unreconciled_broker_intent():
+    with _db_path() as path:
+        store = KillSwitchStore(path)
+        store.deactivate("test with unresolved broker intent")
+        adapter = FakeAdapter(pending=("previous-timeout",))
+        coordinator = ExecutionCoordinator(
+            adapter, SafetyGate(store), risk_engine=_risk_engine()
+        )
+        result = coordinator.submit(_risk_order(), _snapshot(), _risk_context())
+        assert result.status == "GATE_BLOCKED"
+        assert result.reasons == ("UNRECONCILED_ORDER_INTENTS",)
+        assert adapter.calls == 0
+        store.close()
+
+
+def test_coordinator_blocks_when_order_ledger_is_unavailable():
+    with _db_path() as path:
+        store = KillSwitchStore(path)
+        store.deactivate("test missing broker ledger")
+        adapter = FakeAdapter()
+        adapter.unresolved_intents = None
+        result = ExecutionCoordinator(
+            adapter, SafetyGate(store), risk_engine=_risk_engine()
+        ).submit(_risk_order(), _snapshot(), _risk_context())
+        assert result.status == "GATE_BLOCKED"
+        assert result.reasons == ("ORDER_LEDGER_UNAVAILABLE",)
+        assert adapter.calls == 0
         store.close()
