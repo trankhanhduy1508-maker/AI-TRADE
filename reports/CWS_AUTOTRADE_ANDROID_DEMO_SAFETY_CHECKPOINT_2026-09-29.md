@@ -104,3 +104,17 @@ Runtime Supabase đọc trực tiếp: enabled=false, demo_send_enabled=false, r
 3. Chưa có khóa ký release ổn định do Founder quản lý bên ngoài Git, public-key pin, release approval và thử cài/update/recovery cùng signer trên Android thực. Không đóng gói debug APK giả danh bản release. Native Google OAuth vẫn hoãn; xác thực Founder hiện có không được bỏ.
 
 **Kết luận:** ứng viên chiến lược và risk code đã có, source-only QA PASS. Bản APK MT5 DEMO tự giao dịch **chưa thể bàn giao hợp lệ** cho đến khi có bằng chứng broker, chiến lược, signing và thiết bị thật.
+
+
+## Founder đồng ý thử lệnh MT5 DEMO có điều kiện (29/09/2026)
+
+Founder đã trả lời **"Tôi cho phép"** sau đề xuất thử lệnh có giới hạn trên **MT5 DEMO, chỉ sau khi kiểm định đạt yêu cầu** và quản lý ký release/cài thử. Phạm vi được hiểu là cho phép tiến hành các bước kiểm định và phép thử DEMO nhỏ theo profile nghiên cứu đã nêu, không phải xác nhận rằng chiến lược đã qua OOS/WF/forward hoặc rằng đã trao khóa ký hay quyền bỏ xác thực. Không cho phép LIVE, đặt lệnh không có SL, bỏ kill-switch, truy cập tài khoản khác, hay tự đánh dấu approval/evidence giả.
+
+### Thực thi sau khi nhận phép thử
+
+- [Commit eedd3f29](https://github.com/trankhanhduy1508-maker/AI-TRADE/commit/eedd3f29400a91dec8c76d78b8a5f41e771d98b3) gia cố đóng nến H4: ứng viên từ chối H1/M15 bị đưa nhầm dưới nhãn H4, gap lịch sử quá dài; adapter không còn tự sắp xếp/che giấu timestamp broker đảo thứ tự hay trùng nhau. Bổ sung ba test fail-closed, một số có nhiều biến thể.
+- [Source QA 36560397006](https://github.com/trankhanhduy1508-maker/AI-TRADE/actions/runs/36560397006), job 109379603478 ở commit eedd3f29: **SUCCESS: 266 Python PASS, 16 Node PASS**, Java debug/release compile + lint, release prerequisite fail-closed PASS. Job kiểm chứng **không assemble/không giao APK**; không có lệnh broker DEMO hay thử Android thiết bị thật trong run này.
+- Supabase read-only sau phép cho: enabled=false, demo_send_enabled=false, risk_profile_approved=false, forward_shadow_trades=0, approved_execution_models=0, order_intents=0. Vì chưa có dữ liệu forward/model được duyệt, các điều kiện đã được chính Founder nêu vẫn chưa đạt; **không tự thay đổi gate** hay phát lệnh dưới vỏ bọc phép cho.
+- Runtime runner hiện tại vẫn hard-block option enable-demo-send, cloud runner chưa nối server-authoritative per-order approval và broker readback/strategy candidate không được tích hợp E2E. Các broker login/order actions trước đó từng bị tool safety chặn; không dùng một con đường thay thế để lách. Founder-owned release keystore/public-key pin và Android install/update evidence chưa có.
+
+**Trạng thái:** CHẤP NHẬN PHẠM VI PHÉP THỬ DEMO; KIỂM THỬ MÃ NGUỒN PASS; GỬI LỆNH DEMO CHƯA ĐỦ ĐIỀU KIỆN; APK RELEASE CHƯA CÓ. Không biến phản hồi "Tôi cho phép" thành approval của mô hình, ký hộ hay bằng chứng E2E.
