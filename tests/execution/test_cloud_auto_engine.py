@@ -25,12 +25,12 @@ class FakeCloudAdapter:
         self.position = position
         self.partial_representable = partial_representable
         self.pending = tuple(pending)
-
-    def unresolved_intents(self):
-        return self.pending
         self.submit_calls = []
         self.modify_calls = []
         self.close_calls = []
+
+    def unresolved_intents(self):
+        return self.pending
 
     async def positions(self, symbol=None):
         if self.position is None:
