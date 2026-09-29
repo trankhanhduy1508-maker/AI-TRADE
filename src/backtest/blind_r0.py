@@ -84,14 +84,35 @@ def _atr(bars: Sequence[Bar], i: int) -> float | None:
     return atr
 
 
+def atr_series(bars: Sequence[Bar]) -> list[float | None]:
+    """Wilder ATR(20) in O(N), complete bars only."""
+    out: list[float | None] = [None] * len(bars)
+    if len(bars) <= ATR_PERIOD:
+        return out
+    warm = []
+    atr = 0.0
+    for j in range(1, len(bars)):
+        b, p = bars[j], bars[j-1]
+        tr = max(b.high-b.low, abs(b.high-p.close), abs(b.low-p.close))
+        if j <= ATR_PERIOD:
+            warm.append(tr)
+            if j == ATR_PERIOD:
+                atr = sum(warm)/ATR_PERIOD
+                out[j] = atr
+        else:
+            atr = (atr*(ATR_PERIOD-1)+tr)/ATR_PERIOD
+            out[j] = atr
+    return out
+
+
 def _signal(bars: Sequence[Bar], i: int, channel: int,
-            atr_multiple: float, *, allow_short: bool) -> tuple[int, float] | None:
+            atr_multiple: float, atr: float | None,
+            *, allow_short: bool) -> tuple[int, float] | None:
     if i < max(SMA_PERIOD-1, channel, ATR_PERIOD):
         return None
     b = bars[i]
     sma = sum(x.close for x in bars[i-SMA_PERIOD+1:i+1]) / SMA_PERIOD
     prev = bars[i-channel:i]
-    atr = _atr(bars, i)
     if atr is None or atr <= 0:
         return None
     if b.close > max(x.high for x in prev) and b.close > sma:
@@ -168,6 +189,7 @@ def simulate(
     trades: list[dict] = []
     marked: list[float] = []
     realized_r = 0.0
+    atrs = atr_series(bars)
     skipped_gap_entries = 0
     for i in range(begin, end):
         bar = bars[i]
@@ -239,7 +261,7 @@ def simulate(
                     exited_this_bar = True
         pending = None  # orders cannot cross the end of this window
         if position is None and not exited_this_bar and i+1 < end:
-            pending = _signal(bars, i, channel, atr_multiplier,
+            pending = _signal(bars, i, channel, atr_multiplier, atrs[i],
                               allow_short=allow_short)
             if pending is not None:
                 pending = (*pending, bar.ts)
