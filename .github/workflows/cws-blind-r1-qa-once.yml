@@ -1,3 +1,4 @@
+# Source gate regression: registered Bitstamp market/step/closed-only URL; test exact SHA.
 name: CWS blind R1 forward-source provenance QA (one shot)
 
 on:
