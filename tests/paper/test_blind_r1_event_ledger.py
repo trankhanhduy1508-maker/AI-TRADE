@@ -99,7 +99,8 @@ class Runtime(unittest.TestCase):
             symbol="S&P 500",timeframe="D1",
             provider_url="https://query2.finance.yahoo.com/v8/finance/chart/%5EGSPC",
             instrument_type="YAHOO_NONTRADEABLE_INDEX",
-            close_ts=FORWARD_START_UTC+86400)
+            close_ts=FORWARD_START_UTC+86400,
+            retrieved_ts=FORWARD_START_UTC+86400+60)
         a=_append(self.path,daily,now_utc=NOW)
         self.assertEqual(a["forward_independence"],"NOT_VERIFIED")
         self.assertEqual(a["paper_orders_created"],0)
