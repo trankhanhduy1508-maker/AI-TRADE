@@ -46,6 +46,8 @@ public final class DemoLoginActivity extends Activity {
     private NativeEncryptedSession encryptedSession;
     private volatile String accessToken = "";
     private volatile long sessionGeneration = 0L;
+    // Monotonic fence for concurrent broker refresh and password verification.
+    private volatile long brokerGeneration = 0L;
     private volatile long accessTokenExpiresAt = 0L;
 
     @Override public void onCreate(Bundle savedInstanceState) {
@@ -305,15 +307,16 @@ public final class DemoLoginActivity extends Activity {
 
     private void refresh() {
         final long generation = sessionGeneration;
+        final long operation = ++brokerGeneration;
         refreshButton.setEnabled(false);
         status.setText("Đang đọc MT5 DEMO mới từ broker. Không gửi lệnh.");
         network.execute(() -> {
             try {
-                if (generation != sessionGeneration) return;
+                if (generation != sessionGeneration || operation != brokerGeneration) return;
                 String bearer = authorizedToken();
                 JSONObject current = request("GET", API + "status", null,
                     bearer, 18000);
-                if (generation != sessionGeneration || !bearer.equals(accessToken)) return;
+                if (generation != sessionGeneration || operation != brokerGeneration || !bearer.equals(accessToken)) return;
                 if (!current.optBoolean("ok", false)
                     || !"GOOGLE_FOUNDER".equals(current.optString("auth", ""))) {
                     throw new IOException("FOUNDER_SESSION_REQUIRED");
@@ -321,7 +324,7 @@ public final class DemoLoginActivity extends Activity {
                 JSONObject linked = current.optJSONObject("account");
                 if (linked == null) {
                     runOnUiThread(() -> {
-                        if (generation != sessionGeneration) return;
+                        if (generation != sessionGeneration || operation != brokerGeneration) return;
                         account.setText("Chưa liên kết tài khoản MT5 DEMO.\n"
                             + "Balance: — | Equity: — | Positions: —"
                             + "\nAuto Trade: LOCKED | LIVE: LOCKED");
@@ -339,7 +342,7 @@ public final class DemoLoginActivity extends Activity {
                 // Founder-owned DEMO account and fetches fresh broker data.
                 JSONObject broker = request("POST", API + "snapshot", null,
                     bearer, 125000);
-                if (generation != sessionGeneration || !bearer.equals(accessToken)) return;
+                if (generation != sessionGeneration || operation != brokerGeneration || !bearer.equals(accessToken)) return;
                 if (!broker.optBoolean("ok", false)
                     || !"DEMO_SNAPSHOT_READ_ONLY".equals(broker.optString("status", ""))
                     || !"DEMO".equals(broker.optString("mode", ""))
@@ -403,13 +406,13 @@ public final class DemoLoginActivity extends Activity {
                     .append("\nĐọc từ broker lúc: ").append(asOf)
                     .append("\nAuto Trade: LOCKED | LIVE: LOCKED").toString();
                 runOnUiThread(() -> {
-                    if (generation != sessionGeneration) return;
+                    if (generation != sessionGeneration || operation != brokerGeneration) return;
                     account.setText(display);
                     status.setText("MT5 DEMO được xác minh chỉ đọc.");
                 });
             } catch (Exception error) {
                 runOnUiThread(() -> {
-                    if (generation != sessionGeneration) return;
+                    if (generation != sessionGeneration || operation != brokerGeneration) return;
                     account.setText("Balance: — | Equity: — | Positions: —"
                         + "\nKhông có dữ liệu broker mới."
                         + "\nAuto Trade: LOCKED | LIVE: LOCKED");
@@ -417,7 +420,7 @@ public final class DemoLoginActivity extends Activity {
                 });
             } finally {
                 runOnUiThread(() -> {
-                    if (generation == sessionGeneration) {
+                    if (generation == sessionGeneration && operation == brokerGeneration) {
                         refreshButton.setEnabled(!accessToken.isEmpty());
                     }
                 });
@@ -426,6 +429,8 @@ public final class DemoLoginActivity extends Activity {
     }
 
     private void verifyDemo() {
+        final long operation = ++brokerGeneration;
+        refreshButton.setEnabled(false);
         String id = login.getText().toString().trim();
         String host = server.getText().toString().trim();
         String secret = password.getText().toString();
@@ -438,6 +443,7 @@ public final class DemoLoginActivity extends Activity {
         if (!id.matches("[1-9][0-9]{4,14}") || !"MetaQuotes-Demo".equals(host)
             || secret.length() < 4 || secret.length() > 32) {
             status.setText("UNSUPPORTED_SERVER hoặc thông tin DEMO không hợp lệ.");
+            refreshButton.setEnabled(!accessToken.isEmpty());
             return;
         }
         verifyButton.setEnabled(false);
@@ -445,7 +451,7 @@ public final class DemoLoginActivity extends Activity {
         final long generation = sessionGeneration;
         network.execute(() -> {
             try {
-                if (generation != sessionGeneration) return;
+                if (generation != sessionGeneration || operation != brokerGeneration) return;
                 JSONObject payload = new JSONObject();
                 payload.put("login", id);
                 payload.put("server", host);
@@ -453,7 +459,7 @@ public final class DemoLoginActivity extends Activity {
                 String bearer = authorizedToken();
                 JSONObject reply = request("POST", API + "verify-demo", payload,
                     bearer, 125000);
-                if (!bearer.equals(accessToken) || generation != sessionGeneration) return;
+                if (!bearer.equals(accessToken) || generation != sessionGeneration || operation != brokerGeneration) return;
                 if (!reply.optBoolean("ok", false)
                     || !"DEMO_VERIFIED_READ_ONLY".equals(reply.optString("status"))) {
                     throw new IOException("DEMO_NOT_VERIFIED");
@@ -464,7 +470,7 @@ public final class DemoLoginActivity extends Activity {
                 String balanceText = Double.isFinite(balance) && !currency.isEmpty()
                     ? String.valueOf(balance) + " " + currency : "—";
                 runOnUiThread(() -> {
-                    if (generation != sessionGeneration) return;
+                    if (generation != sessionGeneration || operation != brokerGeneration) return;
                     status.setText("DEMO đã xác minh chỉ đọc. Auto Trade: LOCKED.");
                     account.setText("Login: " + id + " | Server: " + host
                         + "\nBalance: " + balanceText
@@ -475,7 +481,7 @@ public final class DemoLoginActivity extends Activity {
                 });
             } catch (Exception error) {
                 runOnUiThread(() -> {
-                    if (generation == sessionGeneration) {
+                    if (generation == sessionGeneration && operation == brokerGeneration) {
                         account.setText("Balance: — | Equity: — | Positions: —"
                             + "\nKhông có dữ liệu broker mới."
                             + "\nAuto Trade: LOCKED | LIVE: LOCKED");
@@ -486,6 +492,11 @@ public final class DemoLoginActivity extends Activity {
                 runOnUiThread(() -> {
                     if (generation == sessionGeneration) {
                         verifyButton.setEnabled(!accessToken.isEmpty());
+                        // A successful verify queues refresh(), which owns
+                        // refreshButton after incrementing brokerGeneration.
+                        if (operation == brokerGeneration) {
+                            refreshButton.setEnabled(!accessToken.isEmpty());
+                        }
                     }
                 });
             }
