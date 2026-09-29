@@ -21,7 +21,7 @@ def event(index=0, **overrides):
         "schema_version":1,"kind":"BAR_CLOSED",
         "symbol":"BTCUSD","timeframe":"H4",
         "provider":"BITSTAMP_PUBLIC_OHLC",
-        "provider_url":"https://www.bitstamp.net/api/v2/ohlc/btcusd/?step=14400",
+        "provider_url":"https://www.bitstamp.net/api/v2/ohlc/btcusd/?step=14400&limit=1000&exclude_current_candle=true",
         "source_bar_id":f"synthetic-fixture-{index}",
         "open_ts":o,"close_ts":o+H4,"retrieved_ts":o+H4+60,
         "closed":True,"open":100.0,"high":110.0,
@@ -163,6 +163,25 @@ class Fault(unittest.TestCase):
         with self.assertRaisesRegex(ValueError,"SCHEMA_MISMATCH"):
             _append(self.path,event(provenance_status="VERIFIED"),
                     now_utc=NOW)
+
+    def test_bitstamp_wrong_market_url_cannot_be_accepted(self):
+        with self.assertRaisesRegex(ValueError,"INVALID_BITSTAMP_SOURCE_URL"):
+            _append(self.path,event(
+                provider_url="https://www.bitstamp.net/api/v2/ohlc/ethusd/?step=14400&limit=1000&exclude_current_candle=true"),
+                now_utc=NOW)
+
+    def test_bitstamp_wrong_interval_url_rejected(self):
+        with self.assertRaisesRegex(ValueError,"BITSTAMP_SOURCE_QUERY_NOT_REGISTERED"):
+            _append(self.path,event(
+                provider_url="https://www.bitstamp.net/api/v2/ohlc/btcusd/?step=86400&limit=1000&exclude_current_candle=true"),
+                now_utc=NOW)
+
+    def test_bitstamp_unclosed_query_rejected(self):
+        with self.assertRaisesRegex(ValueError,"BITSTAMP_SOURCE_QUERY_NOT_REGISTERED"):
+            _append(self.path,event(
+                provider_url="https://www.bitstamp.net/api/v2/ohlc/btcusd/?step=14400&limit=1000&exclude_current_candle=false"),
+                now_utc=NOW)
+
 
 
 if __name__=="__main__":
