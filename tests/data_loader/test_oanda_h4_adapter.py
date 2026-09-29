@@ -177,6 +177,17 @@ class Fault(unittest.TestCase):
         with self.assertRaisesRegex(ValueError,"INVALID_TICK_VOLUME"):
             parse([c])
 
+    def test_h4_spring_dst_boundary_quarantined(self):
+        d=start_time(year=2026,month=3,day=8,hour=1)
+        with self.assertRaisesRegex(ValueError,"DST_H4_CLOSE_BOUNDARY_UNVERIFIED"):
+            parse([candle(d)],retrieved=int(d.timestamp())+2*86400)
+
+    def test_h4_autumn_dst_boundary_quarantined(self):
+        d=start_time(year=2026,month=11,day=1,hour=1)
+        with self.assertRaisesRegex(ValueError,"DST_H4_CLOSE_BOUNDARY_UNVERIFIED"):
+            parse([candle(d)],retrieved=int(d.timestamp())+2*86400)
+
+
 
 if __name__=="__main__":
     unittest.main(verbosity=2)
