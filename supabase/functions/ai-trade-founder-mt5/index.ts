@@ -33,7 +33,7 @@ function respond(payload:unknown,code=200,origin=""){
   }
   return new Response(JSON.stringify(payload),{status:code,headers});
 }
-type Founder={id:number};
+type Founder={id:number;userId:string};
 async function founder(req:Request):Promise<Founder|null>{
   if(!API_KEY)throw new Error("GOOGLE_AUTH_NOT_CONFIGURED");
   const token=(req.headers.get("authorization")??"").match(/^Bearer\s+([^\s]+)$/i)?.[1]??"";
@@ -55,7 +55,7 @@ async function founder(req:Request):Promise<Founder|null>{
       and d.entitlement_state not in ('SUSPENDED','REVOKED')
     limit 1
   `;
-  return rows[0]?{id:Number(rows[0].id)}:null;
+  return rows[0]?{id:Number(rows[0].id),userId:uid}:null;
 }
 async function status(id:number){
   const [binding]=await sql`
@@ -97,7 +97,7 @@ async function status(id:number){
       brokerOrders:false,liveMoneyLocked:true}
   };
 }
-async function verifyStoredDemo(req:Request,id:number){
+async function verifyStoredDemo(req:Request,id:number,userId:string){
   const length=Number(req.headers.get("content-length")??0);
   if(length>1024)return {code:413,body:{ok:false,status:"PAYLOAD_TOO_LARGE"}};
   const raw=await req.text();
@@ -182,6 +182,15 @@ async function verifyStoredDemo(req:Request,id:number){
       and account_login=${login}::bigint
       and server='MetaQuotes-Demo' and account_type='DEMO'
       and connection_state='DISCONNECTED'
+      and exists (
+        select 1 from ai_trade.dashboard_access_tokens d
+        join ai_trade.dashboard_google_access g
+          on g.access_token_id=d.id
+        where d.id=${id} and g.user_id=${userId}::uuid
+          and g.active=true and d.access_role='FOUNDER'
+          and d.revoked_at is null and d.expires_at>now()
+          and d.entitlement_state not in ('SUSPENDED','REVOKED')
+      )
     returning id
   `;
   if(updated.length!==1)return {code:409,body:{ok:false,status:"BINDING_CHANGED"}};
@@ -195,13 +204,14 @@ async function verifyStoredDemo(req:Request,id:number){
   }};
 }
 /** One fresh broker read for the authenticated Founder's existing DEMO account. */
-async function freshSnapshot(id:number){
+async function freshSnapshot(id:number,userId:string){
   const [binding]=await sql`
-    select b.account_login,b.server from ai_trade.account_mt5_bindings b
+    select b.id,b.account_login,b.server from ai_trade.account_mt5_bindings b
     join ai_trade.mt5_demo_accounts a
       on a.account_login=b.account_login and a.server=b.server
     where b.access_token_id=${id}
       and b.account_type='DEMO' and b.server='MetaQuotes-Demo'
+      and b.connection_state!='REVOKED'
       and a.account_type='DEMO' and a.is_active=true
     limit 1
   `;
@@ -272,15 +282,30 @@ async function freshSnapshot(id:number){
     return {code:503,body:{ok:false,status:"BROKER_SNAPSHOT_STALE",
       brokerOrders:false,liveMoneyLocked:true}};
   }
-  const updated=await sql`
-    update ai_trade.account_mt5_bindings set
-      connection_state='CONNECTED',last_verified_at=now(),updated_at=now()
-    where access_token_id=${id}
-      and account_login=${login}::bigint
-      and server='MetaQuotes-Demo' and account_type='DEMO'
-    returning id
+  // Investor-only broker readback must NOT claim a fresh master-password
+  // login. Recheck the binding and the same Google Founder entitlement after
+  // the network call; account revocation during the read fails closed.
+  const current=await sql`
+    select b.id from ai_trade.account_mt5_bindings b
+    join ai_trade.mt5_demo_accounts a
+      on a.account_login=b.account_login and a.server=b.server
+    join ai_trade.dashboard_access_tokens d
+      on d.id=b.access_token_id
+    join ai_trade.dashboard_google_access g
+      on g.access_token_id=d.id
+    where b.id=${binding.id} and b.access_token_id=${id}
+      and b.account_login=${login}::bigint and b.server='MetaQuotes-Demo'
+      and b.account_type='DEMO' and b.connection_state!='REVOKED'
+      and a.account_type='DEMO' and a.is_active=true
+      and g.user_id=${userId}::uuid and g.active=true
+      and d.access_role='FOUNDER' and d.revoked_at is null
+      and d.expires_at>now()
+      and d.entitlement_state not in ('SUSPENDED','REVOKED')
+    limit 1
   `;
-  if(updated.length!==1)return {code:409,body:{ok:false,status:"BINDING_CHANGED"}};
+  if(current.length!==1)return {code:409,body:{ok:false,
+    status:"BINDING_OR_FOUNDER_CHANGED",
+    brokerOrders:false,liveMoneyLocked:true}};
   return {code:200,body:{
     ok:true,status:"DEMO_SNAPSHOT_READ_ONLY",
     login,server:"MetaQuotes-Demo",mode:"DEMO",
@@ -311,11 +336,11 @@ Deno.serve(async(req)=>{
     if(req.method==="GET"&&path.endsWith("/status"))
       return respond(await status(person.id),200,origin);
     if(req.method==="POST"&&path.endsWith("/snapshot")){
-      const value=await freshSnapshot(person.id);
+      const value=await freshSnapshot(person.id,person.userId);
       return respond(value.body,value.code,origin);
     }
     if(req.method==="POST"&&path.endsWith("/verify-demo")){
-      const result=await verifyStoredDemo(req,person.id);
+      const result=await verifyStoredDemo(req,person.id,person.userId);
       return respond(result.body,result.code,origin);
     }
     return respond({ok:false,status:"NOT_FOUND"},404,origin);
