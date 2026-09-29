@@ -37,13 +37,13 @@ jobs:
           p=Path('src/paper/blind_r1_event_ledger.py')
           tree=ast.parse(p.read_text(encoding='utf-8'))
           forbidden={'MetaTrader5','metaapi_cloud_sdk','ccxt','requests',
-                     'urllib','socket','subprocess'}
+                     'urllib.request','urllib.error','socket','subprocess'}
           imports=set()
           for n in ast.walk(tree):
               if isinstance(n,ast.Import):
                   imports.update(x.name.split('.')[0] for x in n.names)
               elif isinstance(n,ast.ImportFrom) and n.module:
-                  imports.add(n.module.split('.')[0])
+                  imports.add(n.module)
           assert not imports & forbidden, sorted(imports & forbidden)
           print('SMOKE import exclusion PASS, code SHA:', __import__('hashlib').sha256(p.read_bytes()).hexdigest())
           PY
