@@ -1,3 +1,4 @@
+# Diagnose real public ZIP member names and sizes; no raw price output.
 # One free official form submission, no PayPal/paid FTP, no raw data upload.
 # One normal GET DOM-form-schema inspection: no POST or ZIP download.
 name: CWS R1 HistData public free ZIP normal-link probe once
