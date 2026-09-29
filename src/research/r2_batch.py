@@ -6,6 +6,7 @@ Do not copy licensed raw prices into output or public GitHub.
 from __future__ import annotations
 
 from pathlib import Path
+import time
 from .r2_csv import load_normalized_ohlc
 from .r2_walkforward import Study, run_walkforward
 
@@ -16,6 +17,8 @@ FIELDS = frozenset({"cell", "symbol", "timeframe", "source_kind",
 
 
 def run_batch(entries: list[dict], *, as_of_utc: int) -> dict:
+    if type(as_of_utc) is not int or not 0 < as_of_utc <= int(time.time()):
+        raise ValueError('INVALID_AS_OF_CLOCK')
     if not isinstance(entries, list) or not 1 <= len(entries) <= MAX_CELLS:
         raise ValueError('INVALID_CATALOG_SIZE')
     seen = set()
