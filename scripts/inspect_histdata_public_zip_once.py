@@ -182,7 +182,13 @@ def inspect() -> dict:
         if not zipfile.is_zipfile(io.BytesIO(rawzip)):
             report["status"]="PUBLIC_LINK_NOT_A_ZIP"
             return report
+        report["zip_sha256"]=hashlib.sha256(rawzip).hexdigest()
         with zipfile.ZipFile(io.BytesIO(rawzip)) as archive:
+            report["zip_entry_metadata"]=[{
+                "filename":f.filename[:180],
+                "uncompressed_size":f.file_size,
+                "is_directory":f.is_dir()
+            } for f in archive.infolist()[:20]]
             entries=[f for f in archive.infolist() if not f.is_dir()]
             matches=[f for f in entries if re.fullmatch(
                 r"(?:DAT_ASCII|HISTDATA_COM_ASCII)_EURUSD_M1_202608\.csv",
