@@ -527,3 +527,48 @@ def test_positions_read_is_blocked_after_switch_to_live_account():
             adapter.positions()
         adapter.close()
     assert terminal.send_calls == 0
+
+
+@pytest.mark.parametrize("stop_loss", [None, float("nan"), float("inf"), -float("inf"), 0.0, -1.0])
+def test_direct_adapter_requires_finite_positive_protective_stop_before_broker_calls(stop_loss):
+    """Direct adapter callers cannot bypass protective SL through a missing/invalid value."""
+    terminal = FakeTerminal()
+    with _ledger_path() as db_path:
+        adapter = MT5BrokerAdapter(
+            terminal, mode=ExecutionMode.DEMO,
+            allow_order_send=True, ledger_path=db_path,
+        )
+        order = MT5OrderRequest(
+            client_order_id="direct-no-protective-stop",
+            symbol="EURUSD", direction="UP", volume=0.01,
+            price=1.1, stop_loss=stop_loss,
+        )
+        result = adapter.submit(order)
+        assert result.status == "RISK_REJECTED"
+        assert result.message == "PROTECTIVE_STOP_REQUIRED"
+        assert terminal.check_calls == 0
+        assert terminal.send_calls == 0
+        assert adapter._ledger.get(order.client_order_id) is None
+        adapter.close()
+
+
+@pytest.mark.parametrize("target", [float("nan"), float("inf"), -float("inf"), 0.0, -1.0])
+def test_direct_adapter_rejects_invalid_target_before_broker_calls(target):
+    terminal = FakeTerminal()
+    with _ledger_path() as db_path:
+        adapter = MT5BrokerAdapter(
+            terminal, mode=ExecutionMode.DEMO,
+            allow_order_send=True, ledger_path=db_path,
+        )
+        order = MT5OrderRequest(
+            client_order_id="direct-invalid-target",
+            symbol="EURUSD", direction="UP", volume=0.01,
+            price=1.1, stop_loss=1.09, take_profit=target,
+        )
+        result = adapter.submit(order)
+        assert result.status == "CONTRACT_REJECTED"
+        assert result.message == "TARGET_INVALID"
+        assert terminal.check_calls == 0
+        assert terminal.send_calls == 0
+        assert adapter._ledger.get(order.client_order_id) is None
+        adapter.close()
