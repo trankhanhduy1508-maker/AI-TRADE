@@ -366,7 +366,6 @@ def evaluate() -> None:
             out["stress_test"]={
                 "cost_2x":_simple(run(b,n,cost_multiplier=2)),
                 "cost_3x":_simple(run(b,n,cost_multiplier=3)),
-                "single_1atr_gap":"NEEDS_SOURCE_RESOLVED_GAP_STRESS"
             }
             varied={"channel50":dict(channel=50),"channel60":dict(channel=60),
                     "trail18":dict(trail=18),"trail22":dict(trail=22),
@@ -386,6 +385,26 @@ def evaluate() -> None:
             out["by_exit_year_historical_oos"]=_per_year(historical["trades"])
             out["by_volatility_regime_historical_oos"]=_regime(
                 historical["trades"],bars)
+            out["failure_cases_historical_oos"]=sorted(
+                historical["trades"],key=lambda t:t["pnl_r"])[:5]
+            # Predeclared 1-ATR adverse gap SHOCK on EACH stop fill.
+            # Synthetic STRESS only; original market candles remain unaltered.
+            atrs=atr_series(bars)
+            indexes={bar.ts:i for i,bar in enumerate(bars)}
+            adverse_r=0.0
+            for trade in historical["trades"]:
+                i=indexes[trade["exit_ts"]]
+                atr=atrs[i]
+                stop_risk=abs(trade["entry_price"]-trade["initial_stop"])
+                if atr is not None and stop_risk>0:
+                    adverse_r+=atr/stop_risk
+            out["stress_test"]["synthetic_adverse_1atr_per_exit"]={
+                "provenance":"SYNTHETIC_SHOCK_NOT_MARKET_DATA",
+                "total_marked_r_after_shock":
+                    historical["ending_marked_equity_r"]-adverse_r,
+                "additional_loss_r":adverse_r,
+                "assumption":"one adverse ATR20 exit shock per closed position"
+            }
             out["historical_oos_closed_trade_count_sufficient"] = (
                 historical["trade_count"] >=30
             )
