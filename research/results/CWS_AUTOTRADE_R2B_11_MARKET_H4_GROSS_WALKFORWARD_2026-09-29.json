@@ -27,7 +27,7 @@
       "first_source_clock": "2012-11-27T00:00",
       "last_source_clock": "2022-03-04T20:00",
       "source_clock_timezone": "UNVERIFIED; date-time interpreted as UTC for sorting only",
-      "missing_intervals": 493,
+      "non4h_breaks_including_weekends": 493,
       "subday_gaps": 0,
       "status": "SOURCE_NAMED_H4_HISTORICAL_REUSED_GROSS_ONLY",
       "standard": {
@@ -1416,7 +1416,7 @@
       "first_source_clock": "2012-11-26T20:00",
       "last_source_clock": "2022-03-04T20:00",
       "source_clock_timezone": "UNVERIFIED; date-time interpreted as UTC for sorting only",
-      "missing_intervals": 493,
+      "non4h_breaks_including_weekends": 493,
       "subday_gaps": 0,
       "status": "SOURCE_NAMED_H4_HISTORICAL_REUSED_GROSS_ONLY",
       "standard": {
@@ -2805,7 +2805,7 @@
       "first_source_clock": "2012-11-26T20:00",
       "last_source_clock": "2022-03-04T20:00",
       "source_clock_timezone": "UNVERIFIED; date-time interpreted as UTC for sorting only",
-      "missing_intervals": 493,
+      "non4h_breaks_including_weekends": 493,
       "subday_gaps": 0,
       "status": "SOURCE_NAMED_H4_HISTORICAL_REUSED_GROSS_ONLY",
       "standard": {
@@ -4194,7 +4194,7 @@
       "first_source_clock": "2012-11-26T20:00",
       "last_source_clock": "2022-03-04T20:00",
       "source_clock_timezone": "UNVERIFIED; date-time interpreted as UTC for sorting only",
-      "missing_intervals": 493,
+      "non4h_breaks_including_weekends": 493,
       "subday_gaps": 0,
       "status": "SOURCE_NAMED_H4_HISTORICAL_REUSED_GROSS_ONLY",
       "standard": {
@@ -5583,7 +5583,7 @@
       "first_source_clock": "2012-11-26T20:00",
       "last_source_clock": "2022-03-04T20:00",
       "source_clock_timezone": "UNVERIFIED; date-time interpreted as UTC for sorting only",
-      "missing_intervals": 493,
+      "non4h_breaks_including_weekends": 493,
       "subday_gaps": 0,
       "status": "SOURCE_NAMED_H4_HISTORICAL_REUSED_GROSS_ONLY",
       "standard": {
@@ -6972,7 +6972,7 @@
       "first_source_clock": "2012-11-26T12:00",
       "last_source_clock": "2022-03-04T20:00",
       "source_clock_timezone": "UNVERIFIED; date-time interpreted as UTC for sorting only",
-      "missing_intervals": 494,
+      "non4h_breaks_including_weekends": 494,
       "subday_gaps": 1,
       "status": "SOURCE_NAMED_H4_HISTORICAL_REUSED_GROSS_ONLY",
       "standard": {
@@ -8361,7 +8361,7 @@
       "first_source_clock": "2012-11-26T20:00",
       "last_source_clock": "2022-03-04T20:00",
       "source_clock_timezone": "UNVERIFIED; date-time interpreted as UTC for sorting only",
-      "missing_intervals": 493,
+      "non4h_breaks_including_weekends": 493,
       "subday_gaps": 0,
       "status": "SOURCE_NAMED_H4_HISTORICAL_REUSED_GROSS_ONLY",
       "standard": {
@@ -9750,7 +9750,7 @@
       "first_source_clock": "2012-11-26T20:00",
       "last_source_clock": "2022-03-04T20:00",
       "source_clock_timezone": "UNVERIFIED; date-time interpreted as UTC for sorting only",
-      "missing_intervals": 493,
+      "non4h_breaks_including_weekends": 493,
       "subday_gaps": 0,
       "status": "SOURCE_NAMED_H4_HISTORICAL_REUSED_GROSS_ONLY",
       "standard": {
@@ -11139,7 +11139,7 @@
       "first_source_clock": "2012-11-26T04:00",
       "last_source_clock": "2022-03-04T20:00",
       "source_clock_timezone": "UNVERIFIED; date-time interpreted as UTC for sorting only",
-      "missing_intervals": 493,
+      "non4h_breaks_including_weekends": 493,
       "subday_gaps": 0,
       "status": "SOURCE_NAMED_H4_HISTORICAL_REUSED_GROSS_ONLY",
       "standard": {
@@ -12528,7 +12528,7 @@
       "first_source_clock": "2012-11-26T20:00",
       "last_source_clock": "2022-03-04T20:00",
       "source_clock_timezone": "UNVERIFIED; date-time interpreted as UTC for sorting only",
-      "missing_intervals": 493,
+      "non4h_breaks_including_weekends": 493,
       "subday_gaps": 0,
       "status": "SOURCE_NAMED_H4_HISTORICAL_REUSED_GROSS_ONLY",
       "standard": {
@@ -13917,7 +13917,7 @@
       "first_source_clock": "2012-10-26T04:00",
       "last_source_clock": "2022-03-04T20:00",
       "source_clock_timezone": "UNVERIFIED; date-time interpreted as UTC for sorting only",
-      "missing_intervals": 540,
+      "non4h_breaks_including_weekends": 540,
       "subday_gaps": 41,
       "status": "SOURCE_NAMED_H4_HISTORICAL_REUSED_GROSS_ONLY",
       "standard": {
@@ -15300,5 +15300,6 @@
   ],
   "orders_sent": 0,
   "independent_forward_trades": 0,
-  "edge_status": "UNPROVEN"
+  "edge_status": "UNPROVEN",
+  "calendar_interpretation": "non4h_breaks_including_weekends includes normal market-closure gaps; NOT 493 individual missing source bars. Short intraday gaps separately audited."
 }
