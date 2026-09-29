@@ -65,6 +65,12 @@ def _closing_time(start: int, granularity: str) -> int:
         local = datetime.fromtimestamp(start, tz=timezone.utc).astimezone(NY)
         if local.minute != 0 or local.hour not in (1, 5, 9, 13, 17, 21):
             raise ValueError("H4_NOT_EXPECTED_NEW_YORK_ALIGNMENT")
+        # H4 is aligned to New York day boundaries. Across a DST shift,
+        # adding 14400 UTC seconds may silently assert the wrong close.
+        # Quarantine that exceptional window until a real broker response
+        # confirms its candle boundary; never invent the elapsed period.
+        if local.utcoffset() != (local + timedelta(hours=4)).utcoffset():
+            raise ValueError("DST_H4_CLOSE_BOUNDARY_UNVERIFIED")
         return start + 14400
     local = datetime.fromtimestamp(start, tz=timezone.utc).astimezone(NY)
     if (local.hour, local.minute, local.second) != (17, 0, 0):
