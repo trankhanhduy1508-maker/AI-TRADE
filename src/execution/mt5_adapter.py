@@ -330,6 +330,29 @@ class MT5BrokerAdapter:
         if duplicate is not None:
             return duplicate
         self._ensure_mutation_allowed()
+        # Entry orders must carry a broker-side protective SL even when a
+        # caller skips ExecutionCoordinator and its independent Risk Engine.
+        # Reject before touching broker state or reserving an order intent.
+        if (
+            not isinstance(order.stop_loss, (int, float))
+            or isinstance(order.stop_loss, bool)
+            or not math.isfinite(order.stop_loss)
+            or order.stop_loss <= 0
+        ):
+            return MT5OrderResult(
+                order.client_order_id, "RISK_REJECTED",
+                message="PROTECTIVE_STOP_REQUIRED",
+            )
+        if order.take_profit is not None and (
+            not isinstance(order.take_profit, (int, float))
+            or isinstance(order.take_profit, bool)
+            or not math.isfinite(order.take_profit)
+            or order.take_profit <= 0
+        ):
+            return MT5OrderResult(
+                order.client_order_id, "CONTRACT_REJECTED",
+                message="TARGET_INVALID",
+            )
         if not self._connected and not self.connect():
             raise ConnectionError("MT5 terminal initialization failed")
 
