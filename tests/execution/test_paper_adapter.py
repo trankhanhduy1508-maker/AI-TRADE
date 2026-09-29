@@ -127,3 +127,33 @@ def test_paper_adapter_closes_short_at_target_using_ask_bid_semantics():
         assert closed.exit_reason == "TARGET"
         assert closed.exit_price == 148.0
         adapter.close()
+
+
+def test_paper_adapter_exposes_pending_ledger_intents():
+    with _db_path() as path:
+        adapter = PaperBrokerAdapter(path)
+        assert adapter.unresolved_intents() == ()
+        assert adapter._ledger.claim("paper-ambiguous-intent")
+        assert adapter.unresolved_intents() == ("paper-ambiguous-intent",)
+        adapter.close()
+
+
+def test_paper_coordinator_blocks_new_order_while_prior_intent_unresolved():
+    with _db_path() as path:
+        kill_switch = KillSwitchStore(path)
+        kill_switch.deactivate("pending paper intent regression")
+        adapter = PaperBrokerAdapter(path)
+        assert adapter._ledger.claim("previous-paper-intent")
+        result = ExecutionCoordinator(
+            adapter, SafetyGate(kill_switch),
+            risk_engine=IndependentRiskEngine(RiskLimits(.01, 1, 20, 100)),
+        ).submit(
+            MT5OrderRequest("next-paper-order", "EURUSD", "UP", .01, 1.1, 1.09),
+            SafetySnapshot(True, True, True, True, True),
+            RiskContext(open_positions=0, spread_points=1, daily_loss=0),
+        )
+        assert result.status == "GATE_BLOCKED"
+        assert result.reasons == ("UNRECONCILED_ORDER_INTENTS",)
+        assert adapter.open_orders() == ()
+        adapter.close()
+        kill_switch.close()

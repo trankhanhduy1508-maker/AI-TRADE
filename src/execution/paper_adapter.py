@@ -59,6 +59,10 @@ class PaperBrokerAdapter:
             "deterministic paper fill",
         )
 
+    def unresolved_intents(self) -> tuple[str, ...]:
+        """Expose unacknowledged paper intents without weakening risk gates."""
+        return self._ledger.unresolved_intents()
+
     def open_orders(self) -> tuple[dict[str, object], ...]:
         return tuple(self._positions.values())
 
