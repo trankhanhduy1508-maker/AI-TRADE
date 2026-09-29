@@ -33,23 +33,36 @@ class PublicLinkParser(HTMLParser):
         self.links=[]
         self.forms=[]
         self._anchor=None
+        self._form=None
 
     def handle_starttag(self, tag, attrs):
         a=dict(attrs)
         if tag=="a":
             self._anchor={"href":a.get("href",""),"text":""}
         if tag=="form":
-            self.forms.append({"method":a.get("method","GET").upper(),
-                               "action":a.get("action","")})
+            self._form={"method":a.get("method","GET").upper(),
+                        "action":a.get("action",""),"inputs":[],"text":""}
+            self.forms.append(self._form)
+        if tag in ("input","button") and self._form is not None:
+            self._form["inputs"].append({
+                "type":a.get("type","submit" if tag=="button" else "text"),
+                "name":a.get("name",""),
+                "value_is_archive":("HISTDATA_COM_ASCII_EURUSD_M1_202608.zip" in
+                                    a.get("value","")),
+            })
 
     def handle_data(self, data):
         if self._anchor is not None:
             self._anchor["text"]+=data
+        if self._form is not None:
+            self._form["text"]+=data
 
     def handle_endtag(self, tag):
         if tag=="a" and self._anchor is not None:
             self.links.append(self._anchor)
             self._anchor=None
+        if tag=="form":
+            self._form=None
 
 
 def _read(url: str, limit: int) -> bytes:
@@ -84,6 +97,13 @@ def inspect() -> dict:
             "HISTDATA_COM_ASCII_EURUSD_M1_202608.zip" in
             page.decode("utf-8",errors="replace"))
         report["form_methods"]=[x["method"] for x in parser.forms]
+        report["form_schema"]=[{
+            "method":x["method"],
+            "action_path":urlsplit(urljoin(PUBLIC_PAGE,x["action"])).path,
+            "inputs":x["inputs"],
+            "text_is_archive":("HISTDATA_COM_ASCII_EURUSD_M1_202608.zip"
+                               in x["text"])
+        } for x in parser.forms]
         eligible=[]
         for link in parser.links:
             href=link["href"]
