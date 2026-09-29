@@ -74,11 +74,39 @@ def test_fresh_readback_contains_equity_and_each_position_without_total_lot_kpi(
     (lambda t: setattr(t.rows[0], "profit", float("inf")), "INVALID_POSITION_PNL"),
     (lambda t: setattr(t.rows[0], "volume", 0.0), "INVALID_POSITION_LOT"),
     (lambda t: setattr(t.rows[0], "type", 8), "INVALID_POSITION_SIDE"),
+    (lambda t: setattr(t.rows[0], "ticket", -1), "INVALID_POSITION_TICKET"),
+    (lambda t: setattr(t.rows[0], "ticket", "1.0"), "INVALID_POSITION_TICKET"),
+    (lambda t: setattr(t.rows[0], "symbol", "EURUSD<script>"), "INVALID_POSITION_SYMBOL"),
+    (lambda t: setattr(t.rows[0], "volume", 1001), "INVALID_POSITION_LOT"),
+    (lambda t: setattr(t.rows[0], "profit", 1e10), "INVALID_POSITION_PNL"),
+    (lambda t: setattr(t.rows[1], "ticket", 1), "DUPLICATE_BROKER_POSITION"),
 ])
 def test_invalid_or_partial_broker_state_fails_closed(change, message):
     terminal = FakeTerminal()
     change(terminal)
     with pytest.raises(RuntimeError, match=message):
+        snapshot(terminal)
+    assert terminal.send_calls == 0
+
+
+def test_zero_positions_is_genuine_broker_zero_not_unavailable():
+    terminal = FakeTerminal()
+    terminal.rows = []
+    result = snapshot(terminal)
+    assert result.positions == ()
+    assert result.symbols_with_positions == 0
+    assert (result.gross_profit, result.gross_loss, result.net_pnl) == (0, 0, 0)
+    assert terminal.send_calls == 0
+
+
+def test_broker_position_count_over_limit_fails_closed():
+    terminal = FakeTerminal()
+    terminal.rows = [
+        NS(ticket=i + 1, symbol="EURUSD", type=0, volume=.01,
+           profit=0.0, sl=1.07, tp=0.0)
+        for i in range(1001)
+    ]
+    with pytest.raises(RuntimeError, match="TOO_MANY_BROKER_POSITIONS"):
         snapshot(terminal)
     assert terminal.send_calls == 0
 
@@ -117,6 +145,7 @@ def test_no_broker_connection_never_returns_cached_account_data(disconnect):
     (lambda t: setattr(t, "connected", False), "BROKER_DISCONNECTED_DURING_READ"),
     (lambda t: setattr(t.account, "server", "Other-Demo"), "ACCOUNT_CHANGED_DURING_READ"),
     (lambda t: setattr(t.account, "login", 987654), "ACCOUNT_CHANGED_DURING_READ"),
+    (lambda t: setattr(t.account, "currency", "EUR"), "ACCOUNT_CHANGED_DURING_READ"),
     (lambda t: setattr(t.account, "trade_mode", 2), "LIVE_OR_NON_DEMO_ACCOUNT_BLOCKED"),
     (lambda t: setattr(t, "account", None), "ACCOUNT_DISCONNECTED_DURING_READ"),
 ])

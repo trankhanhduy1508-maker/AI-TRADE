@@ -8,6 +8,7 @@ The caller must authorize the owner and reject stale snapshots separately.
 from dataclasses import dataclass
 from datetime import datetime, timezone
 import math
+import re
 from typing import Any
 
 
@@ -110,25 +111,37 @@ def read_demo_snapshot(
     if rows is None:
         raise RuntimeError("POSITIONS_READ_FAILED")
     result: list[DemoPositionSnapshot] = []
+    seen_tickets: set[str] = set()
     buy = getattr(terminal, "POSITION_TYPE_BUY", 0)
     sell = getattr(terminal, "POSITION_TYPE_SELL", 1)
-    for position in rows:
+    for index, position in enumerate(rows):
+        if index >= 1000:
+            raise RuntimeError("TOO_MANY_BROKER_POSITIONS")
         ticket = getattr(position, "ticket", None)
         symbol = getattr(position, "symbol", None)
         pos_type = getattr(position, "type", None)
-        if ticket is None or str(ticket) in {"", "0"}:
+        ticket_text = str(ticket)
+        if not re.fullmatch(r"[1-9][0-9]{0,19}", ticket_text):
             raise RuntimeError("INVALID_POSITION_TICKET")
-        if not isinstance(symbol, str) or not symbol.strip():
+        if ticket_text in seen_tickets:
+            raise RuntimeError("DUPLICATE_BROKER_POSITION")
+        seen_tickets.add(ticket_text)
+        if not isinstance(symbol, str) or not re.fullmatch(
+            r"[A-Za-z0-9._-]{2,32}", symbol
+        ):
             raise RuntimeError("INVALID_POSITION_SYMBOL")
         if pos_type != buy and pos_type != sell:
             raise RuntimeError("INVALID_POSITION_SIDE")
         lot = _finite(getattr(position, "volume", None), "POSITION_LOT")
-        if lot <= 0:
+        if lot <= 0 or lot > 1000:
             raise RuntimeError("INVALID_POSITION_LOT")
+        pnl = _finite(getattr(position, "profit", None), "POSITION_PNL")
+        if abs(pnl) > 1e9:
+            raise RuntimeError("INVALID_POSITION_PNL")
         result.append(DemoPositionSnapshot(
-            ticket=str(ticket), symbol=symbol,
+            ticket=ticket_text, symbol=symbol,
             side="BUY" if pos_type == buy else "SELL", lot=lot,
-            floating_pnl=_finite(getattr(position, "profit", None), "POSITION_PNL"),
+            floating_pnl=pnl,
             stop_loss=_protective_price(getattr(position, "sl", None), "STOP_LOSS"),
             take_profit=_protective_price(getattr(position, "tp", None), "TAKE_PROFIT"),
         ))
@@ -143,7 +156,8 @@ def read_demo_snapshot(
     if getattr(final_account, "trade_mode", None) != 0:
         raise RuntimeError("LIVE_OR_NON_DEMO_ACCOUNT_BLOCKED")
     if (str(getattr(final_account, "login", "")) != login
-            or str(getattr(final_account, "server", "")) != server):
+            or str(getattr(final_account, "server", "")) != server
+            or getattr(final_account, "currency", None) != currency):
         raise RuntimeError("ACCOUNT_CHANGED_DURING_READ")
     # This timestamp identifies the fresh terminal read, not a guaranteed
     # broker heartbeat or proof that the Android client remains connected.
