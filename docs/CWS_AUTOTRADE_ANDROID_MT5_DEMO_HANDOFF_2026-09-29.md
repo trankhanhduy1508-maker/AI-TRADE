@@ -1,5 +1,8 @@
 # CWS AUTOTRADE — KINH NGHIỆM VÀ CHECKPOINT APK/MT5 DEMO — 29/09/2026
 
+> **CẬP NHẬT MỚI NHẤT 29/09 (sau các mục lịch sử dưới đây):** xem [checkpoint bridge Android/MT5 DEMO](../reports/CWS_AUTOTRADE_MT5_DEMO_ANDROID_BRIDGE_CHECKPOINT_2026-09-29.md). Mã mới tại `8e3f4f82469a88725eaefa4dc5ca15732384604d`; verifier ACTIVE v3 và Founder API ACTIVE v4. Source QA và broker investor preflight PASS trong phạm vi ghi nhận; full Android E2E, DEMO execution và release APK vẫn BLOCKED. Các phiên bản và nhận xét `equity:null` ở mục 2 chỉ mô tả trạng thái cũ.
+
+
 **Repo:** trankhanhduy1508-maker/AI-TRADE  
 **Nhánh duy nhất:** codex/p0-covel-knowledge-audit  
 **HEAD đã kiểm tra trước khi ghi tài liệu:** eb89cc094cc71071da6814f9cd59864325cf293f  
