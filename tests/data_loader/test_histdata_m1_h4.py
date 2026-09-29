@@ -135,7 +135,7 @@ class Fault(unittest.TestCase):
 
     def test_non_m1_second_timestamp_rejected(self):
         lines=fixture().splitlines()
-        lines[12]=lines[12].replace(b"001200",b"001201",1)
+        lines[12]=lines[12].replace(b"171200",b"171201",1)
         with self.assertRaisesRegex(ValueError,"NOT_M1_ALIGNED"):
             derive_complete_h4(b"\n".join(lines),symbol="EURUSD",
                                received_at_utc=now())
