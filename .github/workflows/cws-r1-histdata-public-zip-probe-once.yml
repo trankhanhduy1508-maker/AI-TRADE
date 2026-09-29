@@ -1,3 +1,4 @@
+# One free official form submission, no PayPal/paid FTP, no raw data upload.
 # One normal GET DOM-form-schema inspection: no POST or ZIP download.
 name: CWS R1 HistData public free ZIP normal-link probe once
 
@@ -33,7 +34,7 @@ jobs:
           python3 -m compileall -q scripts/inspect_histdata_public_zip_once.py src/data_loader/histdata_m1_h4.py
           PYTHONPATH=. python3 -m unittest discover -s tests/data_loader -p 'test_histdata_m1_h4.py' -q
           echo "SMOKE_PASS SYNTHETIC_ONLY"
-      - name: Runtime one official free-page GET and normal public download link if exposed
+      - name: Runtime ordinary free-page GET and exact public get.php form if needed
         run: |
           set -euo pipefail
           PYTHONPATH=. python3 scripts/inspect_histdata_public_zip_once.py --probe
