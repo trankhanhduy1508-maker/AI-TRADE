@@ -131,7 +131,7 @@ class Fault(unittest.TestCase):
 
     def test_crossed_bid_ask_fail_closed(self):
         c=candle()
-        c["ask"]["o"]="1.1000"
+        c["ask"]["o"]="1.1901"  # valid ask OHLC, but ask.open < bid.open
         with self.assertRaisesRegex(ValueError,"CROSSED"):
             parse([c])
 
