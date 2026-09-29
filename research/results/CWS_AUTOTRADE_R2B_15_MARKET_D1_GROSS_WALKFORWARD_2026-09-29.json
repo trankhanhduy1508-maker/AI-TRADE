@@ -1,0 +1,4279 @@
+{
+  "schema": "CWS_R2B_MULTI_MARKET_CAUSAL_EXPLORATORY_V1",
+  "prereg_commit": "3970996837365b562abdef0380fb58b1f6cc100f",
+  "source_lock_commit": "341ada8810d5d5bd7bb654b701b6b32a0d9abb4f",
+  "source_manifest_blob_sha": "LOCKED_SOURCE_FILE",
+  "engine": "JS Reference port of src/research/r2_walkforward.py frozen candidate selector; SP500 34-fold 340-field regression matched before fetching new prices",
+  "source_exposure": "HISTORICAL_REUSED",
+  "cost_provenance": "GROSS_ONLY_ZERO_COST_NOT_REALISTIC",
+  "cost_stress_status": "NOT_RUN; static R2 cost does not support proportional venue-cost profile",
+  "market_data_rights": "RAW_COMMERCIAL_STORAGE_REDISTRIBUTION_NOT_VERIFIED",
+  "note": "Per-episode open positions are marked and abandoned by original R2 evaluator, not liquidated or carried into next episode. Gross realized R is NOT tradable portfolio profit. Correlated pairs and proxy ETFs NOT independent samples.",
+  "eligible_source_count": 15,
+  "source_rejection": {
+    "symbol": "EURCHF",
+    "reason": "19_DAY_UNEXPLAINED_GAP_BEFORE_PERFORMANCE"
+  },
+  "results": [
+    {
+      "symbol": "AUDJPY",
+      "cell": "AUDJPY_D1",
+      "source_repo": "ejtraderLabs/historical-data",
+      "source_path": "AUDJPY/AUDJPYd1.csv",
+      "source_commit": "fbd29b3cd85c0eea4f6e8b81c053f98fb3de22fd",
+      "source_git_blob_sha": "435e0d2657ac0acd8cfa99626ba53c5e44ff3faf",
+      "price_basis": "RAW_PROVIDER_POINTS_UNVERIFIED",
+      "first_date": "2012-12-04",
+      "last_date": "2022-03-04",
+      "bar_count": 2400,
+      "source_type": "FOREX_OR_XAU_QUOTE_NOT_ACCOUNT",
+      "source_rights": "RAW_COMMERCIAL_RIGHTS_UNVERIFIED",
+      "status": "HISTORICAL_REUSED_GROSS_ONLY_EXPLORATORY",
+      "baseline": {
+        "folds": 7,
+        "closed_trades": 11,
+        "mean_closed_trade_r": -0.19644146810194724,
+        "sum_isolated_realized_r": -2.1608561491214195,
+        "sum_open_boundary_unrealized_r": 0.4405781949026778,
+        "folds_positive": 1,
+        "folds_negative": 4,
+        "folds_flat": 2,
+        "folds_open": 2,
+        "gap_stops": 0,
+        "selection": {
+          "FLAT": 0,
+          "R0_REFERENCE": 7,
+          "R2_FAST": 0,
+          "R2_SLOW": 0
+        }
+      },
+      "r2_standard": {
+        "folds": 7,
+        "closed_trades": 12,
+        "mean_closed_trade_r": -0.24235444904535544,
+        "sum_isolated_realized_r": -2.9082533885442654,
+        "sum_open_boundary_unrealized_r": 1.489664606832268,
+        "folds_positive": 1,
+        "folds_negative": 4,
+        "folds_flat": 2,
+        "folds_open": 1,
+        "gap_stops": 0,
+        "selection": {
+          "FLAT": 1,
+          "R0_REFERENCE": 0,
+          "R2_FAST": 6,
+          "R2_SLOW": 0
+        }
+      },
+      "r2_positive_train_gate": {
+        "folds": 7,
+        "closed_trades": 0,
+        "mean_closed_trade_r": null,
+        "sum_isolated_realized_r": 0,
+        "sum_open_boundary_unrealized_r": 0,
+        "folds_positive": 0,
+        "folds_negative": 0,
+        "folds_flat": 7,
+        "folds_open": 0,
+        "gap_stops": 0,
+        "selection": {
+          "FLAT": 7,
+          "R0_REFERENCE": 0,
+          "R2_FAST": 0,
+          "R2_SLOW": 0
+        }
+      },
+      "episodes": [
+        {
+          "begin": "2014-11-06",
+          "end": "2015-10-23",
+          "training_score": null,
+          "standard": {
+            "selected": "FLAT",
+            "closed_trades": 0,
+            "realized_r": 0,
+            "unrealized_r": 0,
+            "max_dd_r_marked": 0,
+            "gap_stops": 0
+          },
+          "gated": {
+            "selected": "FLAT",
+            "closed_trades": 0,
+            "realized_r": 0,
+            "unrealized_r": 0
+          },
+          "fixed": {
+            "closed_trades": 2,
+            "realized_r": -1.4265474215228109,
+            "unrealized_r": 0
+          }
+        },
+        {
+          "begin": "2015-10-26",
+          "end": "2016-10-11",
+          "training_score": -0.4972008013162349,
+          "standard": {
+            "selected": "R2_FAST",
+            "closed_trades": 0,
+            "realized_r": 0,
+            "unrealized_r": 0,
+            "max_dd_r_marked": 0,
+            "gap_stops": 0
+          },
+          "gated": {
+            "selected": "FLAT",
+            "closed_trades": 0,
+            "realized_r": 0,
+            "unrealized_r": 0
+          },
+          "fixed": {
+            "closed_trades": 0,
+            "realized_r": 0,
+            "unrealized_r": 0
+          }
+        },
+        {
+          "begin": "2016-10-12",
+          "end": "2017-09-26",
+          "training_score": -0.4972008013162349,
+          "standard": {
+            "selected": "R2_FAST",
+            "closed_trades": 5,
+            "realized_r": -0.9472553482212434,
+            "unrealized_r": 0,
+            "max_dd_r_marked": 2.3524143407853506,
+            "gap_stops": 0
+          },
+          "gated": {
+            "selected": "FLAT",
+            "closed_trades": 0,
+            "realized_r": 0,
+            "unrealized_r": 0
+          },
+          "fixed": {
+            "closed_trades": 4,
+            "realized_r": -0.9258227904946416,
+            "unrealized_r": -0.7511534905631333
+          }
+        },
+        {
+          "begin": "2017-09-27",
+          "end": "2018-09-13",
+          "training_score": -0.3142734195730042,
+          "standard": {
+            "selected": "R2_FAST",
+            "closed_trades": 1,
+            "realized_r": -1,
+            "unrealized_r": 0,
+            "max_dd_r_marked": 1.2321131584967753,
+            "gap_stops": 0
+          },
+          "gated": {
+            "selected": "FLAT",
+            "closed_trades": 0,
+            "realized_r": 0,
+            "unrealized_r": 0
+          },
+          "fixed": {
+            "closed_trades": 0,
+            "realized_r": 0,
+            "unrealized_r": 0
+          }
+        },
+        {
+          "begin": "2018-09-14",
+          "end": "2019-09-02",
+          "training_score": -0.44966778746720676,
+          "standard": {
+            "selected": "R2_FAST",
+            "closed_trades": 2,
+            "realized_r": -1.8693843729157158,
+            "unrealized_r": 0,
+            "max_dd_r_marked": 2.5110285139541526,
+            "gap_stops": 0
+          },
+          "gated": {
+            "selected": "FLAT",
+            "closed_trades": 0,
+            "realized_r": 0,
+            "unrealized_r": 0
+          },
+          "fixed": {
+            "closed_trades": 2,
+            "realized_r": -1.697064715902377,
+            "unrealized_r": 0
+          }
+        },
+        {
+          "begin": "2019-09-03",
+          "end": "2020-08-19",
+          "training_score": -0.5269740210651233,
+          "standard": {
+            "selected": "R2_FAST",
+            "closed_trades": 1,
+            "realized_r": -1,
+            "unrealized_r": 1.489664606832268,
+            "max_dd_r_marked": 1.5913316745718769,
+            "gap_stops": 0
+          },
+          "gated": {
+            "selected": "FLAT",
+            "closed_trades": 0,
+            "realized_r": 0,
+            "unrealized_r": 0
+          },
+          "fixed": {
+            "closed_trades": 1,
+            "realized_r": -1,
+            "unrealized_r": 1.191731685465811
+          }
+        },
+        {
+          "begin": "2020-08-20",
+          "end": "2021-08-06",
+          "training_score": -0.5954393438309418,
+          "standard": {
+            "selected": "R2_FAST",
+            "closed_trades": 3,
+            "realized_r": 1.908386332592694,
+            "unrealized_r": 0,
+            "max_dd_r_marked": 1.7796048330935461,
+            "gap_stops": 0
+          },
+          "gated": {
+            "selected": "FLAT",
+            "closed_trades": 0,
+            "realized_r": 0,
+            "unrealized_r": 0
+          },
+          "fixed": {
+            "closed_trades": 2,
+            "realized_r": 2.88857877879841,
+            "unrealized_r": 0
+          }
+        }
+      ]
+    },
+    {
+      "symbol": "AUDUSD",
+      "cell": "AUDUSD_D1",
+      "source_repo": "ejtraderLabs/historical-data",
+      "source_path": "AUDUSD/AUDUSDd1.csv",
+      "source_commit": "fbd29b3cd85c0eea4f6e8b81c053f98fb3de22fd",
+      "source_git_blob_sha": "9f6571efa2f9508e7c36005d9df2ce254dc4a504",
+      "price_basis": "RAW_PROVIDER_POINTS_UNVERIFIED",
+      "first_date": "2012-12-04",
+      "last_date": "2022-03-04",
+      "bar_count": 2400,
+      "source_type": "FOREX_OR_XAU_QUOTE_NOT_ACCOUNT",
+      "source_rights": "RAW_COMMERCIAL_RIGHTS_UNVERIFIED",
+      "status": "HISTORICAL_REUSED_GROSS_ONLY_EXPLORATORY",
+      "baseline": {
+        "folds": 7,
+        "closed_trades": 10,
+        "mean_closed_trade_r": -0.22290915951461318,
+        "sum_isolated_realized_r": -2.229091595146132,
+        "sum_open_boundary_unrealized_r": 1.6278577707545003,
+        "folds_positive": 1,
+        "folds_negative": 4,
+        "folds_flat": 2,
+        "folds_open": 1,
+        "gap_stops": 0,
+        "selection": {
+          "FLAT": 0,
+          "R0_REFERENCE": 7,
+          "R2_FAST": 0,
+          "R2_SLOW": 0
+        }
+      },
+      "r2_standard": {
+        "folds": 7,
+        "closed_trades": 5,
+        "mean_closed_trade_r": 0.182861049571309,
+        "sum_isolated_realized_r": 0.914305247856545,
+        "sum_open_boundary_unrealized_r": 2.0363313188234744,
+        "folds_positive": 2,
+        "folds_negative": 1,
+        "folds_flat": 4,
+        "folds_open": 1,
+        "gap_stops": 0,
+        "selection": {
+          "FLAT": 3,
+          "R0_REFERENCE": 0,
+          "R2_FAST": 4,
+          "R2_SLOW": 0
+        }
+      },
+      "r2_positive_train_gate": {
+        "folds": 7,
+        "closed_trades": 5,
+        "mean_closed_trade_r": 0.182861049571309,
+        "sum_isolated_realized_r": 0.914305247856545,
+        "sum_open_boundary_unrealized_r": 2.0363313188234744,
+        "folds_positive": 2,
+        "folds_negative": 1,
+        "folds_flat": 4,
+        "folds_open": 1,
+        "gap_stops": 0,
+        "selection": {
+          "FLAT": 3,
+          "R0_REFERENCE": 0,
+          "R2_FAST": 4,
+          "R2_SLOW": 0
+        }
+      },
+      "episodes": [
+        {
+          "begin": "2014-11-06",
+          "end": "2015-10-23",
+          "training_score": null,
+          "standard": {
+            "selected": "FLAT",
+            "closed_trades": 0,
+            "realized_r": 0,
+            "unrealized_r": 0,
+            "max_dd_r_marked": 0,
+            "gap_stops": 0
+          },
+          "gated": {
+            "selected": "FLAT",
+            "closed_trades": 0,
+            "realized_r": 0,
+            "unrealized_r": 0
+          },
+          "fixed": {
+            "closed_trades": 0,
+            "realized_r": 0,
+            "unrealized_r": 0
+          }
+        },
+        {
+          "begin": "2015-10-26",
+          "end": "2016-10-11",
+          "training_score": null,
+          "standard": {
+            "selected": "FLAT",
+            "closed_trades": 0,
+            "realized_r": 0,
+            "unrealized_r": 0,
+            "max_dd_r_marked": 0,
+            "gap_stops": 0
+          },
+          "gated": {
+            "selected": "FLAT",
+            "closed_trades": 0,
+            "realized_r": 0,
+            "unrealized_r": 0
+          },
+          "fixed": {
+            "closed_trades": 2,
+            "realized_r": -0.333518922294991,
+            "unrealized_r": 0
+          }
+        },
+        {
+          "begin": "2016-10-12",
+          "end": "2017-09-26",
+          "training_score": null,
+          "standard": {
+            "selected": "FLAT",
+            "closed_trades": 0,
+            "realized_r": 0,
+            "unrealized_r": 0,
+            "max_dd_r_marked": 0,
+            "gap_stops": 0
+          },
+          "gated": {
+            "selected": "FLAT",
+            "closed_trades": 0,
+            "realized_r": 0,
+            "unrealized_r": 0
+          },
+          "fixed": {
+            "closed_trades": 3,
+            "realized_r": 0.3255092154031809,
+            "unrealized_r": 0
+          }
+        },
+        {
+          "begin": "2017-09-27",
+          "end": "2018-09-13",
+          "training_score": 0.3024413401616668,
+          "standard": {
+            "selected": "R2_FAST",
+            "closed_trades": 1,
+            "realized_r": 1.7898543628841785,
+            "unrealized_r": 0,
+            "max_dd_r_marked": 2.1519398431917827,
+            "gap_stops": 0
+          },
+          "gated": {
+            "selected": "R2_FAST",
+            "closed_trades": 1,
+            "realized_r": 1.7898543628841785,
+            "unrealized_r": 0
+          },
+          "fixed": {
+            "closed_trades": 1,
+            "realized_r": -0.6066722015619779,
+            "unrealized_r": 0
+          }
+        },
+        {
+          "begin": "2018-09-14",
+          "end": "2019-09-02",
+          "training_score": 0.6966275839513416,
+          "standard": {
+            "selected": "R2_FAST",
+            "closed_trades": 0,
+            "realized_r": 0,
+            "unrealized_r": 0,
+            "max_dd_r_marked": 0,
+            "gap_stops": 0
+          },
+          "gated": {
+            "selected": "R2_FAST",
+            "closed_trades": 0,
+            "realized_r": 0,
+            "unrealized_r": 0
+          },
+          "fixed": {
+            "closed_trades": 0,
+            "realized_r": 0,
+            "unrealized_r": 0
+          }
+        },
+        {
+          "begin": "2019-09-03",
+          "end": "2020-08-19",
+          "training_score": 0.6966275839513416,
+          "standard": {
+            "selected": "R2_FAST",
+            "closed_trades": 1,
+            "realized_r": -1,
+            "unrealized_r": 2.0363313188234744,
+            "max_dd_r_marked": 1.9327570755084684,
+            "gap_stops": 0
+          },
+          "gated": {
+            "selected": "R2_FAST",
+            "closed_trades": 1,
+            "realized_r": -1,
+            "unrealized_r": 2.0363313188234744
+          },
+          "fixed": {
+            "closed_trades": 1,
+            "realized_r": -0.9891410348850445,
+            "unrealized_r": 1.6278577707545003
+          }
+        },
+        {
+          "begin": "2020-08-20",
+          "end": "2021-08-06",
+          "training_score": 0.5091142769450733,
+          "standard": {
+            "selected": "R2_FAST",
+            "closed_trades": 3,
+            "realized_r": 0.12445088497236645,
+            "unrealized_r": 0,
+            "max_dd_r_marked": 2.000075842875657,
+            "gap_stops": 0
+          },
+          "gated": {
+            "selected": "R2_FAST",
+            "closed_trades": 3,
+            "realized_r": 0.12445088497236645,
+            "unrealized_r": 0
+          },
+          "fixed": {
+            "closed_trades": 3,
+            "realized_r": -0.6252686518072992,
+            "unrealized_r": 0
+          }
+        }
+      ]
+    },
+    {
+      "symbol": "EURGBP",
+      "cell": "EURGBP_D1",
+      "source_repo": "ejtraderLabs/historical-data",
+      "source_path": "EURGBP/EURGBPd1.csv",
+      "source_commit": "fbd29b3cd85c0eea4f6e8b81c053f98fb3de22fd",
+      "source_git_blob_sha": "f96c0315e209cb725d8c7f6185996242d5327495",
+      "price_basis": "RAW_PROVIDER_POINTS_UNVERIFIED",
+      "first_date": "2012-12-04",
+      "last_date": "2022-03-04",
+      "bar_count": 2400,
+      "source_type": "FOREX_OR_XAU_QUOTE_NOT_ACCOUNT",
+      "source_rights": "RAW_COMMERCIAL_RIGHTS_UNVERIFIED",
+      "status": "HISTORICAL_REUSED_GROSS_ONLY_EXPLORATORY",
+      "baseline": {
+        "folds": 7,
+        "closed_trades": 12,
+        "mean_closed_trade_r": -0.08895691944353463,
+        "sum_isolated_realized_r": -1.0674830333224157,
+        "sum_open_boundary_unrealized_r": 2.03621281479033,
+        "folds_positive": 3,
+        "folds_negative": 4,
+        "folds_flat": 0,
+        "folds_open": 1,
+        "gap_stops": 0,
+        "selection": {
+          "FLAT": 0,
+          "R0_REFERENCE": 7,
+          "R2_FAST": 0,
+          "R2_SLOW": 0
+        }
+      },
+      "r2_standard": {
+        "folds": 7,
+        "closed_trades": 11,
+        "mean_closed_trade_r": -0.138765731742851,
+        "sum_isolated_realized_r": -1.526423049171361,
+        "sum_open_boundary_unrealized_r": 0,
+        "folds_positive": 3,
+        "folds_negative": 2,
+        "folds_flat": 2,
+        "folds_open": 0,
+        "gap_stops": 1,
+        "selection": {
+          "FLAT": 2,
+          "R0_REFERENCE": 0,
+          "R2_FAST": 5,
+          "R2_SLOW": 0
+        }
+      },
+      "r2_positive_train_gate": {
+        "folds": 7,
+        "closed_trades": 11,
+        "mean_closed_trade_r": -0.138765731742851,
+        "sum_isolated_realized_r": -1.526423049171361,
+        "sum_open_boundary_unrealized_r": 0,
+        "folds_positive": 3,
+        "folds_negative": 2,
+        "folds_flat": 2,
+        "folds_open": 0,
+        "gap_stops": 1,
+        "selection": {
+          "FLAT": 2,
+          "R0_REFERENCE": 0,
+          "R2_FAST": 5,
+          "R2_SLOW": 0
+        }
+      },
+      "episodes": [
+        {
+          "begin": "2014-11-06",
+          "end": "2015-10-23",
+          "training_score": null,
+          "standard": {
+            "selected": "FLAT",
+            "closed_trades": 0,
+            "realized_r": 0,
+            "unrealized_r": 0,
+            "max_dd_r_marked": 0,
+            "gap_stops": 0
+          },
+          "gated": {
+            "selected": "FLAT",
+            "closed_trades": 0,
+            "realized_r": 0,
+            "unrealized_r": 0
+          },
+          "fixed": {
+            "closed_trades": 1,
+            "realized_r": -0.6346069319218881,
+            "unrealized_r": 0
+          }
+        },
+        {
+          "begin": "2015-10-26",
+          "end": "2016-10-11",
+          "training_score": null,
+          "standard": {
+            "selected": "FLAT",
+            "closed_trades": 0,
+            "realized_r": 0,
+            "unrealized_r": 0,
+            "max_dd_r_marked": 0,
+            "gap_stops": 0
+          },
+          "gated": {
+            "selected": "FLAT",
+            "closed_trades": 0,
+            "realized_r": 0,
+            "unrealized_r": 0
+          },
+          "fixed": {
+            "closed_trades": 3,
+            "realized_r": 0.8481992983641046,
+            "unrealized_r": 2.03621281479033
+          }
+        },
+        {
+          "begin": "2016-10-12",
+          "end": "2017-09-26",
+          "training_score": 0.20930999411949264,
+          "standard": {
+            "selected": "R2_FAST",
+            "closed_trades": 3,
+            "realized_r": 0.39071768153712405,
+            "unrealized_r": 0,
+            "max_dd_r_marked": 1.6101142830853106,
+            "gap_stops": 1
+          },
+          "gated": {
+            "selected": "R2_FAST",
+            "closed_trades": 3,
+            "realized_r": 0.39071768153712405,
+            "unrealized_r": 0
+          },
+          "fixed": {
+            "closed_trades": 1,
+            "realized_r": 1.1614735786471249,
+            "unrealized_r": 0
+          }
+        },
+        {
+          "begin": "2017-09-27",
+          "end": "2018-09-13",
+          "training_score": 0.41343302131112447,
+          "standard": {
+            "selected": "R2_FAST",
+            "closed_trades": 1,
+            "realized_r": 0.8946668193593419,
+            "unrealized_r": 0,
+            "max_dd_r_marked": 1.4101883487847788,
+            "gap_stops": 0
+          },
+          "gated": {
+            "selected": "R2_FAST",
+            "closed_trades": 1,
+            "realized_r": 0.8946668193593419,
+            "unrealized_r": 0
+          },
+          "fixed": {
+            "closed_trades": 1,
+            "realized_r": 0.4087686502761055,
+            "unrealized_r": 0
+          }
+        },
+        {
+          "begin": "2018-09-14",
+          "end": "2019-09-02",
+          "training_score": 0.46350367327423997,
+          "standard": {
+            "selected": "R2_FAST",
+            "closed_trades": 3,
+            "realized_r": 0.8022043895213715,
+            "unrealized_r": 0,
+            "max_dd_r_marked": 2.1291488414545983,
+            "gap_stops": 0
+          },
+          "gated": {
+            "selected": "R2_FAST",
+            "closed_trades": 3,
+            "realized_r": 0.8022043895213715,
+            "unrealized_r": 0
+          },
+          "fixed": {
+            "closed_trades": 3,
+            "realized_r": -0.5394336907747312,
+            "unrealized_r": 0
+          }
+        },
+        {
+          "begin": "2019-09-03",
+          "end": "2020-08-19",
+          "training_score": 0.5009505349008707,
+          "standard": {
+            "selected": "R2_FAST",
+            "closed_trades": 2,
+            "realized_r": -1.6140119395891985,
+            "unrealized_r": 0,
+            "max_dd_r_marked": 4.7919708230358165,
+            "gap_stops": 0
+          },
+          "gated": {
+            "selected": "R2_FAST",
+            "closed_trades": 2,
+            "realized_r": -1.6140119395891985,
+            "unrealized_r": 0
+          },
+          "fixed": {
+            "closed_trades": 2,
+            "realized_r": -1.311883937913131,
+            "unrealized_r": 0
+          }
+        },
+        {
+          "begin": "2020-08-20",
+          "end": "2021-08-06",
+          "training_score": 0.004699952972823933,
+          "standard": {
+            "selected": "R2_FAST",
+            "closed_trades": 2,
+            "realized_r": -2,
+            "unrealized_r": 0,
+            "max_dd_r_marked": 2.2285166466040627,
+            "gap_stops": 0
+          },
+          "gated": {
+            "selected": "R2_FAST",
+            "closed_trades": 2,
+            "realized_r": -2,
+            "unrealized_r": 0
+          },
+          "fixed": {
+            "closed_trades": 1,
+            "realized_r": -1,
+            "unrealized_r": 0
+          }
+        }
+      ]
+    },
+    {
+      "symbol": "EURJPY",
+      "cell": "EURJPY_D1",
+      "source_repo": "ejtraderLabs/historical-data",
+      "source_path": "EURJPY/EURJPYd1.csv",
+      "source_commit": "fbd29b3cd85c0eea4f6e8b81c053f98fb3de22fd",
+      "source_git_blob_sha": "1408d2dddb9740479c77e133e2c66c8f72dc271b",
+      "price_basis": "RAW_PROVIDER_POINTS_UNVERIFIED",
+      "first_date": "2012-12-04",
+      "last_date": "2022-03-04",
+      "bar_count": 2400,
+      "source_type": "FOREX_OR_XAU_QUOTE_NOT_ACCOUNT",
+      "source_rights": "RAW_COMMERCIAL_RIGHTS_UNVERIFIED",
+      "status": "HISTORICAL_REUSED_GROSS_ONLY_EXPLORATORY",
+      "baseline": {
+        "folds": 7,
+        "closed_trades": 10,
+        "mean_closed_trade_r": 0.045536191057087325,
+        "sum_isolated_realized_r": 0.4553619105708733,
+        "sum_open_boundary_unrealized_r": 1.8156659153310166,
+        "folds_positive": 2,
+        "folds_negative": 4,
+        "folds_flat": 1,
+        "folds_open": 2,
+        "gap_stops": 1,
+        "selection": {
+          "FLAT": 0,
+          "R0_REFERENCE": 7,
+          "R2_FAST": 0,
+          "R2_SLOW": 0
+        }
+      },
+      "r2_standard": {
+        "folds": 7,
+        "closed_trades": 12,
+        "mean_closed_trade_r": -0.016832559053067575,
+        "sum_isolated_realized_r": -0.2019907086368109,
+        "sum_open_boundary_unrealized_r": 1.8645677365256936,
+        "folds_positive": 2,
+        "folds_negative": 4,
+        "folds_flat": 1,
+        "folds_open": 2,
+        "gap_stops": 1,
+        "selection": {
+          "FLAT": 0,
+          "R0_REFERENCE": 2,
+          "R2_FAST": 5,
+          "R2_SLOW": 0
+        }
+      },
+      "r2_positive_train_gate": {
+        "folds": 7,
+        "closed_trades": 1,
+        "mean_closed_trade_r": -0.6619800332443491,
+        "sum_isolated_realized_r": -0.6619800332443491,
+        "sum_open_boundary_unrealized_r": 0,
+        "folds_positive": 0,
+        "folds_negative": 1,
+        "folds_flat": 6,
+        "folds_open": 0,
+        "gap_stops": 0,
+        "selection": {
+          "FLAT": 6,
+          "R0_REFERENCE": 1,
+          "R2_FAST": 0,
+          "R2_SLOW": 0
+        }
+      },
+      "episodes": [
+        {
+          "begin": "2014-11-06",
+          "end": "2015-10-23",
+          "training_score": -0.2902397695986099,
+          "standard": {
+            "selected": "R2_FAST",
+            "closed_trades": 3,
+            "realized_r": -0.3769415775760955,
+            "unrealized_r": 0,
+            "max_dd_r_marked": 2.406223321903946,
+            "gap_stops": 0
+          },
+          "gated": {
+            "selected": "FLAT",
+            "closed_trades": 0,
+            "realized_r": 0,
+            "unrealized_r": 0
+          },
+          "fixed": {
+            "closed_trades": 2,
+            "realized_r": -0.6735502327546702,
+            "unrealized_r": 0
+          }
+        },
+        {
+          "begin": "2015-10-26",
+          "end": "2016-10-11",
+          "training_score": -0.10763295942290887,
+          "standard": {
+            "selected": "R2_FAST",
+            "closed_trades": 0,
+            "realized_r": 0,
+            "unrealized_r": 0,
+            "max_dd_r_marked": 0,
+            "gap_stops": 0
+          },
+          "gated": {
+            "selected": "FLAT",
+            "closed_trades": 0,
+            "realized_r": 0,
+            "unrealized_r": 0
+          },
+          "fixed": {
+            "closed_trades": 0,
+            "realized_r": 0,
+            "unrealized_r": 0
+          }
+        },
+        {
+          "begin": "2016-10-12",
+          "end": "2017-09-26",
+          "training_score": -0.10763295942290887,
+          "standard": {
+            "selected": "R2_FAST",
+            "closed_trades": 3,
+            "realized_r": 1.2198468727481524,
+            "unrealized_r": 0.24450910597339037,
+            "max_dd_r_marked": 1.676643527756977,
+            "gap_stops": 0
+          },
+          "gated": {
+            "selected": "FLAT",
+            "closed_trades": 0,
+            "realized_r": 0,
+            "unrealized_r": 0
+          },
+          "fixed": {
+            "closed_trades": 3,
+            "realized_r": 0.8902144465549675,
+            "unrealized_r": 0.19560728477871336
+          }
+        },
+        {
+          "begin": "2017-09-27",
+          "end": "2018-09-13",
+          "training_score": 0.22126433785712207,
+          "standard": {
+            "selected": "R0_REFERENCE",
+            "closed_trades": 1,
+            "realized_r": -0.6619800332443491,
+            "unrealized_r": 0,
+            "max_dd_r_marked": 1.7666909582876682,
+            "gap_stops": 0
+          },
+          "gated": {
+            "selected": "R0_REFERENCE",
+            "closed_trades": 1,
+            "realized_r": -0.6619800332443491,
+            "unrealized_r": 0
+          },
+          "fixed": {
+            "closed_trades": 1,
+            "realized_r": -0.6619800332443491,
+            "unrealized_r": 0
+          }
+        },
+        {
+          "begin": "2018-09-14",
+          "end": "2019-09-02",
+          "training_score": -0.05467492930443822,
+          "standard": {
+            "selected": "R2_FAST",
+            "closed_trades": 1,
+            "realized_r": -1,
+            "unrealized_r": 0,
+            "max_dd_r_marked": 1.2022658370843569,
+            "gap_stops": 0
+          },
+          "gated": {
+            "selected": "FLAT",
+            "closed_trades": 0,
+            "realized_r": 0,
+            "unrealized_r": 0
+          },
+          "fixed": {
+            "closed_trades": 1,
+            "realized_r": -1,
+            "unrealized_r": 0
+          }
+        },
+        {
+          "begin": "2019-09-03",
+          "end": "2020-08-19",
+          "training_score": -0.16177363901667505,
+          "standard": {
+            "selected": "R0_REFERENCE",
+            "closed_trades": 1,
+            "realized_r": -0.9783139615781307,
+            "unrealized_r": 1.6200586305523033,
+            "max_dd_r_marked": 2.341142296018304,
+            "gap_stops": 1
+          },
+          "gated": {
+            "selected": "FLAT",
+            "closed_trades": 0,
+            "realized_r": 0,
+            "unrealized_r": 0
+          },
+          "fixed": {
+            "closed_trades": 1,
+            "realized_r": -0.9783139615781307,
+            "unrealized_r": 1.6200586305523033
+          }
+        },
+        {
+          "begin": "2020-08-20",
+          "end": "2021-08-06",
+          "training_score": -0.28009209856160405,
+          "standard": {
+            "selected": "R2_FAST",
+            "closed_trades": 3,
+            "realized_r": 1.5953979910136118,
+            "unrealized_r": 0,
+            "max_dd_r_marked": 1.6438882177414866,
+            "gap_stops": 0
+          },
+          "gated": {
+            "selected": "FLAT",
+            "closed_trades": 0,
+            "realized_r": 0,
+            "unrealized_r": 0
+          },
+          "fixed": {
+            "closed_trades": 2,
+            "realized_r": 2.8789916915930553,
+            "unrealized_r": 0
+          }
+        }
+      ]
+    },
+    {
+      "symbol": "EURUSD",
+      "cell": "EURUSD_D1",
+      "source_repo": "ejtraderLabs/historical-data",
+      "source_path": "EURUSD/EURUSDd1.csv",
+      "source_commit": "fbd29b3cd85c0eea4f6e8b81c053f98fb3de22fd",
+      "source_git_blob_sha": "790cd874846de3ec9d88c088ac02458d707ec09d",
+      "price_basis": "RAW_PROVIDER_POINTS_UNVERIFIED",
+      "first_date": "2012-12-04",
+      "last_date": "2022-03-04",
+      "bar_count": 2400,
+      "source_type": "FOREX_OR_XAU_QUOTE_NOT_ACCOUNT",
+      "source_rights": "RAW_COMMERCIAL_RIGHTS_UNVERIFIED",
+      "status": "HISTORICAL_REUSED_GROSS_ONLY_EXPLORATORY",
+      "baseline": {
+        "folds": 7,
+        "closed_trades": 9,
+        "mean_closed_trade_r": 0.16510562834877313,
+        "sum_isolated_realized_r": 1.485950655138958,
+        "sum_open_boundary_unrealized_r": 2.8238648978177983,
+        "folds_positive": 3,
+        "folds_negative": 4,
+        "folds_flat": 0,
+        "folds_open": 1,
+        "gap_stops": 0,
+        "selection": {
+          "FLAT": 0,
+          "R0_REFERENCE": 7,
+          "R2_FAST": 0,
+          "R2_SLOW": 0
+        }
+      },
+      "r2_standard": {
+        "folds": 7,
+        "closed_trades": 8,
+        "mean_closed_trade_r": 0.5441024148089968,
+        "sum_isolated_realized_r": 4.352819318471974,
+        "sum_open_boundary_unrealized_r": 2.8238648978177983,
+        "folds_positive": 2,
+        "folds_negative": 3,
+        "folds_flat": 2,
+        "folds_open": 1,
+        "gap_stops": 0,
+        "selection": {
+          "FLAT": 2,
+          "R0_REFERENCE": 2,
+          "R2_FAST": 3,
+          "R2_SLOW": 0
+        }
+      },
+      "r2_positive_train_gate": {
+        "folds": 7,
+        "closed_trades": 7,
+        "mean_closed_trade_r": -0.2588375807985731,
+        "sum_isolated_realized_r": -1.8118630655900119,
+        "sum_open_boundary_unrealized_r": 2.8238648978177983,
+        "folds_positive": 1,
+        "folds_negative": 3,
+        "folds_flat": 3,
+        "folds_open": 1,
+        "gap_stops": 0,
+        "selection": {
+          "FLAT": 3,
+          "R0_REFERENCE": 2,
+          "R2_FAST": 2,
+          "R2_SLOW": 0
+        }
+      },
+      "episodes": [
+        {
+          "begin": "2014-11-06",
+          "end": "2015-10-23",
+          "training_score": null,
+          "standard": {
+            "selected": "FLAT",
+            "closed_trades": 0,
+            "realized_r": 0,
+            "unrealized_r": 0,
+            "max_dd_r_marked": 0,
+            "gap_stops": 0
+          },
+          "gated": {
+            "selected": "FLAT",
+            "closed_trades": 0,
+            "realized_r": 0,
+            "unrealized_r": 0
+          },
+          "fixed": {
+            "closed_trades": 1,
+            "realized_r": -1,
+            "unrealized_r": 0
+          }
+        },
+        {
+          "begin": "2015-10-26",
+          "end": "2016-10-11",
+          "training_score": null,
+          "standard": {
+            "selected": "FLAT",
+            "closed_trades": 0,
+            "realized_r": 0,
+            "unrealized_r": 0,
+            "max_dd_r_marked": 0,
+            "gap_stops": 0
+          },
+          "gated": {
+            "selected": "FLAT",
+            "closed_trades": 0,
+            "realized_r": 0,
+            "unrealized_r": 0
+          },
+          "fixed": {
+            "closed_trades": 2,
+            "realized_r": -1.5873053869522806,
+            "unrealized_r": 0
+          }
+        },
+        {
+          "begin": "2016-10-12",
+          "end": "2017-09-26",
+          "training_score": -0.7302592134880147,
+          "standard": {
+            "selected": "R2_FAST",
+            "closed_trades": 1,
+            "realized_r": 6.164682384061987,
+            "unrealized_r": 0,
+            "max_dd_r_marked": 1.3211961589309613,
+            "gap_stops": 0
+          },
+          "gated": {
+            "selected": "FLAT",
+            "closed_trades": 0,
+            "realized_r": 0,
+            "unrealized_r": 0
+          },
+          "fixed": {
+            "closed_trades": 1,
+            "realized_r": 4.848925147029684,
+            "unrealized_r": 0
+          }
+        },
+        {
+          "begin": "2017-09-27",
+          "end": "2018-09-13",
+          "training_score": 0.3342917914942358,
+          "standard": {
+            "selected": "R2_FAST",
+            "closed_trades": 2,
+            "realized_r": 0.4049756591605729,
+            "unrealized_r": 0,
+            "max_dd_r_marked": 2.0435381328764706,
+            "gap_stops": 0
+          },
+          "gated": {
+            "selected": "R2_FAST",
+            "closed_trades": 2,
+            "realized_r": 0.4049756591605729,
+            "unrealized_r": 0
+          },
+          "fixed": {
+            "closed_trades": 1,
+            "realized_r": 1.093437032712017,
+            "unrealized_r": 0
+          }
+        },
+        {
+          "begin": "2018-09-14",
+          "end": "2019-09-02",
+          "training_score": 0.6417275971837171,
+          "standard": {
+            "selected": "R0_REFERENCE",
+            "closed_trades": 1,
+            "realized_r": -1,
+            "unrealized_r": 0,
+            "max_dd_r_marked": 1.1879336599792212,
+            "gap_stops": 0
+          },
+          "gated": {
+            "selected": "R0_REFERENCE",
+            "closed_trades": 1,
+            "realized_r": -1,
+            "unrealized_r": 0
+          },
+          "fixed": {
+            "closed_trades": 1,
+            "realized_r": -1,
+            "unrealized_r": 0
+          }
+        },
+        {
+          "begin": "2019-09-03",
+          "end": "2020-08-19",
+          "training_score": 0.643309842016284,
+          "standard": {
+            "selected": "R0_REFERENCE",
+            "closed_trades": 1,
+            "realized_r": -1,
+            "unrealized_r": 2.8238648978177983,
+            "max_dd_r_marked": 1.6389921992987275,
+            "gap_stops": 0
+          },
+          "gated": {
+            "selected": "R0_REFERENCE",
+            "closed_trades": 1,
+            "realized_r": -1,
+            "unrealized_r": 2.8238648978177983
+          },
+          "fixed": {
+            "closed_trades": 1,
+            "realized_r": -1,
+            "unrealized_r": 2.8238648978177983
+          }
+        },
+        {
+          "begin": "2020-08-20",
+          "end": "2021-08-06",
+          "training_score": 0.8734962273157472,
+          "standard": {
+            "selected": "R2_FAST",
+            "closed_trades": 3,
+            "realized_r": -0.2168387247505847,
+            "unrealized_r": 0,
+            "max_dd_r_marked": 3.013836622027718,
+            "gap_stops": 0
+          },
+          "gated": {
+            "selected": "R2_FAST",
+            "closed_trades": 3,
+            "realized_r": -0.2168387247505847,
+            "unrealized_r": 0
+          },
+          "fixed": {
+            "closed_trades": 2,
+            "realized_r": 0.13089386234953793,
+            "unrealized_r": 0
+          }
+        }
+      ]
+    },
+    {
+      "symbol": "GBPJPY",
+      "cell": "GBPJPY_D1",
+      "source_repo": "ejtraderLabs/historical-data",
+      "source_path": "GBPJPY/GBPJPYd1.csv",
+      "source_commit": "fbd29b3cd85c0eea4f6e8b81c053f98fb3de22fd",
+      "source_git_blob_sha": "c59b15fb43ad9634fda8aa6ae42754d07f7f6a1f",
+      "price_basis": "RAW_PROVIDER_POINTS_UNVERIFIED",
+      "first_date": "2012-12-04",
+      "last_date": "2022-03-04",
+      "bar_count": 2400,
+      "source_type": "FOREX_OR_XAU_QUOTE_NOT_ACCOUNT",
+      "source_rights": "RAW_COMMERCIAL_RIGHTS_UNVERIFIED",
+      "status": "HISTORICAL_REUSED_GROSS_ONLY_EXPLORATORY",
+      "baseline": {
+        "folds": 7,
+        "closed_trades": 13,
+        "mean_closed_trade_r": -0.2564938405235066,
+        "sum_isolated_realized_r": -3.3344199268055856,
+        "sum_open_boundary_unrealized_r": 0.12270979198775023,
+        "folds_positive": 1,
+        "folds_negative": 6,
+        "folds_flat": 0,
+        "folds_open": 1,
+        "gap_stops": 0,
+        "selection": {
+          "FLAT": 0,
+          "R0_REFERENCE": 7,
+          "R2_FAST": 0,
+          "R2_SLOW": 0
+        }
+      },
+      "r2_standard": {
+        "folds": 7,
+        "closed_trades": 15,
+        "mean_closed_trade_r": -0.41034798764826697,
+        "sum_isolated_realized_r": -6.1552198147240045,
+        "sum_open_boundary_unrealized_r": 0.9002389114783262,
+        "folds_positive": 1,
+        "folds_negative": 5,
+        "folds_flat": 1,
+        "folds_open": 2,
+        "gap_stops": 2,
+        "selection": {
+          "FLAT": 1,
+          "R0_REFERENCE": 1,
+          "R2_FAST": 5,
+          "R2_SLOW": 0
+        }
+      },
+      "r2_positive_train_gate": {
+        "folds": 7,
+        "closed_trades": 7,
+        "mean_closed_trade_r": -0.7278571215381613,
+        "sum_isolated_realized_r": -5.094999850767129,
+        "sum_open_boundary_unrealized_r": 1.2226745022049363,
+        "folds_positive": 0,
+        "folds_negative": 3,
+        "folds_flat": 4,
+        "folds_open": 1,
+        "gap_stops": 1,
+        "selection": {
+          "FLAT": 4,
+          "R0_REFERENCE": 0,
+          "R2_FAST": 3,
+          "R2_SLOW": 0
+        }
+      },
+      "episodes": [
+        {
+          "begin": "2014-11-06",
+          "end": "2015-10-23",
+          "training_score": null,
+          "standard": {
+            "selected": "FLAT",
+            "closed_trades": 0,
+            "realized_r": 0,
+            "unrealized_r": 0,
+            "max_dd_r_marked": 0,
+            "gap_stops": 0
+          },
+          "gated": {
+            "selected": "FLAT",
+            "closed_trades": 0,
+            "realized_r": 0,
+            "unrealized_r": 0
+          },
+          "fixed": {
+            "closed_trades": 2,
+            "realized_r": -0.07531953357614662,
+            "unrealized_r": 0
+          }
+        },
+        {
+          "begin": "2015-10-26",
+          "end": "2016-10-11",
+          "training_score": 0.7178141008288377,
+          "standard": {
+            "selected": "R2_FAST",
+            "closed_trades": 1,
+            "realized_r": -1,
+            "unrealized_r": 0,
+            "max_dd_r_marked": 1.185301011963888,
+            "gap_stops": 0
+          },
+          "gated": {
+            "selected": "R2_FAST",
+            "closed_trades": 1,
+            "realized_r": -1,
+            "unrealized_r": 0
+          },
+          "fixed": {
+            "closed_trades": 1,
+            "realized_r": -1,
+            "unrealized_r": 0
+          }
+        },
+        {
+          "begin": "2016-10-12",
+          "end": "2017-09-26",
+          "training_score": 0.4676625700485038,
+          "standard": {
+            "selected": "R2_FAST",
+            "closed_trades": 2,
+            "realized_r": -0.7213882638454893,
+            "unrealized_r": 1.2226745022049363,
+            "max_dd_r_marked": 1.561336005847196,
+            "gap_stops": 0
+          },
+          "gated": {
+            "selected": "R2_FAST",
+            "closed_trades": 2,
+            "realized_r": -0.7213882638454893,
+            "unrealized_r": 1.2226745022049363
+          },
+          "fixed": {
+            "closed_trades": 2,
+            "realized_r": -0.9677080284725007,
+            "unrealized_r": 0.12270979198775023
+          }
+        },
+        {
+          "begin": "2017-09-27",
+          "end": "2018-09-13",
+          "training_score": 0.2074976872369941,
+          "standard": {
+            "selected": "R2_FAST",
+            "closed_trades": 4,
+            "realized_r": -3.3736115869216405,
+            "unrealized_r": 0,
+            "max_dd_r_marked": 3.4310717178064447,
+            "gap_stops": 1
+          },
+          "gated": {
+            "selected": "R2_FAST",
+            "closed_trades": 4,
+            "realized_r": -3.3736115869216405,
+            "unrealized_r": 0
+          },
+          "fixed": {
+            "closed_trades": 2,
+            "realized_r": -2,
+            "unrealized_r": 0
+          }
+        },
+        {
+          "begin": "2018-09-14",
+          "end": "2019-09-02",
+          "training_score": -0.4124811618017823,
+          "standard": {
+            "selected": "R2_FAST",
+            "closed_trades": 2,
+            "realized_r": -1.2041358746460256,
+            "unrealized_r": 0,
+            "max_dd_r_marked": 1.4707743663397523,
+            "gap_stops": 1
+          },
+          "gated": {
+            "selected": "FLAT",
+            "closed_trades": 0,
+            "realized_r": 0,
+            "unrealized_r": 0
+          },
+          "fixed": {
+            "closed_trades": 1,
+            "realized_r": -0.49381798779203206,
+            "unrealized_r": 0
+          }
+        },
+        {
+          "begin": "2019-09-03",
+          "end": "2020-08-19",
+          "training_score": -0.7202492002523065,
+          "standard": {
+            "selected": "R2_FAST",
+            "closed_trades": 3,
+            "realized_r": -1.5711638658844738,
+            "unrealized_r": -0.3224355907266101,
+            "max_dd_r_marked": 3.5391605065592406,
+            "gap_stops": 0
+          },
+          "gated": {
+            "selected": "FLAT",
+            "closed_trades": 0,
+            "realized_r": 0,
+            "unrealized_r": 0
+          },
+          "fixed": {
+            "closed_trades": 2,
+            "realized_r": -0.5126541535385299,
+            "unrealized_r": 0
+          }
+        },
+        {
+          "begin": "2020-08-20",
+          "end": "2021-08-06",
+          "training_score": -0.6291809932174728,
+          "standard": {
+            "selected": "R0_REFERENCE",
+            "closed_trades": 3,
+            "realized_r": 1.7150797765736245,
+            "unrealized_r": 0,
+            "max_dd_r_marked": 1.5709701206358635,
+            "gap_stops": 0
+          },
+          "gated": {
+            "selected": "FLAT",
+            "closed_trades": 0,
+            "realized_r": 0,
+            "unrealized_r": 0
+          },
+          "fixed": {
+            "closed_trades": 3,
+            "realized_r": 1.7150797765736245,
+            "unrealized_r": 0
+          }
+        }
+      ]
+    },
+    {
+      "symbol": "GBPUSD",
+      "cell": "GBPUSD_D1",
+      "source_repo": "ejtraderLabs/historical-data",
+      "source_path": "GBPUSD/GBPUSDd1.csv",
+      "source_commit": "fbd29b3cd85c0eea4f6e8b81c053f98fb3de22fd",
+      "source_git_blob_sha": "47bcf0dbea4a7fda74757069f02edc595a30f923",
+      "price_basis": "RAW_PROVIDER_POINTS_UNVERIFIED",
+      "first_date": "2012-12-04",
+      "last_date": "2022-03-04",
+      "bar_count": 2400,
+      "source_type": "FOREX_OR_XAU_QUOTE_NOT_ACCOUNT",
+      "source_rights": "RAW_COMMERCIAL_RIGHTS_UNVERIFIED",
+      "status": "HISTORICAL_REUSED_GROSS_ONLY_EXPLORATORY",
+      "baseline": {
+        "folds": 7,
+        "closed_trades": 14,
+        "mean_closed_trade_r": -0.45209172729226454,
+        "sum_isolated_realized_r": -6.329284182091704,
+        "sum_open_boundary_unrealized_r": 1.5983720017121352,
+        "folds_positive": 1,
+        "folds_negative": 6,
+        "folds_flat": 0,
+        "folds_open": 2,
+        "gap_stops": 0,
+        "selection": {
+          "FLAT": 0,
+          "R0_REFERENCE": 7,
+          "R2_FAST": 0,
+          "R2_SLOW": 0
+        }
+      },
+      "r2_standard": {
+        "folds": 7,
+        "closed_trades": 10,
+        "mean_closed_trade_r": -0.5161418851284791,
+        "sum_isolated_realized_r": -5.161418851284791,
+        "sum_open_boundary_unrealized_r": 1.3315767877520015,
+        "folds_positive": 2,
+        "folds_negative": 5,
+        "folds_flat": 0,
+        "folds_open": 2,
+        "gap_stops": 1,
+        "selection": {
+          "FLAT": 0,
+          "R0_REFERENCE": 0,
+          "R2_FAST": 1,
+          "R2_SLOW": 6
+        }
+      },
+      "r2_positive_train_gate": {
+        "folds": 7,
+        "closed_trades": 2,
+        "mean_closed_trade_r": -0.30553649375243785,
+        "sum_isolated_realized_r": -0.6110729875048757,
+        "sum_open_boundary_unrealized_r": 0,
+        "folds_positive": 0,
+        "folds_negative": 1,
+        "folds_flat": 6,
+        "folds_open": 0,
+        "gap_stops": 0,
+        "selection": {
+          "FLAT": 6,
+          "R0_REFERENCE": 0,
+          "R2_FAST": 0,
+          "R2_SLOW": 1
+        }
+      },
+      "episodes": [
+        {
+          "begin": "2014-11-06",
+          "end": "2015-10-23",
+          "training_score": -0.37343475755706895,
+          "standard": {
+            "selected": "R2_FAST",
+            "closed_trades": 2,
+            "realized_r": -2,
+            "unrealized_r": 0,
+            "max_dd_r_marked": 2.337671240366729,
+            "gap_stops": 0
+          },
+          "gated": {
+            "selected": "FLAT",
+            "closed_trades": 0,
+            "realized_r": 0,
+            "unrealized_r": 0
+          },
+          "fixed": {
+            "closed_trades": 2,
+            "realized_r": -2,
+            "unrealized_r": 0
+          }
+        },
+        {
+          "begin": "2015-10-26",
+          "end": "2016-10-11",
+          "training_score": -0.43290513671623176,
+          "standard": {
+            "selected": "R2_SLOW",
+            "closed_trades": 1,
+            "realized_r": -1,
+            "unrealized_r": 0,
+            "max_dd_r_marked": 1,
+            "gap_stops": 0
+          },
+          "gated": {
+            "selected": "FLAT",
+            "closed_trades": 0,
+            "realized_r": 0,
+            "unrealized_r": 0
+          },
+          "fixed": {
+            "closed_trades": 1,
+            "realized_r": -1,
+            "unrealized_r": 0
+          }
+        },
+        {
+          "begin": "2016-10-12",
+          "end": "2017-09-26",
+          "training_score": -0.5292669608577838,
+          "standard": {
+            "selected": "R2_SLOW",
+            "closed_trades": 2,
+            "realized_r": -1.1980451847887619,
+            "unrealized_r": 0.6723300573759388,
+            "max_dd_r_marked": 2.0525591431070125,
+            "gap_stops": 1
+          },
+          "gated": {
+            "selected": "FLAT",
+            "closed_trades": 0,
+            "realized_r": 0,
+            "unrealized_r": 0
+          },
+          "fixed": {
+            "closed_trades": 2,
+            "realized_r": -0.7020690214935953,
+            "unrealized_r": 0.8067960688511283
+          }
+        },
+        {
+          "begin": "2017-09-27",
+          "end": "2018-09-13",
+          "training_score": -0.6626193712223442,
+          "standard": {
+            "selected": "R2_SLOW",
+            "closed_trades": 1,
+            "realized_r": 0.10021819150017901,
+            "unrealized_r": 0,
+            "max_dd_r_marked": 1.685944826909366,
+            "gap_stops": 0
+          },
+          "gated": {
+            "selected": "FLAT",
+            "closed_trades": 0,
+            "realized_r": 0,
+            "unrealized_r": 0
+          },
+          "fixed": {
+            "closed_trades": 2,
+            "realized_r": -0.27876074180659827,
+            "unrealized_r": 0
+          }
+        },
+        {
+          "begin": "2018-09-14",
+          "end": "2019-09-02",
+          "training_score": -0.44885638920392956,
+          "standard": {
+            "selected": "R2_SLOW",
+            "closed_trades": 1,
+            "realized_r": -0.8410351790362035,
+            "unrealized_r": 0,
+            "max_dd_r_marked": 1.029458819364939,
+            "gap_stops": 0
+          },
+          "gated": {
+            "selected": "FLAT",
+            "closed_trades": 0,
+            "realized_r": 0,
+            "unrealized_r": 0
+          },
+          "fixed": {
+            "closed_trades": 2,
+            "realized_r": -2,
+            "unrealized_r": 0
+          }
+        },
+        {
+          "begin": "2019-09-03",
+          "end": "2020-08-19",
+          "training_score": -0.27400714202161824,
+          "standard": {
+            "selected": "R2_SLOW",
+            "closed_trades": 1,
+            "realized_r": 0.3885163085448697,
+            "unrealized_r": 0.6592467303760627,
+            "max_dd_r_marked": 1.1299052276029695,
+            "gap_stops": 0
+          },
+          "gated": {
+            "selected": "FLAT",
+            "closed_trades": 0,
+            "realized_r": 0,
+            "unrealized_r": 0
+          },
+          "fixed": {
+            "closed_trades": 2,
+            "realized_r": -0.4259191319341714,
+            "unrealized_r": 0.7915759328610069
+          }
+        },
+        {
+          "begin": "2020-08-20",
+          "end": "2021-08-06",
+          "training_score": 0.006450885527666959,
+          "standard": {
+            "selected": "R2_SLOW",
+            "closed_trades": 2,
+            "realized_r": -0.6110729875048757,
+            "unrealized_r": 0,
+            "max_dd_r_marked": 1.6791713325268813,
+            "gap_stops": 0
+          },
+          "gated": {
+            "selected": "R2_SLOW",
+            "closed_trades": 2,
+            "realized_r": -0.6110729875048757,
+            "unrealized_r": 0
+          },
+          "fixed": {
+            "closed_trades": 3,
+            "realized_r": 0.07746471314266151,
+            "unrealized_r": 0
+          }
+        }
+      ]
+    },
+    {
+      "symbol": "USDCAD",
+      "cell": "USDCAD_D1",
+      "source_repo": "ejtraderLabs/historical-data",
+      "source_path": "USDCAD/USDCADd1.csv",
+      "source_commit": "fbd29b3cd85c0eea4f6e8b81c053f98fb3de22fd",
+      "source_git_blob_sha": "83ad379db0bfcce7c149af2b400c7294b7a0b00b",
+      "price_basis": "RAW_PROVIDER_POINTS_UNVERIFIED",
+      "first_date": "2012-12-04",
+      "last_date": "2022-03-04",
+      "bar_count": 2400,
+      "source_type": "FOREX_OR_XAU_QUOTE_NOT_ACCOUNT",
+      "source_rights": "RAW_COMMERCIAL_RIGHTS_UNVERIFIED",
+      "status": "HISTORICAL_REUSED_GROSS_ONLY_EXPLORATORY",
+      "baseline": {
+        "folds": 7,
+        "closed_trades": 12,
+        "mean_closed_trade_r": 0.6495949001089238,
+        "sum_isolated_realized_r": 7.795138801307086,
+        "sum_open_boundary_unrealized_r": 0.11341367670243518,
+        "folds_positive": 3,
+        "folds_negative": 4,
+        "folds_flat": 0,
+        "folds_open": 1,
+        "gap_stops": 0,
+        "selection": {
+          "FLAT": 0,
+          "R0_REFERENCE": 7,
+          "R2_FAST": 0,
+          "R2_SLOW": 0
+        }
+      },
+      "r2_standard": {
+        "folds": 7,
+        "closed_trades": 10,
+        "mean_closed_trade_r": 0.3662299137955767,
+        "sum_isolated_realized_r": 3.662299137955767,
+        "sum_open_boundary_unrealized_r": 0.11341367670243518,
+        "folds_positive": 2,
+        "folds_negative": 4,
+        "folds_flat": 1,
+        "folds_open": 1,
+        "gap_stops": 0,
+        "selection": {
+          "FLAT": 1,
+          "R0_REFERENCE": 2,
+          "R2_FAST": 3,
+          "R2_SLOW": 1
+        }
+      },
+      "r2_positive_train_gate": {
+        "folds": 7,
+        "closed_trades": 10,
+        "mean_closed_trade_r": 0.3662299137955767,
+        "sum_isolated_realized_r": 3.662299137955767,
+        "sum_open_boundary_unrealized_r": 0.11341367670243518,
+        "folds_positive": 2,
+        "folds_negative": 4,
+        "folds_flat": 1,
+        "folds_open": 1,
+        "gap_stops": 0,
+        "selection": {
+          "FLAT": 1,
+          "R0_REFERENCE": 2,
+          "R2_FAST": 3,
+          "R2_SLOW": 1
+        }
+      },
+      "episodes": [
+        {
+          "begin": "2014-11-06",
+          "end": "2015-10-23",
+          "training_score": null,
+          "standard": {
+            "selected": "FLAT",
+            "closed_trades": 0,
+            "realized_r": 0,
+            "unrealized_r": 0,
+            "max_dd_r_marked": 0,
+            "gap_stops": 0
+          },
+          "gated": {
+            "selected": "FLAT",
+            "closed_trades": 0,
+            "realized_r": 0,
+            "unrealized_r": 0
+          },
+          "fixed": {
+            "closed_trades": 3,
+            "realized_r": 4.942447896309705,
+            "unrealized_r": 0
+          }
+        },
+        {
+          "begin": "2015-10-26",
+          "end": "2016-10-11",
+          "training_score": 1.6632966991018792,
+          "standard": {
+            "selected": "R0_REFERENCE",
+            "closed_trades": 1,
+            "realized_r": 1.6381536808621224,
+            "unrealized_r": 0.11341367670243518,
+            "max_dd_r_marked": 3.0060949416429668,
+            "gap_stops": 0
+          },
+          "gated": {
+            "selected": "R0_REFERENCE",
+            "closed_trades": 1,
+            "realized_r": 1.6381536808621224,
+            "unrealized_r": 0.11341367670243518
+          },
+          "fixed": {
+            "closed_trades": 1,
+            "realized_r": 1.6381536808621224,
+            "unrealized_r": 0.11341367670243518
+          }
+        },
+        {
+          "begin": "2016-10-12",
+          "end": "2017-09-26",
+          "training_score": 1.6536194396747772,
+          "standard": {
+            "selected": "R0_REFERENCE",
+            "closed_trades": 2,
+            "realized_r": -0.6341453015069479,
+            "unrealized_r": 0,
+            "max_dd_r_marked": 1.4701495794707269,
+            "gap_stops": 0
+          },
+          "gated": {
+            "selected": "R0_REFERENCE",
+            "closed_trades": 2,
+            "realized_r": -0.6341453015069479,
+            "unrealized_r": 0
+          },
+          "fixed": {
+            "closed_trades": 2,
+            "realized_r": -0.6341453015069479,
+            "unrealized_r": 0
+          }
+        },
+        {
+          "begin": "2017-09-27",
+          "end": "2018-09-13",
+          "training_score": 1.664868823281519,
+          "standard": {
+            "selected": "R2_SLOW",
+            "closed_trades": 2,
+            "realized_r": -1.5578171597848816,
+            "unrealized_r": 0,
+            "max_dd_r_marked": 2.0129865527211837,
+            "gap_stops": 0
+          },
+          "gated": {
+            "selected": "R2_SLOW",
+            "closed_trades": 2,
+            "realized_r": -1.5578171597848816,
+            "unrealized_r": 0
+          },
+          "fixed": {
+            "closed_trades": 2,
+            "realized_r": -0.7804513588482762,
+            "unrealized_r": 0
+          }
+        },
+        {
+          "begin": "2018-09-14",
+          "end": "2019-09-02",
+          "training_score": 0.7675763210999744,
+          "standard": {
+            "selected": "R2_FAST",
+            "closed_trades": 3,
+            "realized_r": -0.9047512789518537,
+            "unrealized_r": 0,
+            "max_dd_r_marked": 3.8654198837988436,
+            "gap_stops": 0
+          },
+          "gated": {
+            "selected": "R2_FAST",
+            "closed_trades": 3,
+            "realized_r": -0.9047512789518537,
+            "unrealized_r": 0
+          },
+          "fixed": {
+            "closed_trades": 2,
+            "realized_r": -0.5459379508588849,
+            "unrealized_r": 0
+          }
+        },
+        {
+          "begin": "2019-09-03",
+          "end": "2020-08-19",
+          "training_score": 0.0006519838081830778,
+          "standard": {
+            "selected": "R2_FAST",
+            "closed_trades": 1,
+            "realized_r": 6.120859197337327,
+            "unrealized_r": 0,
+            "max_dd_r_marked": 5.6620832958398575,
+            "gap_stops": 0
+          },
+          "gated": {
+            "selected": "R2_FAST",
+            "closed_trades": 1,
+            "realized_r": 6.120859197337327,
+            "unrealized_r": 0
+          },
+          "fixed": {
+            "closed_trades": 1,
+            "realized_r": 4.175071835349368,
+            "unrealized_r": 0
+          }
+        },
+        {
+          "begin": "2020-08-20",
+          "end": "2021-08-06",
+          "training_score": 0.496428249543605,
+          "standard": {
+            "selected": "R2_FAST",
+            "closed_trades": 1,
+            "realized_r": -1,
+            "unrealized_r": 0,
+            "max_dd_r_marked": 1,
+            "gap_stops": 0
+          },
+          "gated": {
+            "selected": "R2_FAST",
+            "closed_trades": 1,
+            "realized_r": -1,
+            "unrealized_r": 0
+          },
+          "fixed": {
+            "closed_trades": 1,
+            "realized_r": -1,
+            "unrealized_r": 0
+          }
+        }
+      ]
+    },
+    {
+      "symbol": "USDCHF",
+      "cell": "USDCHF_D1",
+      "source_repo": "ejtraderLabs/historical-data",
+      "source_path": "USDCHF/USDCHFd1.csv",
+      "source_commit": "fbd29b3cd85c0eea4f6e8b81c053f98fb3de22fd",
+      "source_git_blob_sha": "b39e3948e8b871566bfeb6d5e5042cc5d1369e17",
+      "price_basis": "RAW_PROVIDER_POINTS_UNVERIFIED",
+      "first_date": "2012-12-03",
+      "last_date": "2022-03-04",
+      "bar_count": 2400,
+      "source_type": "FOREX_OR_XAU_QUOTE_NOT_ACCOUNT",
+      "source_rights": "RAW_COMMERCIAL_RIGHTS_UNVERIFIED",
+      "status": "HISTORICAL_REUSED_GROSS_ONLY_EXPLORATORY",
+      "baseline": {
+        "folds": 7,
+        "closed_trades": 16,
+        "mean_closed_trade_r": -0.45074897074843007,
+        "sum_isolated_realized_r": -7.211983531974881,
+        "sum_open_boundary_unrealized_r": 0,
+        "folds_positive": 1,
+        "folds_negative": 6,
+        "folds_flat": 0,
+        "folds_open": 0,
+        "gap_stops": 0,
+        "selection": {
+          "FLAT": 0,
+          "R0_REFERENCE": 7,
+          "R2_FAST": 0,
+          "R2_SLOW": 0
+        }
+      },
+      "r2_standard": {
+        "folds": 7,
+        "closed_trades": 13,
+        "mean_closed_trade_r": -0.13265989042723883,
+        "sum_isolated_realized_r": -1.7245785755541048,
+        "sum_open_boundary_unrealized_r": 0,
+        "folds_positive": 1,
+        "folds_negative": 5,
+        "folds_flat": 1,
+        "folds_open": 0,
+        "gap_stops": 0,
+        "selection": {
+          "FLAT": 1,
+          "R0_REFERENCE": 1,
+          "R2_FAST": 5,
+          "R2_SLOW": 0
+        }
+      },
+      "r2_positive_train_gate": {
+        "folds": 7,
+        "closed_trades": 7,
+        "mean_closed_trade_r": -0.00341358405856559,
+        "sum_isolated_realized_r": -0.02389508840995913,
+        "sum_open_boundary_unrealized_r": 0,
+        "folds_positive": 1,
+        "folds_negative": 3,
+        "folds_flat": 3,
+        "folds_open": 0,
+        "gap_stops": 0,
+        "selection": {
+          "FLAT": 3,
+          "R0_REFERENCE": 1,
+          "R2_FAST": 3,
+          "R2_SLOW": 0
+        }
+      },
+      "episodes": [
+        {
+          "begin": "2014-11-05",
+          "end": "2015-10-23",
+          "training_score": null,
+          "standard": {
+            "selected": "FLAT",
+            "closed_trades": 0,
+            "realized_r": 0,
+            "unrealized_r": 0,
+            "max_dd_r_marked": 0,
+            "gap_stops": 0
+          },
+          "gated": {
+            "selected": "FLAT",
+            "closed_trades": 0,
+            "realized_r": 0,
+            "unrealized_r": 0
+          },
+          "fixed": {
+            "closed_trades": 4,
+            "realized_r": -3.1662121291203453,
+            "unrealized_r": 0
+          }
+        },
+        {
+          "begin": "2015-10-26",
+          "end": "2016-10-11",
+          "training_score": 0.3339298942383251,
+          "standard": {
+            "selected": "R2_FAST",
+            "closed_trades": 2,
+            "realized_r": -0.21896344023469116,
+            "unrealized_r": 0,
+            "max_dd_r_marked": 2.5521036729396185,
+            "gap_stops": 0
+          },
+          "gated": {
+            "selected": "R2_FAST",
+            "closed_trades": 2,
+            "realized_r": -0.21896344023469116,
+            "unrealized_r": 0
+          },
+          "fixed": {
+            "closed_trades": 2,
+            "realized_r": -1.0772525645908515,
+            "unrealized_r": 0
+          }
+        },
+        {
+          "begin": "2016-10-12",
+          "end": "2017-09-26",
+          "training_score": 0.18767867506221503,
+          "standard": {
+            "selected": "R2_FAST",
+            "closed_trades": 2,
+            "realized_r": -0.1792557629383456,
+            "unrealized_r": 0,
+            "max_dd_r_marked": 1.2958509883548093,
+            "gap_stops": 0
+          },
+          "gated": {
+            "selected": "R2_FAST",
+            "closed_trades": 2,
+            "realized_r": -0.1792557629383456,
+            "unrealized_r": 0
+          },
+          "fixed": {
+            "closed_trades": 2,
+            "realized_r": -0.849881345780447,
+            "unrealized_r": 0
+          }
+        },
+        {
+          "begin": "2017-09-27",
+          "end": "2018-09-13",
+          "training_score": 0.444184576453594,
+          "standard": {
+            "selected": "R0_REFERENCE",
+            "closed_trades": 2,
+            "realized_r": 1.3743241147630776,
+            "unrealized_r": 0,
+            "max_dd_r_marked": 1.0242374786295347,
+            "gap_stops": 0
+          },
+          "gated": {
+            "selected": "R0_REFERENCE",
+            "closed_trades": 2,
+            "realized_r": 1.3743241147630776,
+            "unrealized_r": 0
+          },
+          "fixed": {
+            "closed_trades": 2,
+            "realized_r": 1.3743241147630776,
+            "unrealized_r": 0
+          }
+        },
+        {
+          "begin": "2018-09-14",
+          "end": "2019-09-02",
+          "training_score": -0.08669409232394112,
+          "standard": {
+            "selected": "R2_FAST",
+            "closed_trades": 4,
+            "realized_r": -1.5729124130083592,
+            "unrealized_r": 0,
+            "max_dd_r_marked": 2.8996494881550765,
+            "gap_stops": 0
+          },
+          "gated": {
+            "selected": "FLAT",
+            "closed_trades": 0,
+            "realized_r": 0,
+            "unrealized_r": 0
+          },
+          "fixed": {
+            "closed_trades": 3,
+            "realized_r": -1.9904944623242289,
+            "unrealized_r": 0
+          }
+        },
+        {
+          "begin": "2019-09-03",
+          "end": "2020-08-19",
+          "training_score": 0.0003670646430601991,
+          "standard": {
+            "selected": "R2_FAST",
+            "closed_trades": 1,
+            "realized_r": -1,
+            "unrealized_r": 0,
+            "max_dd_r_marked": 1,
+            "gap_stops": 0
+          },
+          "gated": {
+            "selected": "R2_FAST",
+            "closed_trades": 1,
+            "realized_r": -1,
+            "unrealized_r": 0
+          },
+          "fixed": {
+            "closed_trades": 1,
+            "realized_r": -1,
+            "unrealized_r": 0
+          }
+        },
+        {
+          "begin": "2020-08-20",
+          "end": "2021-08-06",
+          "training_score": -0.10886051546760706,
+          "standard": {
+            "selected": "R2_FAST",
+            "closed_trades": 2,
+            "realized_r": -0.12777107413578648,
+            "unrealized_r": 0,
+            "max_dd_r_marked": 2.6103541427933803,
+            "gap_stops": 0
+          },
+          "gated": {
+            "selected": "FLAT",
+            "closed_trades": 0,
+            "realized_r": 0,
+            "unrealized_r": 0
+          },
+          "fixed": {
+            "closed_trades": 2,
+            "realized_r": -0.5024671449220868,
+            "unrealized_r": 0
+          }
+        }
+      ]
+    },
+    {
+      "symbol": "USDJPY",
+      "cell": "USDJPY_D1",
+      "source_repo": "ejtraderLabs/historical-data",
+      "source_path": "USDJPY/USDJPYd1.csv",
+      "source_commit": "fbd29b3cd85c0eea4f6e8b81c053f98fb3de22fd",
+      "source_git_blob_sha": "825510ca2ec567b3f78817197b86477e55f614b6",
+      "price_basis": "RAW_PROVIDER_POINTS_UNVERIFIED",
+      "first_date": "2012-12-04",
+      "last_date": "2022-03-04",
+      "bar_count": 2400,
+      "source_type": "FOREX_OR_XAU_QUOTE_NOT_ACCOUNT",
+      "source_rights": "RAW_COMMERCIAL_RIGHTS_UNVERIFIED",
+      "status": "HISTORICAL_REUSED_GROSS_ONLY_EXPLORATORY",
+      "baseline": {
+        "folds": 7,
+        "closed_trades": 15,
+        "mean_closed_trade_r": -0.36651547800255657,
+        "sum_isolated_realized_r": -5.497732170038349,
+        "sum_open_boundary_unrealized_r": 0,
+        "folds_positive": 2,
+        "folds_negative": 5,
+        "folds_flat": 0,
+        "folds_open": 0,
+        "gap_stops": 1,
+        "selection": {
+          "FLAT": 0,
+          "R0_REFERENCE": 7,
+          "R2_FAST": 0,
+          "R2_SLOW": 0
+        }
+      },
+      "r2_standard": {
+        "folds": 7,
+        "closed_trades": 15,
+        "mean_closed_trade_r": -0.19290116458245923,
+        "sum_isolated_realized_r": -2.8935174687368885,
+        "sum_open_boundary_unrealized_r": 0.0030295481251707557,
+        "folds_positive": 3,
+        "folds_negative": 3,
+        "folds_flat": 1,
+        "folds_open": 1,
+        "gap_stops": 0,
+        "selection": {
+          "FLAT": 1,
+          "R0_REFERENCE": 0,
+          "R2_FAST": 6,
+          "R2_SLOW": 0
+        }
+      },
+      "r2_positive_train_gate": {
+        "folds": 7,
+        "closed_trades": 12,
+        "mean_closed_trade_r": -0.2982878975732726,
+        "sum_isolated_realized_r": -3.579454770879271,
+        "sum_open_boundary_unrealized_r": 0.0030295481251707557,
+        "folds_positive": 2,
+        "folds_negative": 3,
+        "folds_flat": 2,
+        "folds_open": 1,
+        "gap_stops": 0,
+        "selection": {
+          "FLAT": 2,
+          "R0_REFERENCE": 0,
+          "R2_FAST": 5,
+          "R2_SLOW": 0
+        }
+      },
+      "episodes": [
+        {
+          "begin": "2014-11-06",
+          "end": "2015-10-23",
+          "training_score": null,
+          "standard": {
+            "selected": "FLAT",
+            "closed_trades": 0,
+            "realized_r": 0,
+            "unrealized_r": 0,
+            "max_dd_r_marked": 0,
+            "gap_stops": 0
+          },
+          "gated": {
+            "selected": "FLAT",
+            "closed_trades": 0,
+            "realized_r": 0,
+            "unrealized_r": 0
+          },
+          "fixed": {
+            "closed_trades": 3,
+            "realized_r": -0.7313454095394809,
+            "unrealized_r": 0
+          }
+        },
+        {
+          "begin": "2015-10-26",
+          "end": "2016-10-11",
+          "training_score": 0.6936659871390679,
+          "standard": {
+            "selected": "R2_FAST",
+            "closed_trades": 1,
+            "realized_r": 0.39794864049301415,
+            "unrealized_r": 0,
+            "max_dd_r_marked": 0.7704963039332828,
+            "gap_stops": 0
+          },
+          "gated": {
+            "selected": "R2_FAST",
+            "closed_trades": 1,
+            "realized_r": 0.39794864049301415,
+            "unrealized_r": 0
+          },
+          "fixed": {
+            "closed_trades": 1,
+            "realized_r": -0.7071722710998115,
+            "unrealized_r": 0
+          }
+        },
+        {
+          "begin": "2016-10-12",
+          "end": "2017-09-26",
+          "training_score": 0.6574599964589234,
+          "standard": {
+            "selected": "R2_FAST",
+            "closed_trades": 1,
+            "realized_r": 3.915529310845089,
+            "unrealized_r": 0.0030295481251707557,
+            "max_dd_r_marked": 1.1423359099021368,
+            "gap_stops": 0
+          },
+          "gated": {
+            "selected": "R2_FAST",
+            "closed_trades": 1,
+            "realized_r": 3.915529310845089,
+            "unrealized_r": 0.0030295481251707557
+          },
+          "fixed": {
+            "closed_trades": 1,
+            "realized_r": 2.7012366314025478,
+            "unrealized_r": 0
+          }
+        },
+        {
+          "begin": "2017-09-27",
+          "end": "2018-09-13",
+          "training_score": 0.9141307207069191,
+          "standard": {
+            "selected": "R2_FAST",
+            "closed_trades": 3,
+            "realized_r": -1.9333295279727796,
+            "unrealized_r": 0,
+            "max_dd_r_marked": 2.625676737486223,
+            "gap_stops": 0
+          },
+          "gated": {
+            "selected": "R2_FAST",
+            "closed_trades": 3,
+            "realized_r": -1.9333295279727796,
+            "unrealized_r": 0
+          },
+          "fixed": {
+            "closed_trades": 3,
+            "realized_r": -2.4242248813010967,
+            "unrealized_r": 0
+          }
+        },
+        {
+          "begin": "2018-09-14",
+          "end": "2019-09-02",
+          "training_score": 0.28310782799957984,
+          "standard": {
+            "selected": "R2_FAST",
+            "closed_trades": 3,
+            "realized_r": -1.9596031942445946,
+            "unrealized_r": 0,
+            "max_dd_r_marked": 3.7198912761991227,
+            "gap_stops": 0
+          },
+          "gated": {
+            "selected": "R2_FAST",
+            "closed_trades": 3,
+            "realized_r": -1.9596031942445946,
+            "unrealized_r": 0
+          },
+          "fixed": {
+            "closed_trades": 2,
+            "realized_r": -2.329860624120942,
+            "unrealized_r": 0
+          }
+        },
+        {
+          "begin": "2019-09-03",
+          "end": "2020-08-19",
+          "training_score": 0.045373111860600744,
+          "standard": {
+            "selected": "R2_FAST",
+            "closed_trades": 4,
+            "realized_r": -4,
+            "unrealized_r": 0,
+            "max_dd_r_marked": 4,
+            "gap_stops": 0
+          },
+          "gated": {
+            "selected": "R2_FAST",
+            "closed_trades": 4,
+            "realized_r": -4,
+            "unrealized_r": 0
+          },
+          "fixed": {
+            "closed_trades": 3,
+            "realized_r": -2.8933170127568415,
+            "unrealized_r": 0
+          }
+        },
+        {
+          "begin": "2020-08-20",
+          "end": "2021-08-06",
+          "training_score": -0.41929382590900793,
+          "standard": {
+            "selected": "R2_FAST",
+            "closed_trades": 3,
+            "realized_r": 0.6859373021423827,
+            "unrealized_r": 0,
+            "max_dd_r_marked": 2.852167719972778,
+            "gap_stops": 0
+          },
+          "gated": {
+            "selected": "FLAT",
+            "closed_trades": 0,
+            "realized_r": 0,
+            "unrealized_r": 0
+          },
+          "fixed": {
+            "closed_trades": 2,
+            "realized_r": 0.8869513973772762,
+            "unrealized_r": 0
+          }
+        }
+      ]
+    },
+    {
+      "symbol": "XAUUSD",
+      "cell": "XAUUSD_D1",
+      "source_repo": "ejtraderLabs/historical-data",
+      "source_path": "XAUUSD/XAUUSDd1.csv",
+      "source_commit": "fbd29b3cd85c0eea4f6e8b81c053f98fb3de22fd",
+      "source_git_blob_sha": "69cc13ed3ffbffab7e1a1caae90122c370e13c2b",
+      "price_basis": "RAW_PROVIDER_POINTS_UNVERIFIED",
+      "first_date": "2012-11-14",
+      "last_date": "2022-03-04",
+      "bar_count": 2400,
+      "source_type": "FOREX_OR_XAU_QUOTE_NOT_ACCOUNT",
+      "source_rights": "RAW_COMMERCIAL_RIGHTS_UNVERIFIED",
+      "status": "HISTORICAL_REUSED_GROSS_ONLY_EXPLORATORY",
+      "baseline": {
+        "folds": 7,
+        "closed_trades": 11,
+        "mean_closed_trade_r": 0.029451339659990458,
+        "sum_isolated_realized_r": 0.323964736259895,
+        "sum_open_boundary_unrealized_r": 9.925374635624204,
+        "folds_positive": 2,
+        "folds_negative": 5,
+        "folds_flat": 0,
+        "folds_open": 3,
+        "gap_stops": 0,
+        "selection": {
+          "FLAT": 0,
+          "R0_REFERENCE": 7,
+          "R2_FAST": 0,
+          "R2_SLOW": 0
+        }
+      },
+      "r2_standard": {
+        "folds": 7,
+        "closed_trades": 6,
+        "mean_closed_trade_r": 0.4523669722325227,
+        "sum_isolated_realized_r": 2.714201833395136,
+        "sum_open_boundary_unrealized_r": 14.571816010756955,
+        "folds_positive": 3,
+        "folds_negative": 2,
+        "folds_flat": 2,
+        "folds_open": 3,
+        "gap_stops": 0,
+        "selection": {
+          "FLAT": 2,
+          "R0_REFERENCE": 0,
+          "R2_FAST": 5,
+          "R2_SLOW": 0
+        }
+      },
+      "r2_positive_train_gate": {
+        "folds": 7,
+        "closed_trades": 3,
+        "mean_closed_trade_r": 0.4214034384155827,
+        "sum_isolated_realized_r": 1.264210315246748,
+        "sum_open_boundary_unrealized_r": 3.973777566711374,
+        "folds_positive": 1,
+        "folds_negative": 1,
+        "folds_flat": 5,
+        "folds_open": 1,
+        "gap_stops": 0,
+        "selection": {
+          "FLAT": 5,
+          "R0_REFERENCE": 0,
+          "R2_FAST": 2,
+          "R2_SLOW": 0
+        }
+      },
+      "episodes": [
+        {
+          "begin": "2014-10-23",
+          "end": "2015-10-12",
+          "training_score": null,
+          "standard": {
+            "selected": "FLAT",
+            "closed_trades": 0,
+            "realized_r": 0,
+            "unrealized_r": 0,
+            "max_dd_r_marked": 0,
+            "gap_stops": 0
+          },
+          "gated": {
+            "selected": "FLAT",
+            "closed_trades": 0,
+            "realized_r": 0,
+            "unrealized_r": 0
+          },
+          "fixed": {
+            "closed_trades": 1,
+            "realized_r": -0.7002988532491267,
+            "unrealized_r": 0
+          }
+        },
+        {
+          "begin": "2015-10-13",
+          "end": "2016-09-29",
+          "training_score": null,
+          "standard": {
+            "selected": "FLAT",
+            "closed_trades": 0,
+            "realized_r": 0,
+            "unrealized_r": 0,
+            "max_dd_r_marked": 0,
+            "gap_stops": 0
+          },
+          "gated": {
+            "selected": "FLAT",
+            "closed_trades": 0,
+            "realized_r": 0,
+            "unrealized_r": 0
+          },
+          "fixed": {
+            "closed_trades": 4,
+            "realized_r": -0.06667206188302094,
+            "unrealized_r": 0
+          }
+        },
+        {
+          "begin": "2016-09-30",
+          "end": "2017-09-19",
+          "training_score": -0.12005344585106624,
+          "standard": {
+            "selected": "R2_FAST",
+            "closed_trades": 1,
+            "realized_r": -0.8622009895133395,
+            "unrealized_r": 1.042753423524266,
+            "max_dd_r_marked": 2.1118433855523744,
+            "gap_stops": 0
+          },
+          "gated": {
+            "selected": "FLAT",
+            "closed_trades": 0,
+            "realized_r": 0,
+            "unrealized_r": 0
+          },
+          "fixed": {
+            "closed_trades": 1,
+            "realized_r": -0.9497609805220489,
+            "unrealized_r": -0.0900564645248857
+          }
+        },
+        {
+          "begin": "2017-09-20",
+          "end": "2018-09-07",
+          "training_score": -0.22292759091749514,
+          "standard": {
+            "selected": "R2_FAST",
+            "closed_trades": 1,
+            "realized_r": 0.4937768523631569,
+            "unrealized_r": 0,
+            "max_dd_r_marked": 1.1656992962627772,
+            "gap_stops": 0
+          },
+          "gated": {
+            "selected": "FLAT",
+            "closed_trades": 0,
+            "realized_r": 0,
+            "unrealized_r": 0
+          },
+          "fixed": {
+            "closed_trades": 1,
+            "realized_r": -0.2156556660534104,
+            "unrealized_r": 0
+          }
+        },
+        {
+          "begin": "2018-09-10",
+          "end": "2019-08-28",
+          "training_score": -0.034843538566306016,
+          "standard": {
+            "selected": "R2_FAST",
+            "closed_trades": 1,
+            "realized_r": 1.8184156552985709,
+            "unrealized_r": 9.555285020521316,
+            "max_dd_r_marked": 1.743755511796043,
+            "gap_stops": 0
+          },
+          "gated": {
+            "selected": "FLAT",
+            "closed_trades": 0,
+            "realized_r": 0,
+            "unrealized_r": 0
+          },
+          "fixed": {
+            "closed_trades": 1,
+            "realized_r": 1.465178273945469,
+            "unrealized_r": 6.811221305697572
+          }
+        },
+        {
+          "begin": "2019-08-29",
+          "end": "2020-08-17",
+          "training_score": 0.29203803469768447,
+          "standard": {
+            "selected": "R2_FAST",
+            "closed_trades": 2,
+            "realized_r": 1.496590829447044,
+            "unrealized_r": 3.973777566711374,
+            "max_dd_r_marked": 5.011310113690449,
+            "gap_stops": 0
+          },
+          "gated": {
+            "selected": "R2_FAST",
+            "closed_trades": 2,
+            "realized_r": 1.496590829447044,
+            "unrealized_r": 3.973777566711374
+          },
+          "fixed": {
+            "closed_trades": 2,
+            "realized_r": 1.15540117427727,
+            "unrealized_r": 3.2042097944515175
+          }
+        },
+        {
+          "begin": "2020-08-18",
+          "end": "2021-08-05",
+          "training_score": 1.505106723846933,
+          "standard": {
+            "selected": "R2_FAST",
+            "closed_trades": 1,
+            "realized_r": -0.23238051420029598,
+            "unrealized_r": 0,
+            "max_dd_r_marked": 1.1039631934662855,
+            "gap_stops": 0
+          },
+          "gated": {
+            "selected": "R2_FAST",
+            "closed_trades": 1,
+            "realized_r": -0.23238051420029598,
+            "unrealized_r": 0
+          },
+          "fixed": {
+            "closed_trades": 1,
+            "realized_r": -0.3642271502552374,
+            "unrealized_r": 0
+          }
+        }
+      ]
+    },
+    {
+      "symbol": "SPY",
+      "cell": "SPY_ETF_D1",
+      "source_repo": "vivek-v-rao/OHLC-Vol",
+      "source_path": "prices_ohlc.csv",
+      "source_commit": "c46f69d94faacf389378a07d540b3c38fe182d33",
+      "source_git_blob_sha": "81d478f4bb4a89804060a4957782bb9e054b2085",
+      "price_basis": "RAW_PROVIDER_POINTS_UNVERIFIED",
+      "first_date": "2010-01-04",
+      "last_date": "2026-04-15",
+      "bar_count": 4095,
+      "source_type": "ETF_PROXY_NOT_UNDERLYING",
+      "source_rights": "RAW_COMMERCIAL_RIGHTS_UNVERIFIED",
+      "status": "HISTORICAL_REUSED_GROSS_ONLY_EXPLORATORY",
+      "baseline": {
+        "folds": 14,
+        "closed_trades": 44,
+        "mean_closed_trade_r": 0.26340351617568863,
+        "sum_isolated_realized_r": 11.5897547117303,
+        "sum_open_boundary_unrealized_r": 9.049274795821095,
+        "folds_positive": 8,
+        "folds_negative": 6,
+        "folds_flat": 0,
+        "folds_open": 6,
+        "gap_stops": 5,
+        "selection": {
+          "FLAT": 0,
+          "R0_REFERENCE": 14,
+          "R2_FAST": 0,
+          "R2_SLOW": 0
+        }
+      },
+      "r2_standard": {
+        "folds": 14,
+        "closed_trades": 42,
+        "mean_closed_trade_r": 0.1321127624524404,
+        "sum_isolated_realized_r": 5.548736023002498,
+        "sum_open_boundary_unrealized_r": 9.52436319961689,
+        "folds_positive": 5,
+        "folds_negative": 8,
+        "folds_flat": 1,
+        "folds_open": 7,
+        "gap_stops": 9,
+        "selection": {
+          "FLAT": 1,
+          "R0_REFERENCE": 2,
+          "R2_FAST": 5,
+          "R2_SLOW": 6
+        }
+      },
+      "r2_positive_train_gate": {
+        "folds": 14,
+        "closed_trades": 34,
+        "mean_closed_trade_r": 0.1396096332411611,
+        "sum_isolated_realized_r": 4.746727530199477,
+        "sum_open_boundary_unrealized_r": 4.894943617544857,
+        "folds_positive": 4,
+        "folds_negative": 7,
+        "folds_flat": 3,
+        "folds_open": 6,
+        "gap_stops": 9,
+        "selection": {
+          "FLAT": 3,
+          "R0_REFERENCE": 1,
+          "R2_FAST": 4,
+          "R2_SLOW": 6
+        }
+      },
+      "episodes": [
+        {
+          "begin": "2011-12-27",
+          "end": "2012-12-24",
+          "training_score": null,
+          "standard": {
+            "selected": "FLAT",
+            "closed_trades": 0,
+            "realized_r": 0,
+            "unrealized_r": 0,
+            "max_dd_r_marked": 0,
+            "gap_stops": 0
+          },
+          "gated": {
+            "selected": "FLAT",
+            "closed_trades": 0,
+            "realized_r": 0,
+            "unrealized_r": 0
+          },
+          "fixed": {
+            "closed_trades": 2,
+            "realized_r": 2.1366367743361923,
+            "unrealized_r": 0
+          }
+        },
+        {
+          "begin": "2012-12-26",
+          "end": "2013-12-20",
+          "training_score": 0.7773123106047356,
+          "standard": {
+            "selected": "R2_FAST",
+            "closed_trades": 6,
+            "realized_r": 0.418233977800197,
+            "unrealized_r": 0,
+            "max_dd_r_marked": 2.8811576969730326,
+            "gap_stops": 1
+          },
+          "gated": {
+            "selected": "R2_FAST",
+            "closed_trades": 6,
+            "realized_r": 0.418233977800197,
+            "unrealized_r": 0
+          },
+          "fixed": {
+            "closed_trades": 6,
+            "realized_r": -0.3011982963923703,
+            "unrealized_r": 0
+          }
+        },
+        {
+          "begin": "2013-12-23",
+          "end": "2014-12-18",
+          "training_score": 0.37516557742900736,
+          "standard": {
+            "selected": "R2_FAST",
+            "closed_trades": 6,
+            "realized_r": -0.2461410701843341,
+            "unrealized_r": 0,
+            "max_dd_r_marked": 2.747030896063775,
+            "gap_stops": 0
+          },
+          "gated": {
+            "selected": "R2_FAST",
+            "closed_trades": 6,
+            "realized_r": -0.2461410701843341,
+            "unrealized_r": 0
+          },
+          "fixed": {
+            "closed_trades": 5,
+            "realized_r": 0.22131378960015696,
+            "unrealized_r": 0
+          }
+        },
+        {
+          "begin": "2014-12-19",
+          "end": "2015-12-16",
+          "training_score": 0.14706481555228912,
+          "standard": {
+            "selected": "R2_FAST",
+            "closed_trades": 3,
+            "realized_r": -2.361416064835635,
+            "unrealized_r": 0,
+            "max_dd_r_marked": 2.5976098106244967,
+            "gap_stops": 2
+          },
+          "gated": {
+            "selected": "R2_FAST",
+            "closed_trades": 3,
+            "realized_r": -2.361416064835635,
+            "unrealized_r": 0
+          },
+          "fixed": {
+            "closed_trades": 2,
+            "realized_r": -1.9811797866947987,
+            "unrealized_r": 0
+          }
+        },
+        {
+          "begin": "2015-12-17",
+          "end": "2016-12-13",
+          "training_score": 0.0540335813271226,
+          "standard": {
+            "selected": "R2_FAST",
+            "closed_trades": 4,
+            "realized_r": -0.7380542462735704,
+            "unrealized_r": 2.1571506719189903,
+            "max_dd_r_marked": 2.320761473916907,
+            "gap_stops": 1
+          },
+          "gated": {
+            "selected": "R2_FAST",
+            "closed_trades": 4,
+            "realized_r": -0.7380542462735704,
+            "unrealized_r": 2.1571506719189903
+          },
+          "fixed": {
+            "closed_trades": 3,
+            "realized_r": -0.9218055311809803,
+            "unrealized_r": 1.4103044566362788
+          }
+        },
+        {
+          "begin": "2016-12-14",
+          "end": "2017-12-11",
+          "training_score": -0.20748977933319304,
+          "standard": {
+            "selected": "R2_FAST",
+            "closed_trades": 5,
+            "realized_r": -0.13438184376003734,
+            "unrealized_r": 4.6294195820720345,
+            "max_dd_r_marked": 1.9915807081762313,
+            "gap_stops": 0
+          },
+          "gated": {
+            "selected": "FLAT",
+            "closed_trades": 0,
+            "realized_r": 0,
+            "unrealized_r": 0
+          },
+          "fixed": {
+            "closed_trades": 3,
+            "realized_r": 1.1301424724042772,
+            "unrealized_r": 3.7919395170090797
+          }
+        },
+        {
+          "begin": "2017-12-12",
+          "end": "2018-12-10",
+          "training_score": -0.06542024594368254,
+          "standard": {
+            "selected": "R0_REFERENCE",
+            "closed_trades": 3,
+            "realized_r": 0.9363903365630585,
+            "unrealized_r": 0,
+            "max_dd_r_marked": 4.536266798122207,
+            "gap_stops": 0
+          },
+          "gated": {
+            "selected": "FLAT",
+            "closed_trades": 0,
+            "realized_r": 0,
+            "unrealized_r": 0
+          },
+          "fixed": {
+            "closed_trades": 3,
+            "realized_r": 0.9363903365630585,
+            "unrealized_r": 0
+          }
+        },
+        {
+          "begin": "2018-12-11",
+          "end": "2019-12-06",
+          "training_score": 0.9179073618742897,
+          "standard": {
+            "selected": "R2_SLOW",
+            "closed_trades": 2,
+            "realized_r": -1.1102618386256946,
+            "unrealized_r": 1.3729509792560017,
+            "max_dd_r_marked": 2.6408366414231894,
+            "gap_stops": 1
+          },
+          "gated": {
+            "selected": "R2_SLOW",
+            "closed_trades": 2,
+            "realized_r": -1.1102618386256946,
+            "unrealized_r": 1.3729509792560017
+          },
+          "fixed": {
+            "closed_trades": 2,
+            "realized_r": 0.7996039504082953,
+            "unrealized_r": 1.6590549125977994
+          }
+        },
+        {
+          "begin": "2019-12-09",
+          "end": "2020-12-03",
+          "training_score": 0.7535912798630993,
+          "standard": {
+            "selected": "R2_SLOW",
+            "closed_trades": 2,
+            "realized_r": 0.8069206235460812,
+            "unrealized_r": 0.1259978321001599,
+            "max_dd_r_marked": 2.9162364414727024,
+            "gap_stops": 0
+          },
+          "gated": {
+            "selected": "R2_SLOW",
+            "closed_trades": 2,
+            "realized_r": 0.8069206235460812,
+            "unrealized_r": 0.1259978321001599
+          },
+          "fixed": {
+            "closed_trades": 2,
+            "realized_r": 2.1268170121861436,
+            "unrealized_r": 0.1536825755926512
+          }
+        },
+        {
+          "begin": "2020-12-04",
+          "end": "2021-12-01",
+          "training_score": 1.6863647097488776,
+          "standard": {
+            "selected": "R2_SLOW",
+            "closed_trades": 1,
+            "realized_r": 4.652916628465937,
+            "unrealized_r": -0.4320174897793736,
+            "max_dd_r_marked": 1.725593309202564,
+            "gap_stops": 1
+          },
+          "gated": {
+            "selected": "R2_SLOW",
+            "closed_trades": 1,
+            "realized_r": 4.652916628465937,
+            "unrealized_r": -0.4320174897793736
+          },
+          "fixed": {
+            "closed_trades": 4,
+            "realized_r": 2.769786692100344,
+            "unrealized_r": 0
+          }
+        },
+        {
+          "begin": "2021-12-02",
+          "end": "2022-11-29",
+          "training_score": 0.8690759547996916,
+          "standard": {
+            "selected": "R2_SLOW",
+            "closed_trades": 1,
+            "realized_r": -1,
+            "unrealized_r": 0,
+            "max_dd_r_marked": 1,
+            "gap_stops": 0
+          },
+          "gated": {
+            "selected": "R2_SLOW",
+            "closed_trades": 1,
+            "realized_r": -1,
+            "unrealized_r": 0
+          },
+          "fixed": {
+            "closed_trades": 1,
+            "realized_r": -1,
+            "unrealized_r": 0
+          }
+        },
+        {
+          "begin": "2022-11-30",
+          "end": "2023-11-28",
+          "training_score": 0.7266873445293504,
+          "standard": {
+            "selected": "R0_REFERENCE",
+            "closed_trades": 4,
+            "realized_r": -0.9392846725766844,
+            "unrealized_r": 0.1549892201520301,
+            "max_dd_r_marked": 3.6154253886261376,
+            "gap_stops": 1
+          },
+          "gated": {
+            "selected": "R0_REFERENCE",
+            "closed_trades": 4,
+            "realized_r": -0.9392846725766844,
+            "unrealized_r": 0.1549892201520301
+          },
+          "fixed": {
+            "closed_trades": 4,
+            "realized_r": -0.9392846725766844,
+            "unrealized_r": 0.1549892201520301
+          }
+        },
+        {
+          "begin": "2023-11-29",
+          "end": "2024-11-25",
+          "training_score": 0.5649017506525235,
+          "standard": {
+            "selected": "R2_SLOW",
+            "closed_trades": 2,
+            "realized_r": 5.690644740746774,
+            "unrealized_r": 1.5158724038970481,
+            "max_dd_r_marked": 2.4292034901362616,
+            "gap_stops": 1
+          },
+          "gated": {
+            "selected": "R2_SLOW",
+            "closed_trades": 2,
+            "realized_r": 5.690644740746774,
+            "unrealized_r": 1.5158724038970481
+          },
+          "fixed": {
+            "closed_trades": 2,
+            "realized_r": 8.30567088294608,
+            "unrealized_r": 1.8793041138332551
+          }
+        },
+        {
+          "begin": "2024-11-26",
+          "end": "2025-11-25",
+          "training_score": 1.25231752025525,
+          "standard": {
+            "selected": "R2_SLOW",
+            "closed_trades": 3,
+            "realized_r": -0.426830547863595,
+            "unrealized_r": 0,
+            "max_dd_r_marked": 2.5403135511096804,
+            "gap_stops": 1
+          },
+          "gated": {
+            "selected": "R2_SLOW",
+            "closed_trades": 3,
+            "realized_r": -0.426830547863595,
+            "unrealized_r": 0
+          },
+          "fixed": {
+            "closed_trades": 5,
+            "realized_r": -1.6931389119694134,
+            "unrealized_r": 0
+          }
+        }
+      ]
+    },
+    {
+      "symbol": "QQQ",
+      "cell": "QQQ_ETF_D1",
+      "source_repo": "vivek-v-rao/OHLC-Vol",
+      "source_path": "prices_ohlc.csv",
+      "source_commit": "c46f69d94faacf389378a07d540b3c38fe182d33",
+      "source_git_blob_sha": "81d478f4bb4a89804060a4957782bb9e054b2085",
+      "price_basis": "RAW_PROVIDER_POINTS_UNVERIFIED",
+      "first_date": "2010-01-04",
+      "last_date": "2026-04-15",
+      "bar_count": 4095,
+      "source_type": "ETF_PROXY_NOT_UNDERLYING",
+      "source_rights": "RAW_COMMERCIAL_RIGHTS_UNVERIFIED",
+      "status": "HISTORICAL_REUSED_GROSS_ONLY_EXPLORATORY",
+      "baseline": {
+        "folds": 14,
+        "closed_trades": 43,
+        "mean_closed_trade_r": 0.41003591201601747,
+        "sum_isolated_realized_r": 17.631544216688752,
+        "sum_open_boundary_unrealized_r": 8.209317634900538,
+        "folds_positive": 9,
+        "folds_negative": 4,
+        "folds_flat": 1,
+        "folds_open": 6,
+        "gap_stops": 7,
+        "selection": {
+          "FLAT": 0,
+          "R0_REFERENCE": 14,
+          "R2_FAST": 0,
+          "R2_SLOW": 0
+        }
+      },
+      "r2_standard": {
+        "folds": 14,
+        "closed_trades": 46,
+        "mean_closed_trade_r": 0.39669692257752326,
+        "sum_isolated_realized_r": 18.24805843856607,
+        "sum_open_boundary_unrealized_r": 8.57665602838429,
+        "folds_positive": 9,
+        "folds_negative": 4,
+        "folds_flat": 1,
+        "folds_open": 6,
+        "gap_stops": 9,
+        "selection": {
+          "FLAT": 0,
+          "R0_REFERENCE": 8,
+          "R2_FAST": 5,
+          "R2_SLOW": 1
+        }
+      },
+      "r2_positive_train_gate": {
+        "folds": 14,
+        "closed_trades": 43,
+        "mean_closed_trade_r": 0.3355601664327699,
+        "sum_isolated_realized_r": 14.429087156609107,
+        "sum_open_boundary_unrealized_r": 8.57665602838429,
+        "folds_positive": 8,
+        "folds_negative": 4,
+        "folds_flat": 2,
+        "folds_open": 6,
+        "gap_stops": 9,
+        "selection": {
+          "FLAT": 1,
+          "R0_REFERENCE": 8,
+          "R2_FAST": 4,
+          "R2_SLOW": 1
+        }
+      },
+      "episodes": [
+        {
+          "begin": "2011-12-27",
+          "end": "2012-12-24",
+          "training_score": -0.24610101806413204,
+          "standard": {
+            "selected": "R2_FAST",
+            "closed_trades": 3,
+            "realized_r": 3.818971281956962,
+            "unrealized_r": 0,
+            "max_dd_r_marked": 1.9514518364802083,
+            "gap_stops": 0
+          },
+          "gated": {
+            "selected": "FLAT",
+            "closed_trades": 0,
+            "realized_r": 0,
+            "unrealized_r": 0
+          },
+          "fixed": {
+            "closed_trades": 2,
+            "realized_r": 3.1234834944650114,
+            "unrealized_r": 0
+          }
+        },
+        {
+          "begin": "2012-12-26",
+          "end": "2013-12-20",
+          "training_score": 0.4876861352854762,
+          "standard": {
+            "selected": "R0_REFERENCE",
+            "closed_trades": 6,
+            "realized_r": -1.3270310407233925,
+            "unrealized_r": 3.035352654668664,
+            "max_dd_r_marked": 3.609007472665672,
+            "gap_stops": 1
+          },
+          "gated": {
+            "selected": "R0_REFERENCE",
+            "closed_trades": 6,
+            "realized_r": -1.3270310407233925,
+            "unrealized_r": 3.035352654668664
+          },
+          "fixed": {
+            "closed_trades": 6,
+            "realized_r": -1.3270310407233925,
+            "unrealized_r": 3.035352654668664
+          }
+        },
+        {
+          "begin": "2013-12-23",
+          "end": "2014-12-18",
+          "training_score": 0.1105266647402147,
+          "standard": {
+            "selected": "R0_REFERENCE",
+            "closed_trades": 4,
+            "realized_r": 1.4523007168161273,
+            "unrealized_r": 0,
+            "max_dd_r_marked": 1.9087407987245224,
+            "gap_stops": 0
+          },
+          "gated": {
+            "selected": "R0_REFERENCE",
+            "closed_trades": 4,
+            "realized_r": 1.4523007168161273,
+            "unrealized_r": 0
+          },
+          "fixed": {
+            "closed_trades": 4,
+            "realized_r": 1.4523007168161273,
+            "unrealized_r": 0
+          }
+        },
+        {
+          "begin": "2014-12-19",
+          "end": "2015-12-16",
+          "training_score": 0.32121502145627434,
+          "standard": {
+            "selected": "R2_FAST",
+            "closed_trades": 4,
+            "realized_r": -0.9024501652296862,
+            "unrealized_r": 0,
+            "max_dd_r_marked": 2.975820536588994,
+            "gap_stops": 1
+          },
+          "gated": {
+            "selected": "R2_FAST",
+            "closed_trades": 4,
+            "realized_r": -0.9024501652296862,
+            "unrealized_r": 0
+          },
+          "fixed": {
+            "closed_trades": 4,
+            "realized_r": -3.031989468935012,
+            "unrealized_r": 0
+          }
+        },
+        {
+          "begin": "2015-12-17",
+          "end": "2016-12-13",
+          "training_score": 0.3543413531647587,
+          "standard": {
+            "selected": "R2_FAST",
+            "closed_trades": 4,
+            "realized_r": -0.6562100674982159,
+            "unrealized_r": 0,
+            "max_dd_r_marked": 2.178437652732423,
+            "gap_stops": 2
+          },
+          "gated": {
+            "selected": "R2_FAST",
+            "closed_trades": 4,
+            "realized_r": -0.6562100674982159,
+            "unrealized_r": 0
+          },
+          "fixed": {
+            "closed_trades": 3,
+            "realized_r": -0.1807199761527073,
+            "unrealized_r": 0
+          }
+        },
+        {
+          "begin": "2016-12-14",
+          "end": "2017-12-11",
+          "training_score": 0.10133621918687774,
+          "standard": {
+            "selected": "R2_FAST",
+            "closed_trades": 5,
+            "realized_r": 1.866192799038692,
+            "unrealized_r": 4.185637835277319,
+            "max_dd_r_marked": 3.834816662066028,
+            "gap_stops": 0
+          },
+          "gated": {
+            "selected": "R2_FAST",
+            "closed_trades": 5,
+            "realized_r": 1.866192799038692,
+            "unrealized_r": 4.185637835277319
+          },
+          "fixed": {
+            "closed_trades": 4,
+            "realized_r": 2.9826608900356115,
+            "unrealized_r": 3.198747424321044
+          }
+        },
+        {
+          "begin": "2017-12-12",
+          "end": "2018-12-10",
+          "training_score": 0.04372105582568312,
+          "standard": {
+            "selected": "R0_REFERENCE",
+            "closed_trades": 4,
+            "realized_r": -1.0876756095582576,
+            "unrealized_r": 0,
+            "max_dd_r_marked": 4.9571714660979165,
+            "gap_stops": 1
+          },
+          "gated": {
+            "selected": "R0_REFERENCE",
+            "closed_trades": 4,
+            "realized_r": -1.0876756095582576,
+            "unrealized_r": 0
+          },
+          "fixed": {
+            "closed_trades": 4,
+            "realized_r": -1.0876756095582576,
+            "unrealized_r": 0
+          }
+        },
+        {
+          "begin": "2018-12-11",
+          "end": "2019-12-06",
+          "training_score": 0.16150172093766008,
+          "standard": {
+            "selected": "R2_FAST",
+            "closed_trades": 4,
+            "realized_r": 1.52050284444752,
+            "unrealized_r": 0,
+            "max_dd_r_marked": 1.4623602258417798,
+            "gap_stops": 1
+          },
+          "gated": {
+            "selected": "R2_FAST",
+            "closed_trades": 4,
+            "realized_r": 1.52050284444752,
+            "unrealized_r": 0
+          },
+          "fixed": {
+            "closed_trades": 2,
+            "realized_r": 1.4298521213586595,
+            "unrealized_r": 1.1595229582683233
+          }
+        },
+        {
+          "begin": "2019-12-09",
+          "end": "2020-12-03",
+          "training_score": 0.5279002193117946,
+          "standard": {
+            "selected": "R0_REFERENCE",
+            "closed_trades": 2,
+            "realized_r": 4.8247834459500485,
+            "unrealized_r": 0.15763006305933214,
+            "max_dd_r_marked": 4.355650247793529,
+            "gap_stops": 0
+          },
+          "gated": {
+            "selected": "R0_REFERENCE",
+            "closed_trades": 2,
+            "realized_r": 4.8247834459500485,
+            "unrealized_r": 0.15763006305933214
+          },
+          "fixed": {
+            "closed_trades": 2,
+            "realized_r": 4.8247834459500485,
+            "unrealized_r": 0.15763006305933214
+          }
+        },
+        {
+          "begin": "2020-12-04",
+          "end": "2021-12-01",
+          "training_score": 1.0623624553971518,
+          "standard": {
+            "selected": "R2_SLOW",
+            "closed_trades": 3,
+            "realized_r": 0.29274169342539236,
+            "unrealized_r": 0.5399709407958024,
+            "max_dd_r_marked": 3.157205683594247,
+            "gap_stops": 1
+          },
+          "gated": {
+            "selected": "R2_SLOW",
+            "closed_trades": 3,
+            "realized_r": 0.29274169342539236,
+            "unrealized_r": 0.5399709407958024
+          },
+          "fixed": {
+            "closed_trades": 5,
+            "realized_r": 0.9999471034917845,
+            "unrealized_r": 0
+          }
+        },
+        {
+          "begin": "2021-12-02",
+          "end": "2022-11-29",
+          "training_score": 0.4921703127139146,
+          "standard": {
+            "selected": "R0_REFERENCE",
+            "closed_trades": 0,
+            "realized_r": 0,
+            "unrealized_r": 0,
+            "max_dd_r_marked": 0,
+            "gap_stops": 0
+          },
+          "gated": {
+            "selected": "R0_REFERENCE",
+            "closed_trades": 0,
+            "realized_r": 0,
+            "unrealized_r": 0
+          },
+          "fixed": {
+            "closed_trades": 0,
+            "realized_r": 0,
+            "unrealized_r": 0
+          }
+        },
+        {
+          "begin": "2022-11-30",
+          "end": "2023-11-28",
+          "training_score": 0.8744445320559991,
+          "standard": {
+            "selected": "R0_REFERENCE",
+            "closed_trades": 2,
+            "realized_r": 2.635835496612124,
+            "unrealized_r": 0.17906697397233406,
+            "max_dd_r_marked": 1.4222458899151866,
+            "gap_stops": 1
+          },
+          "gated": {
+            "selected": "R0_REFERENCE",
+            "closed_trades": 2,
+            "realized_r": 2.635835496612124,
+            "unrealized_r": 0.17906697397233406
+          },
+          "fixed": {
+            "closed_trades": 2,
+            "realized_r": 2.635835496612124,
+            "unrealized_r": 0.17906697397233406
+          }
+        },
+        {
+          "begin": "2023-11-29",
+          "end": "2024-11-25",
+          "training_score": 0.9323992595806228,
+          "standard": {
+            "selected": "R0_REFERENCE",
+            "closed_trades": 2,
+            "realized_r": 4.435944543103961,
+            "unrealized_r": 0.4789975606108392,
+            "max_dd_r_marked": 2.7574231439398966,
+            "gap_stops": 1
+          },
+          "gated": {
+            "selected": "R0_REFERENCE",
+            "closed_trades": 2,
+            "realized_r": 4.435944543103961,
+            "unrealized_r": 0.4789975606108392
+          },
+          "fixed": {
+            "closed_trades": 2,
+            "realized_r": 4.435944543103961,
+            "unrealized_r": 0.4789975606108392
+          }
+        },
+        {
+          "begin": "2024-11-26",
+          "end": "2025-11-25",
+          "training_score": 0.8403509926499512,
+          "standard": {
+            "selected": "R0_REFERENCE",
+            "closed_trades": 3,
+            "realized_r": 1.374152500224796,
+            "unrealized_r": 0,
+            "max_dd_r_marked": 2.842640823793414,
+            "gap_stops": 0
+          },
+          "gated": {
+            "selected": "R0_REFERENCE",
+            "closed_trades": 3,
+            "realized_r": 1.374152500224796,
+            "unrealized_r": 0
+          },
+          "fixed": {
+            "closed_trades": 3,
+            "realized_r": 1.374152500224796,
+            "unrealized_r": 0
+          }
+        }
+      ]
+    },
+    {
+      "symbol": "GLD",
+      "cell": "GLD_ETF_D1",
+      "source_repo": "vivek-v-rao/OHLC-Vol",
+      "source_path": "prices_ohlc.csv",
+      "source_commit": "c46f69d94faacf389378a07d540b3c38fe182d33",
+      "source_git_blob_sha": "81d478f4bb4a89804060a4957782bb9e054b2085",
+      "price_basis": "RAW_PROVIDER_POINTS_UNVERIFIED",
+      "first_date": "2010-01-04",
+      "last_date": "2026-04-15",
+      "bar_count": 4095,
+      "source_type": "ETF_PROXY_NOT_UNDERLYING",
+      "source_rights": "RAW_COMMERCIAL_RIGHTS_UNVERIFIED",
+      "status": "HISTORICAL_REUSED_GROSS_ONLY_EXPLORATORY",
+      "baseline": {
+        "folds": 14,
+        "closed_trades": 29,
+        "mean_closed_trade_r": 0.5207606912813365,
+        "sum_isolated_realized_r": 15.102060047158758,
+        "sum_open_boundary_unrealized_r": 7.0132158515485274,
+        "folds_positive": 8,
+        "folds_negative": 5,
+        "folds_flat": 1,
+        "folds_open": 2,
+        "gap_stops": 12,
+        "selection": {
+          "FLAT": 0,
+          "R0_REFERENCE": 14,
+          "R2_FAST": 0,
+          "R2_SLOW": 0
+        }
+      },
+      "r2_standard": {
+        "folds": 14,
+        "closed_trades": 31,
+        "mean_closed_trade_r": 0.8136826539311396,
+        "sum_isolated_realized_r": 25.224162271865328,
+        "sum_open_boundary_unrealized_r": 0.29830909742536216,
+        "folds_positive": 8,
+        "folds_negative": 4,
+        "folds_flat": 2,
+        "folds_open": 1,
+        "gap_stops": 14,
+        "selection": {
+          "FLAT": 1,
+          "R0_REFERENCE": 0,
+          "R2_FAST": 13,
+          "R2_SLOW": 0
+        }
+      },
+      "r2_positive_train_gate": {
+        "folds": 14,
+        "closed_trades": 22,
+        "mean_closed_trade_r": 0.5924423502292072,
+        "sum_isolated_realized_r": 13.033731705042559,
+        "sum_open_boundary_unrealized_r": 0.29830909742536216,
+        "folds_positive": 5,
+        "folds_negative": 3,
+        "folds_flat": 6,
+        "folds_open": 1,
+        "gap_stops": 12,
+        "selection": {
+          "FLAT": 5,
+          "R0_REFERENCE": 0,
+          "R2_FAST": 9,
+          "R2_SLOW": 0
+        }
+      },
+      "episodes": [
+        {
+          "begin": "2011-12-27",
+          "end": "2012-12-24",
+          "training_score": null,
+          "standard": {
+            "selected": "FLAT",
+            "closed_trades": 0,
+            "realized_r": 0,
+            "unrealized_r": 0,
+            "max_dd_r_marked": 0,
+            "gap_stops": 0
+          },
+          "gated": {
+            "selected": "FLAT",
+            "closed_trades": 0,
+            "realized_r": 0,
+            "unrealized_r": 0
+          },
+          "fixed": {
+            "closed_trades": 2,
+            "realized_r": 0.4168308534073766,
+            "unrealized_r": 0
+          }
+        },
+        {
+          "begin": "2012-12-26",
+          "end": "2013-12-20",
+          "training_score": 0.25036573973568493,
+          "standard": {
+            "selected": "R2_FAST",
+            "closed_trades": 0,
+            "realized_r": 0,
+            "unrealized_r": 0,
+            "max_dd_r_marked": 0,
+            "gap_stops": 0
+          },
+          "gated": {
+            "selected": "R2_FAST",
+            "closed_trades": 0,
+            "realized_r": 0,
+            "unrealized_r": 0
+          },
+          "fixed": {
+            "closed_trades": 0,
+            "realized_r": 0,
+            "unrealized_r": 0
+          }
+        },
+        {
+          "begin": "2013-12-23",
+          "end": "2014-12-18",
+          "training_score": 0.25036573973568493,
+          "standard": {
+            "selected": "R2_FAST",
+            "closed_trades": 2,
+            "realized_r": -0.6692228450108527,
+            "unrealized_r": 0,
+            "max_dd_r_marked": 2.459162426463822,
+            "gap_stops": 2
+          },
+          "gated": {
+            "selected": "R2_FAST",
+            "closed_trades": 2,
+            "realized_r": -0.6692228450108527,
+            "unrealized_r": 0
+          },
+          "fixed": {
+            "closed_trades": 2,
+            "realized_r": -1.3179801298524336,
+            "unrealized_r": 0
+          }
+        },
+        {
+          "begin": "2014-12-19",
+          "end": "2015-12-16",
+          "training_score": 0.2532728226862403,
+          "standard": {
+            "selected": "R2_FAST",
+            "closed_trades": 2,
+            "realized_r": -1.6127592216705182,
+            "unrealized_r": 0,
+            "max_dd_r_marked": 2.4440217316886637,
+            "gap_stops": 1
+          },
+          "gated": {
+            "selected": "R2_FAST",
+            "closed_trades": 2,
+            "realized_r": -1.6127592216705182,
+            "unrealized_r": 0
+          },
+          "fixed": {
+            "closed_trades": 2,
+            "realized_r": -1.7620057328698011,
+            "unrealized_r": 0
+          }
+        },
+        {
+          "begin": "2015-12-17",
+          "end": "2016-12-13",
+          "training_score": -0.40951810493326474,
+          "standard": {
+            "selected": "R2_FAST",
+            "closed_trades": 3,
+            "realized_r": 0.4495360909402796,
+            "unrealized_r": 0,
+            "max_dd_r_marked": 2.610065876763848,
+            "gap_stops": 1
+          },
+          "gated": {
+            "selected": "FLAT",
+            "closed_trades": 0,
+            "realized_r": 0,
+            "unrealized_r": 0
+          },
+          "fixed": {
+            "closed_trades": 3,
+            "realized_r": 0.11278357648042568,
+            "unrealized_r": 0
+          }
+        },
+        {
+          "begin": "2016-12-14",
+          "end": "2017-12-11",
+          "training_score": -0.302497213015785,
+          "standard": {
+            "selected": "R2_FAST",
+            "closed_trades": 3,
+            "realized_r": -1.0509766513830674,
+            "unrealized_r": 0,
+            "max_dd_r_marked": 3.3053630043012903,
+            "gap_stops": 1
+          },
+          "gated": {
+            "selected": "FLAT",
+            "closed_trades": 0,
+            "realized_r": 0,
+            "unrealized_r": 0
+          },
+          "fixed": {
+            "closed_trades": 3,
+            "realized_r": -3.1357726270685795,
+            "unrealized_r": 0
+          }
+        },
+        {
+          "begin": "2017-12-12",
+          "end": "2018-12-10",
+          "training_score": -0.351185209059755,
+          "standard": {
+            "selected": "R2_FAST",
+            "closed_trades": 1,
+            "realized_r": 0.40654900642365127,
+            "unrealized_r": 0,
+            "max_dd_r_marked": 1.0805644644418149,
+            "gap_stops": 0
+          },
+          "gated": {
+            "selected": "FLAT",
+            "closed_trades": 0,
+            "realized_r": 0,
+            "unrealized_r": 0
+          },
+          "fixed": {
+            "closed_trades": 1,
+            "realized_r": -0.2880635643217428,
+            "unrealized_r": 0
+          }
+        },
+        {
+          "begin": "2018-12-11",
+          "end": "2019-12-06",
+          "training_score": -0.2535698357307764,
+          "standard": {
+            "selected": "R2_FAST",
+            "closed_trades": 2,
+            "realized_r": 12.385322120841906,
+            "unrealized_r": 0,
+            "max_dd_r_marked": 3.697332333980359,
+            "gap_stops": 0
+          },
+          "gated": {
+            "selected": "FLAT",
+            "closed_trades": 0,
+            "realized_r": 0,
+            "unrealized_r": 0
+          },
+          "fixed": {
+            "closed_trades": 2,
+            "realized_r": 6.9598548056068275,
+            "unrealized_r": 0
+          }
+        },
+        {
+          "begin": "2019-12-09",
+          "end": "2020-12-03",
+          "training_score": 1.3017725356594927,
+          "standard": {
+            "selected": "R2_FAST",
+            "closed_trades": 3,
+            "realized_r": 2.7530328167907383,
+            "unrealized_r": 0,
+            "max_dd_r_marked": 3.3602482930428272,
+            "gap_stops": 0
+          },
+          "gated": {
+            "selected": "R2_FAST",
+            "closed_trades": 3,
+            "realized_r": 2.7530328167907383,
+            "unrealized_r": 0
+          },
+          "fixed": {
+            "closed_trades": 3,
+            "realized_r": 2.166062576393839,
+            "unrealized_r": 0
+          }
+        },
+        {
+          "begin": "2020-12-04",
+          "end": "2021-12-01",
+          "training_score": 1.5717127006486618,
+          "standard": {
+            "selected": "R2_FAST",
+            "closed_trades": 2,
+            "realized_r": -1.4845164317248642,
+            "unrealized_r": 0,
+            "max_dd_r_marked": 2.361028428883944,
+            "gap_stops": 1
+          },
+          "gated": {
+            "selected": "R2_FAST",
+            "closed_trades": 2,
+            "realized_r": -1.4845164317248642,
+            "unrealized_r": 0
+          },
+          "fixed": {
+            "closed_trades": 2,
+            "realized_r": -1.446024570498752,
+            "unrealized_r": 0
+          }
+        },
+        {
+          "begin": "2021-12-02",
+          "end": "2022-11-29",
+          "training_score": 1.7125899995427485,
+          "standard": {
+            "selected": "R2_FAST",
+            "closed_trades": 1,
+            "realized_r": 1.0042734100888775,
+            "unrealized_r": 0,
+            "max_dd_r_marked": 4.758110913819138,
+            "gap_stops": 0
+          },
+          "gated": {
+            "selected": "R2_FAST",
+            "closed_trades": 1,
+            "realized_r": 1.0042734100888775,
+            "unrealized_r": 0
+          },
+          "fixed": {
+            "closed_trades": 1,
+            "realized_r": 0.8018550742268478,
+            "unrealized_r": 0
+          }
+        },
+        {
+          "begin": "2022-11-30",
+          "end": "2023-11-28",
+          "training_score": 1.7846828803613908,
+          "standard": {
+            "selected": "R2_FAST",
+            "closed_trades": 3,
+            "realized_r": 2.873656315567887,
+            "unrealized_r": 0.29830909742536216,
+            "max_dd_r_marked": 4.343157408901635,
+            "gap_stops": 2
+          },
+          "gated": {
+            "selected": "R2_FAST",
+            "closed_trades": 3,
+            "realized_r": 2.873656315567887,
+            "unrealized_r": 0.29830909742536216
+          },
+          "fixed": {
+            "closed_trades": 2,
+            "realized_r": 1.8908430087855213,
+            "unrealized_r": 1.220152644404631
+          }
+        },
+        {
+          "begin": "2023-11-29",
+          "end": "2024-11-25",
+          "training_score": 0.5159066002376183,
+          "standard": {
+            "selected": "R2_FAST",
+            "closed_trades": 5,
+            "realized_r": 4.748307790053322,
+            "unrealized_r": 0,
+            "max_dd_r_marked": 3.178002094030564,
+            "gap_stops": 4
+          },
+          "gated": {
+            "selected": "R2_FAST",
+            "closed_trades": 5,
+            "realized_r": 4.748307790053322,
+            "unrealized_r": 0
+          },
+          "fixed": {
+            "closed_trades": 5,
+            "realized_r": 1.578088781948205,
+            "unrealized_r": 0
+          }
+        },
+        {
+          "begin": "2024-11-26",
+          "end": "2025-11-25",
+          "training_score": 0.5913015357937677,
+          "standard": {
+            "selected": "R2_FAST",
+            "closed_trades": 4,
+            "realized_r": 5.4209598709479705,
+            "unrealized_r": 0,
+            "max_dd_r_marked": 4.733453737830913,
+            "gap_stops": 2
+          },
+          "gated": {
+            "selected": "R2_FAST",
+            "closed_trades": 4,
+            "realized_r": 5.4209598709479705,
+            "unrealized_r": 0
+          },
+          "fixed": {
+            "closed_trades": 1,
+            "realized_r": 9.125587994921025,
+            "unrealized_r": 5.793063207143897
+          }
+        }
+      ]
+    },
+    {
+      "symbol": "USO",
+      "cell": "USO_ETF_D1",
+      "source_repo": "vivek-v-rao/OHLC-Vol",
+      "source_path": "prices_ohlc.csv",
+      "source_commit": "c46f69d94faacf389378a07d540b3c38fe182d33",
+      "source_git_blob_sha": "81d478f4bb4a89804060a4957782bb9e054b2085",
+      "price_basis": "RAW_PROVIDER_POINTS_UNVERIFIED",
+      "first_date": "2010-01-04",
+      "last_date": "2026-04-15",
+      "bar_count": 4095,
+      "source_type": "ETF_PROXY_NOT_UNDERLYING",
+      "source_rights": "RAW_COMMERCIAL_RIGHTS_UNVERIFIED",
+      "status": "HISTORICAL_REUSED_GROSS_ONLY_EXPLORATORY",
+      "baseline": {
+        "folds": 14,
+        "closed_trades": 28,
+        "mean_closed_trade_r": -0.0024512375455569913,
+        "sum_isolated_realized_r": -0.06863465127559576,
+        "sum_open_boundary_unrealized_r": 5.342659352488023,
+        "folds_positive": 4,
+        "folds_negative": 9,
+        "folds_flat": 1,
+        "folds_open": 1,
+        "gap_stops": 12,
+        "selection": {
+          "FLAT": 0,
+          "R0_REFERENCE": 14,
+          "R2_FAST": 0,
+          "R2_SLOW": 0
+        }
+      },
+      "r2_standard": {
+        "folds": 14,
+        "closed_trades": 30,
+        "mean_closed_trade_r": 0.017370810475282016,
+        "sum_isolated_realized_r": 0.5211243142584605,
+        "sum_open_boundary_unrealized_r": 10.428397558066495,
+        "folds_positive": 4,
+        "folds_negative": 8,
+        "folds_flat": 2,
+        "folds_open": 1,
+        "gap_stops": 9,
+        "selection": {
+          "FLAT": 1,
+          "R0_REFERENCE": 2,
+          "R2_FAST": 10,
+          "R2_SLOW": 1
+        }
+      },
+      "r2_positive_train_gate": {
+        "folds": 14,
+        "closed_trades": 16,
+        "mean_closed_trade_r": 0.342542107921622,
+        "sum_isolated_realized_r": 5.480673726745952,
+        "sum_open_boundary_unrealized_r": 0,
+        "folds_positive": 3,
+        "folds_negative": 4,
+        "folds_flat": 7,
+        "folds_open": 0,
+        "gap_stops": 6,
+        "selection": {
+          "FLAT": 7,
+          "R0_REFERENCE": 2,
+          "R2_FAST": 4,
+          "R2_SLOW": 1
+        }
+      },
+      "episodes": [
+        {
+          "begin": "2011-12-27",
+          "end": "2012-12-24",
+          "training_score": null,
+          "standard": {
+            "selected": "FLAT",
+            "closed_trades": 0,
+            "realized_r": 0,
+            "unrealized_r": 0,
+            "max_dd_r_marked": 0,
+            "gap_stops": 0
+          },
+          "gated": {
+            "selected": "FLAT",
+            "closed_trades": 0,
+            "realized_r": 0,
+            "unrealized_r": 0
+          },
+          "fixed": {
+            "closed_trades": 3,
+            "realized_r": -2.582509265107988,
+            "unrealized_r": 0
+          }
+        },
+        {
+          "begin": "2012-12-26",
+          "end": "2013-12-20",
+          "training_score": -0.5966705241646556,
+          "standard": {
+            "selected": "R2_FAST",
+            "closed_trades": 4,
+            "realized_r": -1.9251466255721157,
+            "unrealized_r": 0,
+            "max_dd_r_marked": 2.699958300299199,
+            "gap_stops": 0
+          },
+          "gated": {
+            "selected": "FLAT",
+            "closed_trades": 0,
+            "realized_r": 0,
+            "unrealized_r": 0
+          },
+          "fixed": {
+            "closed_trades": 4,
+            "realized_r": -2.0087743444101145,
+            "unrealized_r": 0
+          }
+        },
+        {
+          "begin": "2013-12-23",
+          "end": "2014-12-18",
+          "training_score": -0.5901360192652699,
+          "standard": {
+            "selected": "R2_FAST",
+            "closed_trades": 3,
+            "realized_r": -1.6189363073733691,
+            "unrealized_r": 0,
+            "max_dd_r_marked": 2.5597689668755264,
+            "gap_stops": 2
+          },
+          "gated": {
+            "selected": "FLAT",
+            "closed_trades": 0,
+            "realized_r": 0,
+            "unrealized_r": 0
+          },
+          "fixed": {
+            "closed_trades": 2,
+            "realized_r": -1.3798542915534389,
+            "unrealized_r": 0
+          }
+        },
+        {
+          "begin": "2014-12-19",
+          "end": "2015-12-16",
+          "training_score": -0.5781846207854926,
+          "standard": {
+            "selected": "R2_FAST",
+            "closed_trades": 0,
+            "realized_r": 0,
+            "unrealized_r": 0,
+            "max_dd_r_marked": 0,
+            "gap_stops": 0
+          },
+          "gated": {
+            "selected": "FLAT",
+            "closed_trades": 0,
+            "realized_r": 0,
+            "unrealized_r": 0
+          },
+          "fixed": {
+            "closed_trades": 0,
+            "realized_r": 0,
+            "unrealized_r": 0
+          }
+        },
+        {
+          "begin": "2015-12-17",
+          "end": "2016-12-13",
+          "training_score": -0.6665925590075166,
+          "standard": {
+            "selected": "R2_FAST",
+            "closed_trades": 2,
+            "realized_r": -1.1239156444170235,
+            "unrealized_r": 0,
+            "max_dd_r_marked": 1.9990492355889673,
+            "gap_stops": 1
+          },
+          "gated": {
+            "selected": "FLAT",
+            "closed_trades": 0,
+            "realized_r": 0,
+            "unrealized_r": 0
+          },
+          "fixed": {
+            "closed_trades": 2,
+            "realized_r": -1.3289118015423143,
+            "unrealized_r": 0
+          }
+        },
+        {
+          "begin": "2016-12-14",
+          "end": "2017-12-11",
+          "training_score": -0.5730946111167302,
+          "standard": {
+            "selected": "R2_FAST",
+            "closed_trades": 1,
+            "realized_r": -1,
+            "unrealized_r": 10.428397558066495,
+            "max_dd_r_marked": 5.9161101531338804,
+            "gap_stops": 0
+          },
+          "gated": {
+            "selected": "FLAT",
+            "closed_trades": 0,
+            "realized_r": 0,
+            "unrealized_r": 0
+          },
+          "fixed": {
+            "closed_trades": 1,
+            "realized_r": -1.060080114330055,
+            "unrealized_r": 5.342659352488023
+          }
+        },
+        {
+          "begin": "2017-12-12",
+          "end": "2018-12-10",
+          "training_score": -0.682969760163071,
+          "standard": {
+            "selected": "R2_FAST",
+            "closed_trades": 4,
+            "realized_r": 0.7084491648750187,
+            "unrealized_r": 0,
+            "max_dd_r_marked": 3.553446056591319,
+            "gap_stops": 0
+          },
+          "gated": {
+            "selected": "FLAT",
+            "closed_trades": 0,
+            "realized_r": 0,
+            "unrealized_r": 0
+          },
+          "fixed": {
+            "closed_trades": 4,
+            "realized_r": -0.6182289921767687,
+            "unrealized_r": 0
+          }
+        },
+        {
+          "begin": "2018-12-11",
+          "end": "2019-12-06",
+          "training_score": 2.394644077516545,
+          "standard": {
+            "selected": "R2_FAST",
+            "closed_trades": 3,
+            "realized_r": -2.1565169354407425,
+            "unrealized_r": 0,
+            "max_dd_r_marked": 3.7021216729180733,
+            "gap_stops": 1
+          },
+          "gated": {
+            "selected": "R2_FAST",
+            "closed_trades": 3,
+            "realized_r": -2.1565169354407425,
+            "unrealized_r": 0
+          },
+          "fixed": {
+            "closed_trades": 2,
+            "realized_r": -1.3193834400322575,
+            "unrealized_r": 0
+          }
+        },
+        {
+          "begin": "2019-12-09",
+          "end": "2020-12-03",
+          "training_score": 1.4166412227583984,
+          "standard": {
+            "selected": "R2_FAST",
+            "closed_trades": 1,
+            "realized_r": -0.21548705853570282,
+            "unrealized_r": 0,
+            "max_dd_r_marked": 1.3360197629213606,
+            "gap_stops": 0
+          },
+          "gated": {
+            "selected": "R2_FAST",
+            "closed_trades": 1,
+            "realized_r": -0.21548705853570282,
+            "unrealized_r": 0
+          },
+          "fixed": {
+            "closed_trades": 1,
+            "realized_r": -0.6217638457975143,
+            "unrealized_r": 0
+          }
+        },
+        {
+          "begin": "2020-12-04",
+          "end": "2021-12-01",
+          "training_score": 1.683517189951908,
+          "standard": {
+            "selected": "R2_FAST",
+            "closed_trades": 4,
+            "realized_r": 6.828173273771118,
+            "unrealized_r": 0,
+            "max_dd_r_marked": 3.9054341253766385,
+            "gap_stops": 1
+          },
+          "gated": {
+            "selected": "R2_FAST",
+            "closed_trades": 4,
+            "realized_r": 6.828173273771118,
+            "unrealized_r": 0
+          },
+          "fixed": {
+            "closed_trades": 3,
+            "realized_r": 6.04184453703461,
+            "unrealized_r": 0
+          }
+        },
+        {
+          "begin": "2021-12-02",
+          "end": "2022-11-29",
+          "training_score": 0.37052929699148524,
+          "standard": {
+            "selected": "R2_FAST",
+            "closed_trades": 3,
+            "realized_r": 3.385189540785766,
+            "unrealized_r": 0,
+            "max_dd_r_marked": 5.468982020046731,
+            "gap_stops": 0
+          },
+          "gated": {
+            "selected": "R2_FAST",
+            "closed_trades": 3,
+            "realized_r": 3.385189540785766,
+            "unrealized_r": 0
+          },
+          "fixed": {
+            "closed_trades": 1,
+            "realized_r": 5.338590882797591,
+            "unrealized_r": 0
+          }
+        },
+        {
+          "begin": "2022-11-30",
+          "end": "2023-11-28",
+          "training_score": 1.8418303978413084,
+          "standard": {
+            "selected": "R2_SLOW",
+            "closed_trades": 2,
+            "realized_r": -0.922595811563027,
+            "unrealized_r": 0,
+            "max_dd_r_marked": 2.4744371206788167,
+            "gap_stops": 1
+          },
+          "gated": {
+            "selected": "R2_SLOW",
+            "closed_trades": 2,
+            "realized_r": -0.922595811563027,
+            "unrealized_r": 0
+          },
+          "fixed": {
+            "closed_trades": 2,
+            "realized_r": 0.908525306114117,
+            "unrealized_r": 0
+          }
+        },
+        {
+          "begin": "2023-11-29",
+          "end": "2024-11-25",
+          "training_score": 1.6205249285422172,
+          "standard": {
+            "selected": "R0_REFERENCE",
+            "closed_trades": 1,
+            "realized_r": 0.42187479533040184,
+            "unrealized_r": 0,
+            "max_dd_r_marked": 1.0938300105731569,
+            "gap_stops": 1
+          },
+          "gated": {
+            "selected": "R0_REFERENCE",
+            "closed_trades": 1,
+            "realized_r": 0.42187479533040184,
+            "unrealized_r": 0
+          },
+          "fixed": {
+            "closed_trades": 1,
+            "realized_r": 0.42187479533040184,
+            "unrealized_r": 0
+          }
+        },
+        {
+          "begin": "2024-11-26",
+          "end": "2025-11-25",
+          "training_score": 1.7696161629890625,
+          "standard": {
+            "selected": "R0_REFERENCE",
+            "closed_trades": 2,
+            "realized_r": -1.8599640776018629,
+            "unrealized_r": 0,
+            "max_dd_r_marked": 3.447844675278641,
+            "gap_stops": 2
+          },
+          "gated": {
+            "selected": "R0_REFERENCE",
+            "closed_trades": 2,
+            "realized_r": -1.8599640776018629,
+            "unrealized_r": 0
+          },
+          "fixed": {
+            "closed_trades": 2,
+            "realized_r": -1.8599640776018629,
+            "unrealized_r": 0
+          }
+        }
+      ]
+    }
+  ],
+  "orders_sent": 0,
+  "independent_forward_trades": 0,
+  "edge_status": "UNPROVEN"
+}
