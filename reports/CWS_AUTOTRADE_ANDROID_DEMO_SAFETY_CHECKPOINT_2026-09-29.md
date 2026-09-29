@@ -76,3 +76,31 @@
 3. Thiếu keystore ổn định do Founder quản lý bên ngoài Git checkout, release public-key pin, Founder approval manifest và bằng chứng cùng signer/versionCode tăng khi install, update, encrypted-data migration và native recovery trên Android. Không commit keystore/password/secret; debug APK hoặc unit test với signer giả không phải release.
 
 **Kết luận nghiệm thu:** deterministic engine và safety source được củng cố; SOURCE QA PASS tại SHA nêu trên. **Chưa có bản APK release được ký hay khả năng bật auto-trade DEMO đã nghiệm thu.** Giữ fail-closed và chỉ tiếp tục với xác thực, approval, signing và Android/broker evidence thật.
+
+
+## Nghiên cứu chiến lược và risk DEMO tự thiết kế (29/09/2026)
+
+**Phạm vi:** Founder giao tự thiết kế ứng viên chiến lược deterministic và cấu hình risk cho MT5 DEMO. Chỉ nhánh codex/p0-covel-knowledge-audit; không thay Main/Stable/Production, không dùng máy Founder, không tốn dịch vụ mới, không bật runtime DEMO-send/risk/LIVE hoặc bypass Founder authentication.
+
+### Mã đã bổ sung
+
+- [Risk caps 89444f31](https://github.com/trankhanhduy1508-maker/AI-TRADE/commit/89444f31e65c6f846cf5cc5a5948930abd9938bd): bổ sung giới hạn broker equity, rủi ro tiền dự kiến từ khoảng entry đến SL và loss-side tick value/lot, giới hạn lỗ ngày theo equity, từ chối metadata thiếu/sai currency.
+- [Ứng viên 96f0e2cc](https://github.com/trankhanhduy1508-maker/AI-TRADE/commit/96f0e2cc38b3277596971afb0b96da3c21ff7818): source src/execution/demo_candidate.py và strategies/CWS_DEMO_TF014_EURUSD_H4_CANDIDATE.md. Phiên bản CWS-DEMO-TF014-EURUSD-H4-V1: EURUSD H4, 60 nến đóng để warmup, momentum 20 nến, protective stop từ 10 nến trước, trailing 20 nến, không pyramiding. Dữ liệu không hữu hạn/nến chưa đóng/timestamp trùng hoặc đảo thứ tự -> ABSTAIN. RESEARCH_CANDIDATE, broker_orders_approved=false; không tự nâng thành mô hình duyệt.
+- [MT5 broker metadata d6251f2b](https://github.com/trankhanhduy1508-maker/AI-TRADE/commit/d6251f2b85b2fe69d96f5473ac0954738340543e): verified_demo_risk_context lấy equity, balance, tick-size và loss-side tick-value/lot từ MT5 DEMO; tính account-wide positions/symbol volume, lỗ giao dịch đóng của toàn tài khoản và floating loss âm; so login/server/currency trước và sau readback. Thiếu broker metadata hoặc đổi account -> fail closed. Chưa nối E2E đến APK.
+
+**Thông số risk ứng viên:** max 0,01 lot/lệnh và /symbol, 1 vị thế trên tài khoản, spread 20 broker points, lỗ ngày tối đa 100 USD hoặc 1% equity (mức chạm trước), stop exposure tối đa 0,25% verified broker equity, USD account, broker-side protective SL bắt buộc. Khoảng lỗ đến SL là ước tính, có thể bị vượt do gap/slippage/chi phí. Chưa triển khai cấu hình này thành quyền giao dịch.
+
+### QA có thể kiểm chứng
+
+- [Source QA 36531889315](https://github.com/trankhanhduy1508-maker/AI-TRADE/actions/runs/36531889315): SUCCESS tại 96f0e2cc; 259 Python + 16 Node PASS.
+- [Source QA 36532127519](https://github.com/trankhanhduy1508-maker/AI-TRADE/actions/runs/36532127519): SUCCESS tại d6251f2b; **263 Python + 16 Node PASS**, Java debug/release compilation + lint, release signing gate fail-closed đúng thiết kế, **không tạo APK**. Các test broker dùng fake, chưa phải broker order-send hoặc Android physical-device E2E.
+
+### BLOCKER phát hành còn nguyên
+
+Runtime Supabase đọc trực tiếp: enabled=false, demo_send_enabled=false, risk_profile_approved=false, approved_execution_models=0, order_intents=0. GitHub Releases=0 và release approval manifest chưa tồn tại.
+
+1. Chiến lược mới vẫn thiếu OOS, walk-forward, kiểm chi phí/spread/slippage, next-open/gap và forward paper trên dữ liệu broker thật; không kế thừa bằng chứng TF-004 đã bị bác bỏ và không tự tạo model APPROVED.
+2. Chưa nghiệm thu xác thực Founder -> MT5 DEMO login/server/password và account snapshot -> order-check/send cùng SL broker acknowledgement -> reconciliation/restart -> Android thực. Không lách các giới hạn tool/safety hoặc tự bật execution.
+3. Chưa có khóa ký release ổn định do Founder quản lý bên ngoài Git, public-key pin, release approval và thử cài/update/recovery cùng signer trên Android thực. Không đóng gói debug APK giả danh bản release. Native Google OAuth vẫn hoãn; xác thực Founder hiện có không được bỏ.
+
+**Kết luận:** ứng viên chiến lược và risk code đã có, source-only QA PASS. Bản APK MT5 DEMO tự giao dịch **chưa thể bàn giao hợp lệ** cho đến khi có bằng chứng broker, chiến lược, signing và thiết bị thật.
