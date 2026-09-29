@@ -9,7 +9,7 @@
  * Other brokers/accounts need separate verified adapter and security review.
  */
 import postgres from "npm:postgres@3.4.9";
-import {createHash,timingSafeEqual} from "node:crypto";
+import { parseFounderDemoLogin } from "./demo-login-contract.mjs";
 
 const sql=postgres(Deno.env.get("SUPABASE_DB_URL")!,{
   prepare:false,max:2,connect_timeout:10,idle_timeout:20
@@ -57,11 +57,6 @@ async function founder(req:Request):Promise<Founder|null>{
   `;
   return rows[0]?{id:Number(rows[0].id)}:null;
 }
-function samePassword(one:string,two:string){
-  const a=createHash("sha256").update(one,"utf8").digest();
-  const b=createHash("sha256").update(two,"utf8").digest();
-  return timingSafeEqual(a,b);
-}
 async function status(id:number){
   const [binding]=await sql`
     select b.account_login,b.server,b.account_type,b.connection_state,
@@ -107,36 +102,46 @@ async function verifyStoredDemo(req:Request,id:number){
   if(length>1024)return {code:413,body:{ok:false,status:"PAYLOAD_TOO_LARGE"}};
   const raw=await req.text();
   if(raw.length>1024)return {code:413,body:{ok:false,status:"PAYLOAD_TOO_LARGE"}};
-  let payload:Record<string,unknown>;
+  let payload:unknown;
   try{payload=JSON.parse(raw)}catch{return {code:400,body:{ok:false,status:"INVALID_JSON"}}}
-  const login=String(payload?.login??"").trim();
-  const server=String(payload?.server??"").trim();
-  const password=String(payload?.password??"");
-  if(!/^[1-9][0-9]{4,14}$/.test(login)
-      ||server!=="MetaQuotes-Demo"
-      ||password.length<4||password.length>32){
+  let login:string,server:string,password:string;
+  try{
+    ({login,server,password}=parseFounderDemoLogin(payload));
+  }catch{
     return {code:400,body:{ok:false,status:"INVALID_DEMO_CREDENTIAL_FORMAT"}};
   }
-  // Bind only to an existing account already associated with this Founder.
-  // Never issue/upsert a new account or replace the existing Vault credential here.
+  // Require this exact account to be already linked to this Founder.
+  // A broker login must use the supplied password, not a historical Vault match.
   const rows=await sql`
-    select v.decrypted_secret as stored_password
-    from ai_trade.account_mt5_bindings b
+    select b.id from ai_trade.account_mt5_bindings b
     join ai_trade.mt5_demo_accounts a
       on a.account_login=b.account_login and a.server=b.server
-    join vault.decrypted_secrets v on v.id=a.password_secret_id
     where b.access_token_id=${id}
       and b.account_login=${login}::bigint
-      and b.server='MetaQuotes-Demo'
-      and b.account_type='DEMO'
+      and b.server=${server} and b.account_type='DEMO'
       and a.account_type='DEMO' and a.is_active=true
     limit 1
   `;
-  if(!rows[0]||!samePassword(password,String(rows[0].stored_password??""))){
-    return {code:403,body:{ok:false,status:"INVALID_DEMO_CREDENTIALS"}};
+  if(rows.length!==1){
+    return {code:403,body:{ok:false,status:"FOUNDER_DEMO_NOT_LINKED",
+      brokerOrders:false,liveMoneyLocked:true}};
   }
-  // Revalidate with the pre-existing broker read-only verifier, which returns
-  // DEMO account metadata but no credentials and submits no order.
+  // Re-verification invalidates historical CONNECTED even if broker times out.
+  // No credential is stored in a table, Vault, a device or an application log.
+  const disconnected=await sql`
+    update ai_trade.account_mt5_bindings set
+      connection_state='DISCONNECTED',last_verified_at=null,updated_at=now()
+    where access_token_id=${id} and account_login=${login}::bigint
+      and server=${server} and account_type='DEMO'
+      and connection_state!='REVOKED'
+    returning id
+  `;
+  if(disconnected.length!==1){
+    return {code:409,body:{ok:false,status:"BINDING_CHANGED",
+      brokerOrders:false,liveMoneyLocked:true}};
+  }
+  // Internal verifier authenticates on the real broker using transient input.
+  // Its permitted broker commands are bootstrap/init/login/account only.
   const [cron]=await sql`select secret from ai_trade.cron_auth where id=1`;
   const secret=String(cron?.secret??"");
   if(!secret)return {code:503,body:{ok:false,status:"BROKER_VERIFIER_UNAVAILABLE"}};
@@ -145,7 +150,7 @@ async function verifyStoredDemo(req:Request,id:number){
     const result=await fetch(URL_ROOT+"/functions/v1/ai-trade-mt5-demo-validate",{
       method:"POST",
       headers:{"content-type":"application/json","x-ai-trade-cron":secret},
-      body:JSON.stringify({login}),
+      body:JSON.stringify({login,readback:"founder_verify",verifyPassword:password}),
       cache:"no-store",
       signal:AbortSignal.timeout(120000)
     });
@@ -156,7 +161,9 @@ async function verifyStoredDemo(req:Request,id:number){
       brokerOrders:false,liveMoneyLocked:true}};
   }
   if(data.verified!==true||data.status!=="DEMO_VERIFIED"
-      ||data.server!=="MetaQuotes-Demo"||String(data.login)!==login){
+      ||data.accountType!==1||data.server!==server
+      ||String(data.login)!==login
+      ||data.brokerOrders!==false||data.liveMoneyLocked!==true){
     return {code:403,body:{ok:false,status:"BROKER_DEMO_NOT_VERIFIED",
       brokerOrders:false,liveMoneyLocked:true}};
   }
@@ -174,6 +181,7 @@ async function verifyStoredDemo(req:Request,id:number){
     where access_token_id=${id}
       and account_login=${login}::bigint
       and server='MetaQuotes-Demo' and account_type='DEMO'
+      and connection_state='DISCONNECTED'
     returning id
   `;
   if(updated.length!==1)return {code:409,body:{ok:false,status:"BINDING_CHANGED"}};

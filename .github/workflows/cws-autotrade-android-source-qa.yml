@@ -14,6 +14,8 @@ on:
       - 'scripts/build_cws_trade_static.py'
       - 'scripts/check_native_autotrade_contract.py'
       - 'tests/android/**'
+      - 'supabase/functions/ai-trade-founder-mt5/**'
+      - 'supabase/functions/ai-trade-mt5-demo-validate/**'
 
 permissions:
   contents: read
@@ -59,7 +61,7 @@ jobs:
           PYTHONPATH=. "$RUNNER_TEMP/cws-py/bin/python" -m pytest -q tests/execution tests/android --maxfail=1
 
       - name: Test broker-only equity and positions decoder (no broker access)
-        run: node --test tests/android/mt5_snapshot_readonly.test.mjs
+        run: node --test tests/android/*.test.mjs
 
       - name: Build exact offline Android assets and merge (no APK)
         run: gradle --no-daemon -p android :app:prepareCwsAndroidAssets :app:mergeDebugAssets --stacktrace

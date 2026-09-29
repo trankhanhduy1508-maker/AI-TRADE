@@ -6,7 +6,7 @@ const sql=postgres(Deno.env.get("SUPABASE_DB_URL")!,{prepare:false,max:1,connect
 const WS_URI="wss://web.metatrader.app/terminal";
 const INITIAL_KEY_HEX="02de02a1a65cc794684fcbea1ecb0fd74ae657e43662c11eee885d2fd64f4964";
 
-const json=(b:unknown,s=200)=>new Response(JSON.stringify(b),{status:s,headers:{"content-type":"application/json"}});
+const json=(b:unknown,s=200)=>new Response(JSON.stringify(b),{status:s,headers:{"content-type":"application/json","cache-control":"no-store","x-content-type-options":"nosniff"}});
 async function authorized(req:Request){
   const rows=await sql`select secret from ai_trade.cron_auth where id=1`;
   const expected=String(rows[0]?.secret??"");
@@ -111,15 +111,43 @@ function parseAccount(body:Uint8Array){
 
 Deno.serve(async(req)=>{
   if(!(await authorized(req)))return json({ok:false,status:"UNAUTHORIZED"},401);
-  const body=await req.json().catch(()=>({})) as {login?:string;readback?:string};
-  const requested=String(body.login??"").trim();
+  const size=Number(req.headers.get("content-length")??0);
+  if(!Number.isFinite(size)||size>1024)return json({ok:false,
+    status:"INVALID_DEMO_REQUEST",verified:false},413);
+  const raw=await req.text();
+  if(raw.length>1024)return json({ok:false,
+    status:"INVALID_DEMO_REQUEST",verified:false},413);
+  let body:{login?:unknown;readback?:unknown;verifyPassword?:unknown};
+  try{body=JSON.parse(raw)}catch{return json({ok:false,
+    status:"INVALID_DEMO_REQUEST",verified:false},400);}
+  if(!body||typeof body!=="object"||Array.isArray(body))
+    return json({ok:false,status:"INVALID_DEMO_REQUEST",verified:false},400);
+  const requested=typeof body.login==="string"?body.login.trim():"";
   const fullReadback=body.readback==="investor_snapshot";
+  const direct=body.readback==="founder_verify";
+  if((body.readback!==undefined&&!fullReadback&&!direct)
+      ||(direct&&(!requested||typeof body.verifyPassword!=="string"
+        ||body.verifyPassword.length<4||body.verifyPassword.length>32
+        ||/[\u0000-\u001F\u007F]/.test(body.verifyPassword)))
+      ||(!direct&&body.verifyPassword!==undefined)){
+    return json({ok:false,status:"INVALID_DEMO_REQUEST",verified:false,
+      brokerOrders:false,liveMoneyLocked:true},400);
+  }
   if(requested&&!/^[1-9][0-9]{4,14}$/.test(requested)){
     return json({ok:false,status:"INVALID_DEMO_LOGIN",verified:false,
       brokerOrders:false,liveMoneyLocked:true},400);
   }
 
-  const rows=requested
+  const rows=direct
+    ? await sql`
+      select a.account_login as login,a.server
+      from ai_trade.mt5_demo_accounts a
+      where a.account_login=${BigInt(requested)}
+        and a.account_type='DEMO' and a.server='MetaQuotes-Demo'
+        and a.is_active=true
+      limit 1
+    `
+    : requested
     ? await sql`
       select a.account_login as login,a.server,
              v.decrypted_secret as password,
@@ -151,9 +179,10 @@ Deno.serve(async(req)=>{
 
   const row=rows[0];
   const login=BigInt(row.login);
-  const password=String((fullReadback?row.investor_password:row.password)??"");
+  const password=String((direct?body.verifyPassword:(fullReadback?row.investor_password:row.password))??"");
   if(!password)return json({ok:false,status:fullReadback
-    ?"MISSING_INVESTOR_ONLY_CREDENTIAL":"MISSING_DECRYPTED_PASSWORD",
+    ?"MISSING_INVESTOR_ONLY_CREDENTIAL":direct
+    ?"INVALID_DEMO_REQUEST":"MISSING_DECRYPTED_PASSWORD",
     verified:false,brokerOrders:false,liveMoneyLocked:true},503);
 
   const c=new Client();
