@@ -10,14 +10,14 @@ from src.execution.risk import RiskContext
 from src.rule_engine.types import Bar
 
 
-def history(n=65, delta=.0001, *, volume=100):
+def history(n=65, delta=.0001, *, volume=100, spacing_hours=4):
     start = datetime(2026, 1, 1, tzinfo=timezone.utc)
     out = []
     for i in range(n):
         opened = 1.10 + i * delta
         closed = opened + delta / 2
         out.append(Bar(
-            (start + timedelta(hours=4 * i)).isoformat(),
+            (start + timedelta(hours=spacing_hours * i)).isoformat(),
             opened, max(opened, closed) + .0002,
             min(opened, closed) - .0002,
             closed, volume, True,
@@ -93,3 +93,22 @@ def test_candidate_risk_caps_single_position_stop_exposure_and_daily_loss():
     assert "BROKER_TICK_VALUE_REQUIRED" in policy.evaluate(
         order, replace(context, tick_size=None)
     ).reasons
+
+
+def test_candidate_abstains_if_h1_m15_or_implausible_history_is_labeled_h4():
+    profile = DemoTrendCandidate()
+    assert profile(history(spacing_hours=1)) is None
+    assert profile(history(spacing_hours=.25)) is None
+    assert profile(history(spacing_hours=4 * 25)) is None
+    assert profile(history(spacing_hours=4)) is not None
+
+
+def test_candidate_allows_a_weekend_gap_but_not_inverted_broker_timestamps():
+    profile = DemoTrendCandidate()
+    friday_to_monday = history()
+    stamp = datetime.fromisoformat(friday_to_monday[-2].timestamp)
+    friday_to_monday[-1].timestamp = (stamp + timedelta(hours=52)).isoformat()
+    assert profile(friday_to_monday) is not None
+    inverted = history()
+    inverted[-2].timestamp = inverted[-1].timestamp
+    assert profile(inverted) is None

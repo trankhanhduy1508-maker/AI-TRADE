@@ -142,3 +142,19 @@ def test_broker_risk_context_fails_closed_on_unknown_tick_or_positions():
             mt5, expected_login="123456", expected_server="MetaQuotes-Demo",
             symbol="EURUSD", market=market,
         )
+
+
+def test_closed_bars_rejects_broker_out_of_order_and_duplicate_rates():
+    import pytest
+    mt5 = MT5()
+    base = mt5.copy_rates_from_pos("EURUSD", 15, 1, 2)
+    mt5.copy_rates_from_pos = lambda *args: list(reversed(base))
+    with pytest.raises(RuntimeError, match="BROKER_BARS_OUT_OF_ORDER"):
+        collect_market_state(
+            mt5, symbol="EURUSD", timeframe=15, count=2, magic=260926
+        )
+    mt5.copy_rates_from_pos = lambda *args: [base[0], base[0]]
+    with pytest.raises(RuntimeError, match="BROKER_BARS_OUT_OF_ORDER"):
+        collect_market_state(
+            mt5, symbol="EURUSD", timeframe=15, count=2, magic=260926
+        )

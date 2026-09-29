@@ -61,3 +61,13 @@ allocation advice or approval to enable runtime flags.
 
 **Current status: source candidate only. No approved model, no DEMO
 send gate, no release APK.** Never fabricate an approval or E2E PASS.
+
+
+## H4 candle-integrity gate
+
+The research candidate also checks that successive timestamps are at least
+four hours apart and no more than four days apart. This rejects accidental
+H1/M15 input without silently manufacturing broker bars; gaps for weekends
+and holidays remain possible. This does not independently authenticate feed
+origin, broker server, timestamp epoch or completeness. Those requirements
+remain at the trusted MT5 adapter and E2E QA boundary.

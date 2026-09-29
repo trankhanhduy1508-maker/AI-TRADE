@@ -45,7 +45,10 @@ def closed_bars(mt5: Any, symbol: str, timeframe: int, count: int) -> tuple[Bar,
         )
         for row in records
     ]
-    bars.sort(key=lambda bar: bar.timestamp)
+    # Do not silently reorder/deduplicate broker records: doing so can hide
+    # stale or inconsistent prices and misrepresent a closed-bar checkpoint.
+    if any(current.timestamp <= previous.timestamp for previous, current in zip(bars, bars[1:])):
+        raise RuntimeError("BROKER_BARS_OUT_OF_ORDER")
     return tuple(bars)
 
 

@@ -7,7 +7,7 @@ Founder authentication, independent risk gate and DEMO-send authorization.
 from __future__ import annotations
 
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import datetime, timedelta
 import math
 from collections.abc import Sequence
 
@@ -112,6 +112,14 @@ class DemoTrendCandidate:
                 previous_ts is not None and timestamp <= previous_ts
             ):
                 return None
+            if previous_ts is not None:
+                elapsed = timestamp - previous_ts
+                # The caller must independently verify the broker's H4 feed.
+                # This additional guard rejects accidentally supplied M15/H1
+                # candles and implausible/missing-history gaps; holiday/weekend
+                # gaps are allowed up to four days.
+                if not timedelta(hours=4) <= elapsed <= timedelta(days=4):
+                    return None
             previous_ts = timestamp
             values = (bar.open, bar.high, bar.low, bar.close, bar.volume)
             if not all(
