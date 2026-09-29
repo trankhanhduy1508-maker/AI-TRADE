@@ -48,6 +48,10 @@ class Runtime(unittest.TestCase):
 
 
 class Fault(unittest.TestCase):
+    def test_future_clock_rejected_even_when_data_missing(self):
+        with self.assertRaisesRegex(ValueError,'INVALID_AS_OF_CLOCK'):
+            run_batch([entry()],as_of_utc=9999999999)
+
     def test_duplicate_cells_rejected(self):
         with self.assertRaisesRegex(ValueError,'DUPLICATE_OR_EMPTY_CELL'):
             run_batch([entry(),entry()],as_of_utc=START+1000*86400)
