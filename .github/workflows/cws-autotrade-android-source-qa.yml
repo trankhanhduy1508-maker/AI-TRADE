@@ -16,6 +16,8 @@ on:
       - 'tests/android/**'
       - 'supabase/functions/ai-trade-founder-mt5/**'
       - 'supabase/functions/ai-trade-mt5-demo-validate/**'
+      - 'src/execution/coordinator.py'
+      - 'tests/execution/test_coordinator.py'
 
 permissions:
   contents: read

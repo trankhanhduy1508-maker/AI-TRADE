@@ -65,7 +65,7 @@ def test_coordinator_blocks_before_adapter_when_kill_switch_is_active():
         store.close()
 
 
-def test_coordinator_passes_only_after_explicit_gate_clear():
+def test_coordinator_requires_independent_risk_even_after_explicit_gate_clear():
     with _db_path() as path:
         store = KillSwitchStore(path)
         store.deactivate("demo coordinator test")
@@ -75,9 +75,29 @@ def test_coordinator_passes_only_after_explicit_gate_clear():
             _order(), _snapshot()
         )
 
-        assert outcome.status == "FILLED"
-        assert outcome.reasons == ()
-        assert adapter.calls == 1
+        assert outcome.status == "RISK_BLOCKED"
+        assert outcome.reasons == ("RISK_ENGINE_REQUIRED",)
+        assert adapter.calls == 0
+        store.close()
+
+
+def test_missing_risk_engine_is_audited_without_broker_submission():
+    with _db_path() as path:
+        store = KillSwitchStore(path)
+        store.deactivate("risk absence negative test")
+        adapter = FakeAdapter()
+        audit = AppendOnlyAuditLog(path)
+        outcome = ExecutionCoordinator(
+            adapter, SafetyGate(store), audit_log=audit
+        ).submit(_order(), _snapshot())
+
+        assert outcome.status == "RISK_BLOCKED"
+        assert adapter.calls == 0
+        events = audit.read_all()
+        assert len(events) == 1
+        assert events[0].event_type == "risk_blocked"
+        assert events[0].details == {"reasons": ["RISK_ENGINE_REQUIRED"]}
+        audit.close()
         store.close()
 
 

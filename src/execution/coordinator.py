@@ -50,23 +50,26 @@ class ExecutionCoordinator:
                 )
             return ExecutionOutcome(status="GATE_BLOCKED", reasons=decision.reasons)
 
-        if self._risk_engine is not None:
-            if risk_context is None:
-                reasons = ("RISK_CONTEXT_MISSING",)
-            else:
-                risk_decision = self._risk_engine.evaluate(order, risk_context)
-                reasons = risk_decision.reasons
-            if reasons:
-                if self._audit_log is not None:
-                    self._audit_log.append(
-                        AuditEvent(
-                            "risk_blocked",
-                            "REJECTED",
-                            {"reasons": list(reasons)},
-                            client_order_id=order.client_order_id,
-                        )
+        # A true SafetySnapshot.risk_allowed flag is never a substitute for
+        # the independent Risk Engine and a complete live risk context.
+        if self._risk_engine is None:
+            reasons = ("RISK_ENGINE_REQUIRED",)
+        elif risk_context is None:
+            reasons = ("RISK_CONTEXT_MISSING",)
+        else:
+            risk_decision = self._risk_engine.evaluate(order, risk_context)
+            reasons = risk_decision.reasons
+        if reasons:
+            if self._audit_log is not None:
+                self._audit_log.append(
+                    AuditEvent(
+                        "risk_blocked",
+                        "REJECTED",
+                        {"reasons": list(reasons)},
+                        client_order_id=order.client_order_id,
                     )
-                return ExecutionOutcome(status="RISK_BLOCKED", reasons=reasons)
+                )
+            return ExecutionOutcome(status="RISK_BLOCKED", reasons=reasons)
 
         result = self._adapter.submit(order)
         if self._audit_log is not None:
