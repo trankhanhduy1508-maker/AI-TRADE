@@ -277,9 +277,21 @@ class MT5BrokerAdapter:
             raise TradingDisabledError("account trading disabled")
         login = getattr(info, "login", None)
         server = getattr(info, "server", None)
-        self._bound_identity = (
-            (str(login), str(server)) if login is not None and server else None
-        )
+        # Never continue into DEMO orders or readback without a stable identity.
+        # Otherwise _assert_demo_account could silently skip the fencing check.
+        login_text = str(login) if isinstance(login, (int, str)) and not isinstance(login, bool) else ""
+        if (
+            not login_text.isascii()
+            or not login_text.isdecimal()
+            or not 5 <= len(login_text) <= 15
+            or login_text[0] == "0"
+            or not isinstance(server, str)
+            or not server.strip()
+            or len(server) > 128
+        ):
+            self._terminal.shutdown()
+            raise TradingDisabledError("DEMO account identity required")
+        self._bound_identity = (login_text, server)
         self._connected = True
         return True
 
@@ -541,11 +553,12 @@ class MT5BrokerAdapter:
         if (getattr(info, "trade_allowed", None) is not True
                 or getattr(info, "trade_expert", None) is not True):
             raise TradingDisabledError("account trading disabled")
-        if self._bound_identity is not None:
-            identity = (str(getattr(info, "login", "")),
-                        str(getattr(info, "server", "")))
-            if identity != self._bound_identity:
-                raise TradingDisabledError("DEMO account identity changed")
+        if self._bound_identity is None:
+            raise TradingDisabledError("DEMO account identity required")
+        identity = (str(getattr(info, "login", "")),
+                    str(getattr(info, "server", "")))
+        if identity != self._bound_identity:
+            raise TradingDisabledError("DEMO account identity changed")
 
     def _checked_send(
         self,

@@ -20,7 +20,9 @@ class Terminal:
     POSITION_TYPE_SELL = 1
 
     def __init__(self):
-        self.account = SimpleNamespace(trade_mode=0, trade_allowed=True, trade_expert=True)
+        self.account = SimpleNamespace(
+            login=123456, server="MetaQuotes-Demo",
+            trade_mode=0, trade_allowed=True, trade_expert=True)
         self.contract = SimpleNamespace(
             point=.00001, digits=5, volume_min=.01, volume_max=1.0,
             volume_step=.01, trade_stops_level=10, trade_mode=1

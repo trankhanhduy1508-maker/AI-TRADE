@@ -16,7 +16,9 @@ class FakeTerminal:
     POSITION_TYPE_SELL = 1
 
     def __init__(self):
-        self.account = SimpleNamespace(trade_mode=0, trade_allowed=True, trade_expert=True)
+        self.account = SimpleNamespace(
+            login=123456, server="MetaQuotes-Demo",
+            trade_mode=0, trade_allowed=True, trade_expert=True)
         self.contract = SimpleNamespace(
             point=0.00001,
             digits=5,

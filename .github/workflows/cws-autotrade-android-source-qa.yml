@@ -17,6 +17,11 @@ on:
       - 'supabase/functions/ai-trade-founder-mt5/**'
       - 'supabase/functions/ai-trade-mt5-demo-validate/**'
       - 'src/execution/coordinator.py'
+      - 'src/execution/mt5_adapter.py'
+      - 'tests/execution/test_mt5_adapter.py'
+      - 'tests/execution/test_auto_engine.py'
+      - 'tests/execution/test_position_lifecycle.py'
+      - 'tests/execution/test_position_state_controller.py'
       - 'tests/execution/test_coordinator.py'
       - 'tests/execution/test_paper_adapter.py'
 

@@ -126,6 +126,30 @@ def test_live_mode_is_locked_even_when_send_flag_is_requested():
     assert terminal.initialize_calls == 0
 
 
+@pytest.mark.parametrize("attribute,value", [
+    ("login", None),
+    ("login", 0),
+    ("login", ""),
+    ("login", "012345"),
+    ("server", None),
+    ("server", ""),
+    ("server", "   "),
+])
+def test_demo_missing_identity_never_reads_or_sends(attribute, value):
+    terminal = FakeTerminal()
+    setattr(terminal.account, attribute, value)
+    with _ledger_path() as db_path:
+        adapter = MT5BrokerAdapter(
+            terminal, mode=ExecutionMode.DEMO,
+            allow_order_send=True, ledger_path=db_path,
+        )
+        with pytest.raises(TradingDisabledError, match="identity required"):
+            adapter.submit(_request("missing-demo-identity"))
+        adapter.close()
+    assert terminal.check_calls == 0
+    assert terminal.send_calls == 0
+
+
 def test_order_check_must_pass_before_order_send():
     terminal = FakeTerminal(check_retcode=10016)
     with _ledger_path() as db_path:
@@ -340,6 +364,8 @@ def test_contract_preflight_rejects_stop_at_entry_even_without_broker_minimum():
     lambda a: setattr(a, "trade_allowed", False),
     lambda a: setattr(a, "login", 654321),
     lambda a: setattr(a, "server", "Different-Demo"),
+    lambda a: setattr(a, "server", None),
+    lambda a: setattr(a, "login", None),
 ])
 def test_broker_switch_after_order_check_blocks_order_send(mutate_account):
     terminal = FakeTerminal()
