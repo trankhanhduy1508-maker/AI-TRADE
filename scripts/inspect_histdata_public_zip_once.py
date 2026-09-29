@@ -189,17 +189,29 @@ def inspect() -> dict:
                 "uncompressed_size":f.file_size,
                 "is_directory":f.is_dir()
             } for f in archive.infolist()[:20]]
-            entries=[f for f in archive.infolist() if not f.is_dir()]
-            matches=[f for f in entries if re.fullmatch(
-                r"(?:DAT_ASCII|HISTDATA_COM_ASCII)_EURUSD_M1_202608\.csv",
-                f.filename,re.I)]
-            if len(matches)!=1 or len(entries)!=1:
+            entries=archive.infolist()
+            expected={"DAT_ASCII_EURUSD_M1_202608.csv",
+                      "DAT_ASCII_EURUSD_M1_202608.txt"}
+            if (len(entries)!=2 or any(f.is_dir() or
+                    "/" in f.filename or "\\" in f.filename or
+                    ".." in f.filename for f in entries) or
+                    {f.filename for f in entries}!=expected):
                 report["status"]="ZIP_ENTRY_FORMAT_UNVERIFIED"
                 return report
-            if matches[0].file_size>MAX_CSV_BYTES:
+            csv_info=next(f for f in entries if f.filename.endswith(".csv"))
+            txt_info=next(f for f in entries if f.filename.endswith(".txt"))
+            if (csv_info.file_size>MAX_CSV_BYTES
+                or txt_info.file_size>100_000):
                 report["status"]="ZIP_UNCOMPRESSED_TOO_LARGE"
                 return report
-            rawcsv=archive.read(matches[0])
+            rawcsv=archive.read(csv_info)
+            status_txt=archive.read(txt_info)
+            if (len(rawcsv)!=csv_info.file_size or
+                len(status_txt)!=txt_info.file_size):
+                report["status"]="ZIP_MEMBER_SIZE_MISMATCH"
+                return report
+            report["provider_status_txt_sha256"]=hashlib.sha256(
+                status_txt).hexdigest()
             if len(rawcsv)>MAX_CSV_BYTES:
                 report["status"]="CSV_EXCEEDS_LIMIT"
                 return report
