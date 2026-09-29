@@ -1,5 +1,8 @@
 # CWS AUTOTRADE — KINH NGHIỆM VÀ CHECKPOINT APK/MT5 DEMO — 29/09/2026
 
+> **CẬP NHẬT READ-ONLY BROKER QA (29/09):** source commit `a83e83c631137900a403178933734fe126f04791` tăng kiểm soát `src/execution/demo_readback.py`: tối đa 1000 vị thế, ticket duy nhất đúng định dạng, mã cặp đúng định dạng, giới hạn lot/P&L, bắt thay đổi currency khi đọc broker, phân biệt danh sách rỗng được broker xác nhận với dữ liệu unavailable. [Source-only QA 36529015884](https://github.com/trankhanhduy1508-maker/AI-TRADE/actions/runs/36529015884) **SUCCESS: 204 Python + 16 Node tests**, Java standalone contracts, Android debug/release compile + lint PASS; **không tạo APK**. Google OAuth vẫn HOÃN. API Founder v6 ACTIVE, Edge verifier v4 ACTIVE (source mới chưa deploy), DEMO/LIVE/release gates giữ khóa. Nội dung bàn giao chat mới ngay dưới giữ nguyên.
+
+
 > **BÀN GIAO CHAT MỚI 29/09 (ưu tiên đọc):** [CWS_AUTOTRADE_APK_NEW_CHAT_HANDOFF_2026-09-29.md](CWS_AUTOTRADE_APK_NEW_CHAT_HANDOFF_2026-09-29.md). Checkpoint ghi nhận mã nguồn `a162feada1f2bb2113c2acb6bcef414a9c0d337a`, tài liệu trước đó tại `4acba221d2c4a8769d0a6b32e3c111a213c868de`; kiểm tra HEAD mới nhất trước thao tác. Google OAuth HOÃN; source-only QA 195 Python + 16 Node PASS, broker investor probe PASS; Founder Edge v6 ACTIVE, verifier Edge v4 ACTIVE. Full broker-to-Android E2E, model/risk/send approval, stable signing và APK release vẫn CHƯA PASS. Lệnh Founder: cập nhật kinh nghiệm lên GitHub, giao prompt cho chat mới.
 
 

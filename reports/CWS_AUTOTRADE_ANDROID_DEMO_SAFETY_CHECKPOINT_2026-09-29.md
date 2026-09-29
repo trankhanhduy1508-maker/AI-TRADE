@@ -1,5 +1,8 @@
 # CWS AutoTrade Android / MT5 DEMO — checkpoint an toàn, APK-first (29/09/2026)
 
+> **CẬP NHẬT READ-ONLY BROKER QA (29/09):** source commit `a83e83c631137900a403178933734fe126f04791` tăng kiểm soát `src/execution/demo_readback.py`: tối đa 1000 vị thế, ticket duy nhất đúng định dạng, mã cặp đúng định dạng, giới hạn lot/P&L, bắt thay đổi currency khi đọc broker, phân biệt danh sách rỗng được broker xác nhận với dữ liệu unavailable. [Source-only QA 36529015884](https://github.com/trankhanhduy1508-maker/AI-TRADE/actions/runs/36529015884) **SUCCESS: 204 Python + 16 Node tests**, Java standalone contracts, Android debug/release compile + lint PASS; **không tạo APK**. Google OAuth vẫn HOÃN. API Founder v6 ACTIVE, Edge verifier v4 ACTIVE (source mới chưa deploy), DEMO/LIVE/release gates giữ khóa.
+
+
 **Repo:** `trankhanhduy1508-maker/AI-TRADE`  
 **Nhánh duy nhất:** `codex/p0-covel-knowledge-audit`  
 **HEAD mã nguồn nghiệm thu source-only:** `a162feada1f2bb2113c2acb6bcef414a9c0d337a`  
