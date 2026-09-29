@@ -376,6 +376,9 @@ class MT5BrokerAdapter:
         records = getter(symbol=symbol) if symbol is not None else getter()
         if records is None:
             raise RuntimeError("positions_get failed")
+        # A broker session may switch during a read. Never expose the other
+        # account's positions or treat them as a reconciled DEMO snapshot.
+        self._assert_demo_account(require_trade_permissions=False)
         return tuple(self._position_from_record(record) for record in records)
 
     def account_snapshot(
@@ -408,6 +411,26 @@ class MT5BrokerAdapter:
         if not client_order_id.strip():
             raise ValueError("client_order_id is required")
         self._ensure_mutation_allowed()
+        if (
+            not isinstance(stop_loss, (int, float))
+            or isinstance(stop_loss, bool)
+            or not math.isfinite(stop_loss)
+            or stop_loss <= 0
+        ):
+            return MT5OrderResult(
+                client_order_id, "RISK_REJECTED",
+                message="PROTECTIVE_STOP_REQUIRED",
+            )
+        if take_profit is not None and (
+            not isinstance(take_profit, (int, float))
+            or isinstance(take_profit, bool)
+            or not math.isfinite(take_profit)
+            or take_profit <= 0
+        ):
+            return MT5OrderResult(
+                client_order_id, "CONTRACT_REJECTED",
+                message="TARGET_INVALID",
+            )
         duplicate = self._duplicate_result(client_order_id)
         if duplicate is not None:
             return duplicate

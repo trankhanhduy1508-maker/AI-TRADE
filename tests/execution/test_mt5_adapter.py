@@ -572,3 +572,64 @@ def test_direct_adapter_rejects_invalid_target_before_broker_calls(target):
         assert terminal.send_calls == 0
         assert adapter._ledger.get(order.client_order_id) is None
         adapter.close()
+
+
+@pytest.mark.parametrize("stop_loss", [None, float("nan"), float("inf"), -float("inf"), 0.0, -1.0, False])
+def test_modify_position_rejects_missing_or_invalid_stop_before_broker_calls(stop_loss):
+    terminal = FakeTerminal()
+    with _ledger_path() as db_path:
+        adapter = MT5BrokerAdapter(
+            terminal, mode=ExecutionMode.DEMO,
+            allow_order_send=True, ledger_path=db_path,
+        )
+        result = adapter.modify_position(
+            "42", client_order_id="invalid-sl-modification",
+            stop_loss=stop_loss,
+        )
+        assert (result.status, result.message) == (
+            "RISK_REJECTED", "PROTECTIVE_STOP_REQUIRED"
+        )
+        assert terminal.initialize_calls == 0
+        assert terminal.check_calls == 0
+        assert terminal.send_calls == 0
+        assert adapter._ledger.get("invalid-sl-modification") is None
+        adapter.close()
+
+
+@pytest.mark.parametrize("take_profit", [float("nan"), float("inf"), -float("inf"), 0.0, -1.0, False])
+def test_modify_position_rejects_invalid_target_before_broker_calls(take_profit):
+    terminal = FakeTerminal()
+    with _ledger_path() as db_path:
+        adapter = MT5BrokerAdapter(
+            terminal, mode=ExecutionMode.DEMO,
+            allow_order_send=True, ledger_path=db_path,
+        )
+        result = adapter.modify_position(
+            "42", client_order_id="invalid-tp-modification",
+            stop_loss=1.09, take_profit=take_profit,
+        )
+        assert (result.status, result.message) == (
+            "CONTRACT_REJECTED", "TARGET_INVALID"
+        )
+        assert terminal.initialize_calls == 0
+        assert terminal.check_calls == 0
+        assert terminal.send_calls == 0
+        assert adapter._ledger.get("invalid-tp-modification") is None
+        adapter.close()
+
+
+def test_positions_read_fails_closed_when_account_switches_during_broker_call():
+    terminal = FakeTerminal()
+
+    def switched_positions(**kwargs):
+        terminal.account.trade_mode = 2
+        return ()
+
+    terminal.positions_get = switched_positions
+    adapter = MT5BrokerAdapter(
+        terminal, mode=ExecutionMode.DEMO, allow_order_send=False,
+    )
+    with pytest.raises(TradingDisabledError, match="DEMO account"):
+        adapter.positions()
+    assert terminal.send_calls == 0
+    adapter.close()
