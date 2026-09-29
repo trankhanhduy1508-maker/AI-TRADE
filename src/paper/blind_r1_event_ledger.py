@@ -67,13 +67,28 @@ def validate_observation(e: dict, *, now_utc: int) -> None:
     if e["provider"] == "BITSTAMP_PUBLIC_OHLC":
         if e["symbol"] not in ("BTCUSD", "ETHUSD"):
             raise ValueError("BITSTAMP_SYMBOL_NOT_REGISTERED")
-        if not isinstance(e["provider_url"], str) or not e["provider_url"].startswith(
-                "https://www.bitstamp.net/api/v2/ohlc/"):
+        from urllib.parse import parse_qs, urlsplit
+        if not isinstance(e["provider_url"],str):
             raise ValueError("INVALID_BITSTAMP_SOURCE_URL")
+        url=urlsplit(e["provider_url"])
+        market={"BTCUSD":"btcusd","ETHUSD":"ethusd"}[e["symbol"]]
+        if (url.scheme!="https" or url.hostname!="www.bitstamp.net"
+            or url.username is not None or url.password is not None
+            or url.port is not None or url.fragment
+            or url.path!="/api/v2/ohlc/"+market+"/"):
+            raise ValueError("INVALID_BITSTAMP_SOURCE_URL")
+        params=parse_qs(url.query,keep_blank_values=True)
+        step="14400" if e["timeframe"]=="H4" else "86400"
+        if (set(params)!={"step","limit","exclude_current_candle"}
+            or params.get("step")!=[step]
+            or params.get("exclude_current_candle")!=["true"]
+            or not (len(params.get("limit",[]))==1
+                    and params["limit"][0].isdigit()
+                    and 1<=int(params["limit"][0])<=1000)):
+            raise ValueError("BITSTAMP_SOURCE_QUERY_NOT_REGISTERED")
         if e["instrument_type"] != "BITSTAMP_USD_SPOT":
             raise ValueError("MISMATCHED_INSTRUMENT_TYPE")
-        if e["close_ts"]-e["open_ts"] != (
-                14400 if e["timeframe"] == "H4" else 86400):
+        if e["close_ts"]-e["open_ts"] != int(step):
             raise ValueError("NOT_NATIVE_BITSTAMP_INTERVAL")
     elif e["provider"] == "YAHOO_FINANCE_CHART":
         if (e["symbol"] in ("BTCUSD", "ETHUSD") or
