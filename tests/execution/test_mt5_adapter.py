@@ -9,6 +9,7 @@ from src.execution.mt5_adapter import (
     ExecutionMode,
     MT5BrokerAdapter,
     MT5OrderRequest,
+    OrderIntentLedger,
     TradingDisabledError,
 )
 
@@ -195,6 +196,56 @@ def test_success_is_persistently_duplicate_safe():
     assert second_result.status == "DUPLICATE_SUPPRESSED"
     assert first_terminal.send_calls == 1
     assert second_terminal.send_calls == 0
+
+
+def test_sqlite_intent_claim_is_atomic_across_two_connections():
+    with _ledger_path() as db_path:
+        first = OrderIntentLedger(db_path)
+        second = OrderIntentLedger(db_path)
+        assert first.claim("cross-worker-claim")
+        assert not second.claim("cross-worker-claim")
+        assert second.get("cross-worker-claim") == ("SUBMITTING", None, None)
+        first.close()
+        second.close()
+        restarted = OrderIntentLedger(db_path)
+        assert not restarted.claim("cross-worker-claim")
+        assert restarted.get("cross-worker-claim")[0] == "SUBMITTING"
+        restarted.close()
+
+
+def test_stale_duplicate_precheck_cannot_submit_same_intent_twice():
+    with _ledger_path() as db_path:
+        first_terminal = FakeTerminal()
+        second_terminal = FakeTerminal()
+        first = MT5BrokerAdapter(
+            first_terminal, mode=ExecutionMode.DEMO,
+            allow_order_send=True, ledger_path=db_path,
+        )
+        second = MT5BrokerAdapter(
+            second_terminal, mode=ExecutionMode.DEMO,
+            allow_order_send=True, ledger_path=db_path,
+        )
+        assert first.submit(_request("simulated-race")).status == "FILLED"
+        # Model both workers observing an absent intent before the atomic
+        # reservation. The second must still lose the INSERT-on-conflict.
+        original = second._duplicate_result
+        checks = 0
+
+        def stale_first_check(client_order_id):
+            nonlocal checks
+            checks += 1
+            if checks == 1:
+                return None
+            return original(client_order_id)
+
+        second._duplicate_result = stale_first_check
+        outcome = second.submit(_request("simulated-race"))
+        assert outcome.status == "DUPLICATE_SUPPRESSED"
+        assert checks == 2
+        assert first_terminal.send_calls == 1
+        assert second_terminal.send_calls == 0
+        first.close()
+        second.close()
 
 
 def test_contract_preflight_rejects_volume_step_before_order_check():

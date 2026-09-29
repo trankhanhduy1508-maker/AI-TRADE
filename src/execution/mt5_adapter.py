@@ -200,6 +200,24 @@ class OrderIntentLedger:
         ).fetchone()
         return row if row is not None else None
 
+    def claim(self, client_order_id: str) -> bool:
+        """Atomically reserve one broker mutation across workers/processes.
+
+        A crash leaves SUBMITTING for reconciliation, never an auto-retry.
+        """
+        if not client_order_id.strip():
+            raise ValueError("client_order_id is required")
+        cursor = self._connection.execute(
+            """
+            INSERT INTO order_intents(client_order_id, status, updated_at)
+            VALUES (?, 'SUBMITTING', ?)
+            ON CONFLICT(client_order_id) DO NOTHING
+            """,
+            (client_order_id, datetime.now(timezone.utc).isoformat()),
+        )
+        self._connection.commit()
+        return cursor.rowcount == 1
+
     def record(
         self,
         client_order_id: str,
@@ -314,7 +332,9 @@ class MT5BrokerAdapter:
         if contract_result is not None:
             return contract_result
 
-        self._ledger.record(order.client_order_id, "SUBMITTING")
+        duplicate = self._claim_or_duplicate(order.client_order_id)
+        if duplicate is not None:
+            return duplicate
         return self._checked_send(order.client_order_id, self._request_dict(order))
 
     def positions(self, symbol: str | None = None) -> tuple[MT5Position, ...]:
@@ -386,7 +406,9 @@ class MT5BrokerAdapter:
             if position.direction == "DOWN" and stop_loss > position.stop_loss:
                 return MT5OrderResult(client_order_id, "RISK_REJECTED", message="STOP_WOULD_INCREASE_RISK")
 
-        self._ledger.record(client_order_id, "SUBMITTING")
+        duplicate = self._claim_or_duplicate(client_order_id)
+        if duplicate is not None:
+            return duplicate
         request: dict[str, object] = {
             "action": getattr(self._terminal, "TRADE_ACTION_SLTP"),
             "position": int(position.position_id),
@@ -442,7 +464,9 @@ class MT5BrokerAdapter:
             order_type = getattr(self._terminal, "ORDER_TYPE_BUY")
             price = float(tick.ask)
 
-        self._ledger.record(client_order_id, "SUBMITTING")
+        duplicate = self._claim_or_duplicate(client_order_id)
+        if duplicate is not None:
+            return duplicate
         request = {
             "action": getattr(self._terminal, "TRADE_ACTION_DEAL"),
             "position": int(position.position_id),
@@ -466,6 +490,14 @@ class MT5BrokerAdapter:
             raise TradingDisabledError("order submission is disabled")
         if self._mode == ExecutionMode.LIVE:
             raise TradingDisabledError("LIVE execution is locked")
+
+    def _claim_or_duplicate(self, client_order_id: str) -> MT5OrderResult | None:
+        if self._ledger.claim(client_order_id):
+            return None
+        return self._duplicate_result(client_order_id) or MT5OrderResult(
+            client_order_id, "DUPLICATE_SUPPRESSED",
+            message="intent was reserved concurrently; reconcile before retry",
+        )
 
     def _duplicate_result(self, client_order_id: str) -> MT5OrderResult | None:
         existing = self._ledger.get(client_order_id)
