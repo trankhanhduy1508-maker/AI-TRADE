@@ -1,0 +1,74 @@
+name: CWS blind R1 forward-source provenance QA (one shot)
+
+on:
+  push:
+    branches: [codex/p0-covel-knowledge-audit]
+    paths:
+      - '.github/workflows/cws-blind-r1-qa-once.yml'
+      - 'src/paper/blind_r1_event_ledger.py'
+      - 'tests/paper/test_blind_r1_event_ledger.py'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: cws-blind-r1-paper-provenance
+  cancel-in-progress: false
+
+jobs:
+  smoke-runtime-fault:
+    runs-on: ubuntu-latest
+    timeout-minutes: 7
+    steps:
+      - name: Checkout exact source, no new branch
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7 immutable
+        with:
+          ref: codex/p0-covel-knowledge-audit
+          fetch-depth: 1
+
+      - name: Smoke compile and network/broker import exclusion
+        run: |
+          set -euo pipefail
+          python3 -m compileall -q src/paper/blind_r1_event_ledger.py tests/paper/test_blind_r1_event_ledger.py
+          python3 - <<'PY'
+          import ast
+          from pathlib import Path
+          p=Path('src/paper/blind_r1_event_ledger.py')
+          tree=ast.parse(p.read_text(encoding='utf-8'))
+          forbidden={'MetaTrader5','metaapi_cloud_sdk','ccxt','requests',
+                     'urllib','socket','subprocess'}
+          imports=set()
+          for n in ast.walk(tree):
+              if isinstance(n,ast.Import):
+                  imports.update(x.name.split('.')[0] for x in n.names)
+              elif isinstance(n,ast.ImportFrom) and n.module:
+                  imports.add(n.module.split('.')[0])
+          assert not imports & forbidden, sorted(imports & forbidden)
+          print('SMOKE import exclusion PASS, code SHA:', __import__('hashlib').sha256(p.read_bytes()).hexdigest())
+          PY
+
+      - name: Round 1 - Smoke regression
+        run: |
+          set -euo pipefail
+          PYTHONPATH=. python3 -m unittest discover -s tests/paper -p 'test_blind_r1_event_ledger.py' -v
+
+      - name: Round 2 - Runtime append-only/quarantine execution
+        run: |
+          set -euo pipefail
+          PYTHONPATH=. python3 -m unittest discover -s tests/paper -p 'test_blind_r1_event_ledger.py' -v
+          echo 'RUNTIME fixtures PASS; NO REAL FORWARD DATA OR PAPER ORDERS'
+
+      - name: Round 3 - Fault/replay regression
+        run: |
+          set -euo pipefail
+          PYTHONPATH=. python3 -m unittest discover -s tests/paper -p 'test_blind_r1_event_ledger.py' -v
+          echo 'FAULT fixtures PASS; NO INDEPENDENT MARKET EDGE CLAIM'
+
+      - name: Verify immutable branch and prereg on GitHub checkout
+        run: |
+          set -euo pipefail
+          test -s research/CWS_AUTOTRADE_FORWARD_R1_PREREG_2026-09-29.md
+          test -s research/CWS_BLIND_R0_REPORT_AND_FAILURE_JOURNAL_2026-09-29.md
+          test "$(git branch --show-current)" = "codex/p0-covel-knowledge-audit"
+          git rev-parse HEAD
+          git status --porcelain
