@@ -421,6 +421,11 @@ public final class DemoLoginActivity extends Activity {
         String host = server.getText().toString().trim();
         String secret = password.getText().toString();
         password.setText("");
+        // An attempted re-login invalidates any previously displayed broker
+        // snapshot until the newly supplied DEMO credential is verified.
+        account.setText("Balance: — | Equity: — | Positions: —"
+            + "\nKhông có dữ liệu broker mới."
+            + "\nAuto Trade: LOCKED | LIVE: LOCKED");
         if (!id.matches("[1-9][0-9]{4,14}") || !"MetaQuotes-Demo".equals(host)
             || secret.length() < 4 || secret.length() > 32) {
             status.setText("UNSUPPORTED_SERVER hoặc thông tin DEMO không hợp lệ.");
@@ -462,6 +467,9 @@ public final class DemoLoginActivity extends Activity {
             } catch (Exception error) {
                 runOnUiThread(() -> {
                     if (generation == sessionGeneration) {
+                        account.setText("Balance: — | Equity: — | Positions: —"
+                            + "\nKhông có dữ liệu broker mới."
+                            + "\nAuto Trade: LOCKED | LIVE: LOCKED");
                         status.setText("Không xác minh được MT5 DEMO. Không gửi lệnh.");
                     }
                 });
