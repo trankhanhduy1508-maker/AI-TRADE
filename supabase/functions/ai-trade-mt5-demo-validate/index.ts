@@ -1,5 +1,6 @@
 import postgres from "npm:postgres@3.4.9";
 import WebSocket from "npm:ws@8.18.3";
+import { verifiedDemoSnapshot } from "./readback.mjs";
 
 const sql=postgres(Deno.env.get("SUPABASE_DB_URL")!,{prepare:false,max:1,connect_timeout:10,idle_timeout:20});
 const WS_URI="wss://web.metatrader.app/terminal";
@@ -110,15 +111,22 @@ function parseAccount(body:Uint8Array){
 
 Deno.serve(async(req)=>{
   if(!(await authorized(req)))return json({ok:false,status:"UNAUTHORIZED"},401);
-  const body=await req.json().catch(()=>({})) as {login?:string};
+  const body=await req.json().catch(()=>({})) as {login?:string;readback?:string};
   const requested=String(body.login??"").trim();
+  const fullReadback=body.readback==="investor_snapshot";
+  if(requested&&!/^[1-9][0-9]{4,14}$/.test(requested)){
+    return json({ok:false,status:"INVALID_DEMO_LOGIN",verified:false,
+      brokerOrders:false,liveMoneyLocked:true},400);
+  }
 
   const rows=requested
     ? await sql`
       select a.account_login as login,a.server,
-             v.decrypted_secret as password
+             v.decrypted_secret as password,
+             vi.decrypted_secret as investor_password
       from ai_trade.mt5_demo_accounts a
       join vault.decrypted_secrets v on v.id=a.password_secret_id
+      left join vault.decrypted_secrets vi on vi.id=a.investor_password_secret_id
       where a.account_login=${BigInt(requested)}
         and a.account_type='DEMO'
         and a.server='MetaQuotes-Demo'
@@ -127,9 +135,11 @@ Deno.serve(async(req)=>{
     `
     : await sql`
       select a.account_login as login,a.server,
-             v.decrypted_secret as password
+             v.decrypted_secret as password,
+             vi.decrypted_secret as investor_password
       from ai_trade.mt5_demo_accounts a
       join vault.decrypted_secrets v on v.id=a.password_secret_id
+      left join vault.decrypted_secrets vi on vi.id=a.investor_password_secret_id
       where a.account_type='DEMO'
         and a.server='MetaQuotes-Demo'
         and a.is_active=true
@@ -141,8 +151,10 @@ Deno.serve(async(req)=>{
 
   const row=rows[0];
   const login=BigInt(row.login);
-  const password=String(row.password??"");
-  if(!password)return json({ok:false,status:"MISSING_DECRYPTED_PASSWORD",verified:false},500);
+  const password=String((fullReadback?row.investor_password:row.password)??"");
+  if(!password)return json({ok:false,status:fullReadback
+    ?"MISSING_INVESTOR_ONLY_CREDENTIAL":"MISSING_DECRYPTED_PASSWORD",
+    verified:false,brokerOrders:false,liveMoneyLocked:true},503);
 
   const c=new Client();
   try{
@@ -167,6 +179,32 @@ Deno.serve(async(req)=>{
 
     const account=parseAccount(acctResult.body);
     const verified=account.isDemo&&account.serverName==="MetaQuotes-Demo";
+    if(fullReadback){
+      // Investor-only: fresh cmd=3 -> cmd=4 -> cmd=3, same broker session.
+      // An empty position list is valid only if the broker returned count=0.
+      if(!verified) return json({ok:false,status:"BROKER_NOT_DEMO",
+        verified:false,brokerOrders:false,liveMoneyLocked:true},403);
+      const positionsResult=await c.command(4,new Uint8Array());
+      if(positionsResult.code!==0)throw new Error("BROKER_POSITIONS_FAILED");
+      const secondResult=await c.command(3,new Uint8Array());
+      if(secondResult.code!==0)throw new Error("BROKER_ACCOUNT_RECHECK_FAILED");
+      const fresh=verifiedDemoSnapshot(
+        acctResult.body,positionsResult.body,secondResult.body);
+      if(fresh.server!==row.server)throw new Error("BROKER_SERVER_CHANGED");
+      await sql`
+        update ai_trade.mt5_demo_accounts
+        set last_verified_at=now()
+        where account_login=${login}
+          and account_type='DEMO' and server='MetaQuotes-Demo' and is_active=true
+      `;
+      return json({ok:true,status:"DEMO_VERIFIED",verified:true,
+        login:login.toString(),accountType:1,server:fresh.server,
+        mode:fresh.mode,readbackSource:"MT5_INVESTOR_BROKER",
+        readOnly:true,credentialScope:"INVESTOR_READ_ONLY",
+        balance:fresh.balance,equity:fresh.equity,currency:fresh.currency,
+        positions:fresh.positions,asOf:new Date().toISOString(),
+        brokerOrders:false,liveMoneyLocked:true});
+    }
     if(verified){
       await sql`
         update ai_trade.mt5_demo_accounts
@@ -194,7 +232,9 @@ Deno.serve(async(req)=>{
       brokerOrders:false,
       liveMoneyLocked:true
     });
-  }catch(e){
-    return json({ok:false,status:"ERROR",error:e instanceof Error?e.message:String(e),verified:false,brokerOrders:false,liveMoneyLocked:true},500);
+  }catch{
+    // Never echo SDK/SQL/WebSocket exceptions: they can contain broker secrets.
+    return json({ok:false,status:"BROKER_VERIFIER_FAILED",verified:false,
+      brokerOrders:false,liveMoneyLocked:true},503);
   }finally{c.close();}
 });

@@ -15,6 +15,7 @@ import android.widget.LinearLayout;
 import android.widget.ScrollView;
 import android.widget.TextView;
 
+import org.json.JSONArray;
 import org.json.JSONObject;
 
 import java.io.ByteArrayOutputStream;
@@ -342,21 +343,56 @@ public final class DemoLoginActivity extends Activity {
                 if (!broker.optBoolean("ok", false)
                     || !"DEMO_SNAPSHOT_READ_ONLY".equals(broker.optString("status", ""))
                     || !"DEMO".equals(broker.optString("mode", ""))
+                    || !"MT5_INVESTOR_BROKER".equals(broker.optString("readbackSource", ""))
                     || !linkedLogin.equals(broker.optString("login", ""))
-                    || !linkedServer.equals(broker.optString("server", ""))) {
+                    || !linkedServer.equals(broker.optString("server", ""))
+                    || broker.optBoolean("brokerOrders", true)
+                    || !broker.optBoolean("liveMoneyLocked", false)
+                    || !(broker.opt("balance") instanceof Number)
+                    || !(broker.opt("equity") instanceof Number)) {
                     throw new IOException("BROKER_SNAPSHOT_INVALID");
                 }
-                double balance = broker.optDouble("balance", Double.NaN);
+                double balance = broker.getDouble("balance");
+                double equity = broker.getDouble("equity");
                 String currency = broker.optString("currency", "");
-                if (!Double.isFinite(balance) || !currency.matches("[A-Z]{3,8}")) {
-                    throw new IOException("BROKER_BALANCE_INVALID");
+                JSONArray positions = broker.optJSONArray("positions");
+                if (!Double.isFinite(balance) || !Double.isFinite(equity)
+                    || !currency.matches("[A-Z]{3,8}") || positions == null
+                    || positions.length() > 1000) {
+                    throw new IOException("BROKER_DATA_INCOMPLETE");
                 }
-                String asOf = broker.optString("asOf", "—");
-                final String display = "Login: " + linkedLogin + " | " + linkedServer
-                    + "\nBalance: " + balance + " " + currency
-                    + "\nEquity: — | Positions: —"
-                    + "\nĐọc từ broker lúc: " + asOf
-                    + "\nAuto Trade: LOCKED | LIVE: LOCKED";
+                String asOf = broker.optString("asOf", "");
+                if (asOf.isEmpty()) throw new IOException("BROKER_TIMESTAMP_MISSING");
+                StringBuilder shown = new StringBuilder("Login: ")
+                    .append(linkedLogin).append(" | ").append(linkedServer)
+                    .append("\\nBalance: ").append(balance).append(" ").append(currency)
+                    .append("\\nEquity: ").append(equity).append(" ").append(currency)
+                    .append("\\nPositions: ").append(positions.length());
+                for (int i = 0; i < positions.length(); i++) {
+                    JSONObject p = positions.optJSONObject(i);
+                    if (p == null
+                        || !p.optString("ticket", "").matches("[1-9][0-9]{0,19}")
+                        || !p.optString("symbol", "").matches("[A-Za-z0-9._-]{2,32}")
+                        || !("BUY".equals(p.optString("side", ""))
+                            || "SELL".equals(p.optString("side", "")))
+                        || !(p.opt("lot") instanceof Number)
+                        || !(p.opt("pnl") instanceof Number)) {
+                        throw new IOException("BROKER_POSITION_INVALID");
+                    }
+                    double lot = p.getDouble("lot");
+                    double pnl = p.getDouble("pnl");
+                    if (!Double.isFinite(lot) || lot <= 0 || !Double.isFinite(pnl)) {
+                        throw new IOException("BROKER_POSITION_INVALID");
+                    }
+                    shown.append("\\n").append(p.getString("symbol"))
+                        .append(" ").append(p.getString("side"))
+                        .append(" | Lot: ").append(lot)
+                        .append(" | P/L: ").append(pnl).append(" ").append(currency)
+                        .append(" | #").append(p.getString("ticket"));
+                }
+                final String display = shown
+                    .append("\\nĐọc từ broker lúc: ").append(asOf)
+                    .append("\\nAuto Trade: LOCKED | LIVE: LOCKED").toString();
                 runOnUiThread(() -> {
                     if (generation != sessionGeneration) return;
                     account.setText(display);
@@ -421,6 +457,7 @@ public final class DemoLoginActivity extends Activity {
                         + " | Equity: — | Positions: —"
                         + "\nBroker readback: " + verifiedAt
                         + "\nAuto Trade: LOCKED | LIVE: LOCKED");
+                    refresh();
                 });
             } catch (Exception error) {
                 runOnUiThread(() -> {
@@ -466,7 +503,7 @@ public final class DemoLoginActivity extends Activity {
                 byte[] buffer = new byte[4096];
                 int n;
                 while ((n = stream.read(buffer)) != -1) {
-                    if (result.size() + n > 32768) throw new IOException("OVERSIZE_RESPONSE");
+                    if (result.size() + n > 524288) throw new IOException("OVERSIZE_RESPONSE");
                     result.write(buffer, 0, n);
                 }
                 return new JSONObject(result.toString(StandardCharsets.UTF_8.name()));

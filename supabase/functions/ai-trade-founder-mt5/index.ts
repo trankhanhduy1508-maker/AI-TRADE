@@ -209,7 +209,7 @@ async function freshSnapshot(id:number){
     const response=await fetch(URL_ROOT+"/functions/v1/ai-trade-mt5-demo-validate",{
       method:"POST",
       headers:{"content-type":"application/json","x-ai-trade-cron":secret},
-      body:JSON.stringify({login}),
+      body:JSON.stringify({login,readback:"investor_snapshot"}),
       cache:"no-store",signal:AbortSignal.timeout(120000)
     });
     if(!response.ok)throw new Error("UPSTREAM_UNAVAILABLE");
@@ -219,15 +219,51 @@ async function freshSnapshot(id:number){
       brokerOrders:false,liveMoneyLocked:true}};
   }
   if(data.verified!==true||data.status!=="DEMO_VERIFIED"
-      ||data.accountType!==1||data.server!==binding.server
-      ||String(data.login)!==login
+      ||data.accountType!==1||data.mode!=="DEMO"
+      ||data.server!==binding.server||String(data.login)!==login
+      ||data.readbackSource!=="MT5_INVESTOR_BROKER"
+      ||data.readOnly!==true||data.credentialScope!=="INVESTOR_READ_ONLY"
+      ||data.brokerOrders!==false||data.liveMoneyLocked!==true
       ||typeof data.balance!=="number"||!Number.isFinite(data.balance)
-      ||typeof data.currency!=="string"||!/^[A-Z]{3,8}$/.test(data.currency)){
+      ||typeof data.equity!=="number"||!Number.isFinite(data.equity)
+      ||typeof data.currency!=="string"||!/^[A-Z]{3,8}$/.test(data.currency)
+      ||!Array.isArray(data.positions)||data.positions.length>1000){
     return {code:503,body:{ok:false,status:"FRESH_BROKER_DEMO_READBACK_FAILED",
       brokerOrders:false,liveMoneyLocked:true}};
   }
-  // This upstream protocol returns balance but not equity/positions.
-  // Do not substitute historic data or infer equity from balance.
+  // The broker must explicitly return the list; [] means zero positions.
+  // Missing/null positions never become an empty or historical list.
+  const tickets=new Set<string>();
+  const positions:Record<string,unknown>[]=[];
+  for(const item of data.positions){
+    if(!item||typeof item!=="object"||Array.isArray(item)){
+      return {code:503,body:{ok:false,status:"BROKER_POSITIONS_INVALID",
+        brokerOrders:false,liveMoneyLocked:true}};
+    }
+    const p=item as Record<string,unknown>;
+    if(typeof p.ticket!=="string"||!/^[1-9][0-9]{0,19}$/.test(p.ticket)
+        ||tickets.has(p.ticket)
+        ||typeof p.symbol!=="string"
+        ||!/^[A-Za-z0-9._-]{2,32}$/.test(p.symbol)
+        ||(p.side!=="BUY"&&p.side!=="SELL")
+        ||typeof p.lot!=="number"||!Number.isFinite(p.lot)||p.lot<=0
+        ||typeof p.pnl!=="number"||!Number.isFinite(p.pnl)
+        ||typeof p.openPrice!=="number"||!Number.isFinite(p.openPrice)||p.openPrice<0
+        ||typeof p.sl!=="number"||!Number.isFinite(p.sl)||p.sl<0
+        ||typeof p.tp!=="number"||!Number.isFinite(p.tp)||p.tp<0){
+      return {code:503,body:{ok:false,status:"BROKER_POSITIONS_INVALID",
+        brokerOrders:false,liveMoneyLocked:true}};
+    }
+    tickets.add(p.ticket);
+    positions.push({ticket:p.ticket,symbol:p.symbol,side:p.side,lot:p.lot,
+      pnl:p.pnl,openPrice:p.openPrice,sl:p.sl,tp:p.tp});
+  }
+  const observed=typeof data.asOf==="string"?new Date(data.asOf):null;
+  const age=observed?Date.now()-observed.getTime():Number.NaN;
+  if(!Number.isFinite(age)||age < -5000||age > 120000){
+    return {code:503,body:{ok:false,status:"BROKER_SNAPSHOT_STALE",
+      brokerOrders:false,liveMoneyLocked:true}};
+  }
   const updated=await sql`
     update ai_trade.account_mt5_bindings set
       connection_state='CONNECTED',last_verified_at=now(),updated_at=now()
@@ -241,8 +277,8 @@ async function freshSnapshot(id:number){
     ok:true,status:"DEMO_SNAPSHOT_READ_ONLY",
     login,server:"MetaQuotes-Demo",mode:"DEMO",
     balance:data.balance,currency:data.currency,
-    equity:null,positions:null,asOf:new Date().toISOString(),
-    readbackSource:"MT5_DEMO_VERIFIER",
+    equity:data.equity,positions,asOf:observed!.toISOString(),
+    readbackSource:"MT5_INVESTOR_BROKER",
     autoTradeActive:false,brokerOrders:false,liveMoneyLocked:true
   }};
 }
