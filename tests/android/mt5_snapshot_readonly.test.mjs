@@ -56,6 +56,27 @@ test("detect account switch before publishing a snapshot", () => {
     account(), position(), account(1, 512, "Other-Demo")
   ), /VALID_DEMO/);
 });
+test("reject same-server account identity and permission switches", () => {
+  const renamed = account();
+  utf16(new DataView(renamed.buffer), 97, "Changed DEMO owner");
+  assert.throws(() => verifiedDemoSnapshot(account(), position(), renamed),
+    /BROKER_ACCOUNT_CHANGED/);
+  const changedCompany = account();
+  utf16(new DataView(changedCompany.buffer), 483, "Changed Broker");
+  assert.throws(() => verifiedDemoSnapshot(
+    account(), position(), changedCompany
+  ), /BROKER_ACCOUNT_CHANGED/);
+  // Both rights masks pass the independent read-only bit check, but the
+  // account rights are not allowed to change during one investor readback.
+  assert.throws(() => verifiedDemoSnapshot(
+    account(1, 512), position(), account(1, 8)
+  ), /BROKER_ACCOUNT_CHANGED/);
+  const changedLeverage = account();
+  new DataView(changedLeverage.buffer).setUint32(93, 400, true);
+  assert.throws(() => verifiedDemoSnapshot(account(), position(), changedLeverage),
+    /BROKER_ACCOUNT_CHANGED/);
+});
+
 test("reject truncated records and oversized claimed count", () => {
   assert.throws(() => parseDemoPositions(position().slice(0, 200)), /TRUNCATED/);
   const oversized = new Uint8Array(8);

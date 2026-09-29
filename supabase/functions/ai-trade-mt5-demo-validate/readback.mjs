@@ -36,7 +36,14 @@ function parseDemoAccount(value) {
   const balance = finite64(view, 9);
   const credit = finite64(view, 17);
   const currency = fixedUtf16(raw, 25, 64);
+  // Static broker account header fields: reject a same-server switch during
+  // cmd 3 -> cmd 4 -> cmd 3, even if currency and DEMO mode are unchanged.
+  // This is supplemental fencing; the protocol does not supply login here.
+  const accountName = fixedUtf16(raw, 97, 256);
+  const leverage = view.getUint32(93, true);
+  const serverBuild = view.getUint16(353, true);
   const server = fixedUtf16(raw, 355, 128);
+  const company = fixedUtf16(raw, 483, 256);
   const profit = finite64(view, 784);
   const equity = balance + credit + profit; // Same broker fields as pinned pymt5.
   if (mode !== 1 || server !== "MetaQuotes-Demo"
@@ -45,7 +52,9 @@ function parseDemoAccount(value) {
   }
   // An investor credential must be reflected as investor or read-only rights.
   if ((rights & (8 | 512)) === 0) throw new Error("INVESTOR_RIGHTS_NOT_VERIFIED");
-  return {mode: "DEMO", server, currency, balance, equity};
+  return {mode: "DEMO", server, currency, balance, equity,
+    // Never serialize these fields into the Founder/API response.
+    identity: {accountName, company, leverage, serverBuild, rights}};
 }
 
 function parseDemoPositions(value) {
@@ -92,7 +101,14 @@ function verifiedDemoSnapshot(beforeRaw, positionRaw, afterRaw) {
   const positions = parseDemoPositions(positionRaw);
   const last = parseDemoAccount(afterRaw);
   if (first.server !== last.server || first.currency !== last.currency
-      || first.mode !== last.mode) throw new Error("BROKER_ACCOUNT_CHANGED");
+      || first.mode !== last.mode
+      || first.identity.accountName !== last.identity.accountName
+      || first.identity.company !== last.identity.company
+      || first.identity.leverage !== last.identity.leverage
+      || first.identity.serverBuild !== last.identity.serverBuild
+      || first.identity.rights !== last.identity.rights) {
+    throw new Error("BROKER_ACCOUNT_CHANGED");
+  }
   return {balance: last.balance, equity: last.equity, currency: last.currency,
     positions, server: last.server, mode: last.mode};
 }
