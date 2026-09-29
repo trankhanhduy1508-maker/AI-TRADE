@@ -18,6 +18,7 @@ on:
       - 'supabase/functions/ai-trade-mt5-demo-validate/**'
       - 'src/execution/coordinator.py'
       - 'tests/execution/test_coordinator.py'
+      - 'tests/execution/test_paper_adapter.py'
 
 permissions:
   contents: read

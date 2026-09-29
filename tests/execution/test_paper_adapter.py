@@ -6,6 +6,7 @@ from src.execution.mt5_adapter import MT5OrderRequest
 from src.execution.paper_adapter import PaperBrokerAdapter
 from src.execution.audit import AppendOnlyAuditLog
 from src.execution.coordinator import ExecutionCoordinator
+from src.execution.risk import IndependentRiskEngine, RiskContext, RiskLimits
 from src.execution.safety import KillSwitchStore, SafetyGate, SafetySnapshot
 
 
@@ -59,9 +60,13 @@ def test_paper_adapter_runs_through_safety_gate_and_audit_log():
         kill_switch.deactivate("paper integration test")
         adapter = PaperBrokerAdapter(path)
         audit = AppendOnlyAuditLog(path)
-        outcome = ExecutionCoordinator(adapter, SafetyGate(kill_switch), audit).submit(
-            _order("paper-3"),
+        outcome = ExecutionCoordinator(
+            adapter, SafetyGate(kill_switch), audit,
+            risk_engine=IndependentRiskEngine(RiskLimits(.01, 1, 20, 100)),
+        ).submit(
+            MT5OrderRequest("paper-3", "EURUSD", "UP", .01, 1.1, 1.09, 1.12),
             SafetySnapshot(True, True, True, True, True),
+            RiskContext(open_positions=0, spread_points=1, daily_loss=0),
         )
 
         assert outcome.status == "FILLED"
@@ -69,6 +74,25 @@ def test_paper_adapter_runs_through_safety_gate_and_audit_log():
             "order_submission"
         ]
         audit.close()
+        adapter.close()
+        kill_switch.close()
+
+
+
+def test_paper_coordinator_does_not_bypass_missing_risk_engine():
+    with _db_path() as path:
+        kill_switch = KillSwitchStore(path)
+        kill_switch.deactivate("paper negative integration test")
+        adapter = PaperBrokerAdapter(path)
+        outcome = ExecutionCoordinator(
+            adapter, SafetyGate(kill_switch)
+        ).submit(
+            MT5OrderRequest("paper-no-risk", "EURUSD", "UP", .01, 1.1, 1.09),
+            SafetySnapshot(True, True, True, True, True),
+        )
+        assert outcome.status == "RISK_BLOCKED"
+        assert outcome.reasons == ("RISK_ENGINE_REQUIRED",)
+        assert adapter.open_orders() == ()
         adapter.close()
         kill_switch.close()
 
