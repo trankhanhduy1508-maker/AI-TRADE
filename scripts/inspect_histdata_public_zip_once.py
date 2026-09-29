@@ -1,8 +1,9 @@
-"""Single normal-page HistData free-download feasibility check (read-only).
+"""One-shot normal free HistData download via its published page/form.
 
 No hidden-endpoint guessing, captcha bypass, paid FTP, login, raw archive
 publication, trading/broker API, or evaluation of strategy returns.
-Only follows a direct same-origin public .zip anchor observed in the page.
+Uses one public ZIP anchor or the page's own exactly identified /get.php
+form with original hidden fields and cookie, never a payment form.
 """
 from __future__ import annotations
 
@@ -14,8 +15,11 @@ import re
 import time
 import zipfile
 from html.parser import HTMLParser
-from urllib.parse import urljoin, urlsplit
-from urllib.request import Request, urlopen
+from http.cookiejar import CookieJar
+from urllib.parse import urlencode, urljoin, urlsplit
+from urllib.request import (
+    Request, urlopen, HTTPCookieProcessor, build_opener,
+)
 
 from src.data_loader.histdata_m1_h4 import derive_complete_h4, MAX_CSV_BYTES
 
@@ -47,6 +51,7 @@ class PublicLinkParser(HTMLParser):
             self._form["inputs"].append({
                 "type":a.get("type","submit" if tag=="button" else "text"),
                 "name":a.get("name",""),
+                "value":a.get("value",""),
                 "value_is_archive":("HISTDATA_COM_ASCII_EURUSD_M1_202608.zip" in
                                     a.get("value","")),
             })
@@ -65,11 +70,11 @@ class PublicLinkParser(HTMLParser):
             self._form=None
 
 
-def _read(url: str, limit: int) -> bytes:
+def _read(url: str, limit: int, *, opener=None) -> bytes:
     req=Request(url,method="GET",headers={
         "User-Agent":"CWS-AutoTrade-research-source-probe/1.0",
         "Accept":"text/html,application/zip,application/octet-stream"})
-    with urlopen(req,timeout=16) as response:
+    with (opener.open if opener else urlopen)(req,timeout=16) as response:
         final=urlsplit(response.geturl())
         if final.scheme!="https" or final.hostname not in (
                 "www.histdata.com","histdata.com"):
@@ -89,7 +94,8 @@ def inspect() -> dict:
             "download_attempts":0,"actual_derived_h4_count":None,
             "holdout_opened":False}
     try:
-        page=_read(PUBLIC_PAGE,MAX_HTML)
+        opener=build_opener(HTTPCookieProcessor(CookieJar()))
+        page=_read(PUBLIC_PAGE,MAX_HTML,opener=opener)
         parser=PublicLinkParser()
         parser.feed(page.decode("utf-8"))
         report["html_sha256"]=hashlib.sha256(page).hexdigest()
@@ -100,7 +106,8 @@ def inspect() -> dict:
         report["form_schema"]=[{
             "method":x["method"],
             "action_path":urlsplit(urljoin(PUBLIC_PAGE,x["action"])).path,
-            "inputs":x["inputs"],
+            "inputs":[{k:i[k] for k in ("type","name","value_is_archive")}
+                      for i in x["inputs"]],
             "text_is_archive":("HISTDATA_COM_ASCII_EURUSD_M1_202608.zip"
                                in x["text"])
         } for x in parser.forms]
@@ -117,16 +124,61 @@ def inspect() -> dict:
                 ("www.histdata.com","histdata.com")):
                 eligible.append(absolute)
         report["direct_download_links_seen"]=len(eligible)
-        if not eligible:
-            report["status"]="FREE_DOWNLOAD_PAGE_REQUIRES_INTERACTIVE_STEP"
-            return report
-        # Observe and follow only ONE normal public link directly in HTML.
-        url=eligible[0]
-        if re.search(r"(ftp|sftp|subscription|pay|checkout)",url,re.I):
-            report["status"]="DIRECT_LINK_REQUIRES_PAID_OR_SPECIAL_ACCESS"
-            return report
-        report["download_attempts"]=1
-        rawzip=_read(url,MAX_ZIP)
+        if eligible:
+            # Follow one ordinary same-origin public ZIP anchor when present.
+            url=eligible[0]
+            if re.search(r"(ftp|sftp|subscription|pay|checkout)",url,re.I):
+                report["status"]="DIRECT_LINK_REQUIRES_PAID_OR_SPECIAL_ACCESS"
+                return report
+            report["download_attempts"]=1
+            rawzip=_read(url,MAX_ZIP,opener=opener)
+        else:
+            # Page inspection identified exactly one PUBLIC free-download
+            # form POST /get.php. This is its normal browser submission,
+            # using exactly the current page's own hidden fields and cookie.
+            # Never submit /getStatus.php, PayPal or any unknown action.
+            choices=[]
+            for item in parser.forms:
+                u=urlsplit(urljoin(PUBLIC_PAGE,item["action"]))
+                if (item["method"]=="POST" and u.scheme=="https"
+                    and u.hostname=="www.histdata.com"
+                    and u.path=="/get.php" and not u.query
+                    and not u.fragment):
+                    choices.append(item)
+            expected={"tk","date","datemonth","platform","timeframe","fxpair"}
+            if not report["public_zip_filename_advertised"] or len(choices)!=1:
+                report["status"]="FREE_DOWNLOAD_FORM_NOT_UNAMBIGUOUS"
+                return report
+            inputs=choices[0]["inputs"]
+            if (len(inputs)!=6 or {i["name"] for i in inputs}!=expected
+                or any(i["type"]!="hidden" or not i["value"]
+                       for i in inputs)):
+                report["status"]="FREE_DOWNLOAD_FORM_REQUIRES_INTERACTION"
+                return report
+            fields={i["name"]:i["value"] for i in inputs}
+            report["public_form_selection"]={
+                k:fields[k] for k in ("date","datemonth",
+                                    "platform","timeframe","fxpair")}
+            if fields["fxpair"].upper()!="EURUSD":
+                report["status"]="FORM_SELECTED_WRONG_SOURCE_MARKET"
+                return report
+            target="https://www.histdata.com/get.php"
+            req=Request(target,data=urlencode(fields).encode("utf-8"),
+                        method="POST",headers={
+                            "User-Agent":"CWS-AutoTrade-research-source-probe/1.0",
+                            "Referer":PUBLIC_PAGE,
+                            "Content-Type":"application/x-www-form-urlencoded",
+                            "Accept":"application/zip,application/octet-stream"})
+            report["download_attempts"]=1
+            with opener.open(req,timeout=20) as response:
+                final=urlsplit(response.geturl())
+                if (final.scheme!="https" or final.hostname not in
+                    ("www.histdata.com","histdata.com")):
+                    raise ValueError("EXTERNAL_FORM_REDIRECT_NOT_APPROVED")
+                rawzip=response.read(MAX_ZIP+1)
+                if not rawzip or len(rawzip)>MAX_ZIP:
+                    raise ValueError("FREE_FORM_RESPONSE_INVALID_SIZE")
+            report["normal_public_form_used"]=True
         if not zipfile.is_zipfile(io.BytesIO(rawzip)):
             report["status"]="PUBLIC_LINK_NOT_A_ZIP"
             return report
