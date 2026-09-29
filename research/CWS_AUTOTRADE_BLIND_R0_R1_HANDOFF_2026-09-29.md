@@ -11,7 +11,8 @@
 3. `research/results/CWS_BLIND_R0_2026-09-29.json` (commit `a7a8855d84371faf3ce93ae394e80c32b800c0f4`).
 4. `research/CWS_BLIND_R0_REPORT_AND_FAILURE_JOURNAL_2026-09-29.md` (commit `926fc42ad230ab04b735c8872326e0ea82b50b2a`, bảng kết quả 30 thị trường/khung, 26 trường hợp thiếu H4, lỗi, kết luận).
 5. `research/CWS_AUTOTRADE_FORWARD_R1_PREREG_2026-09-29.md` (commit `debf1bd2f95080e0ddd1d94f97763eb3abe327f8`).
-6. Khi cần sửa mã: `src/backtest/blind_r0.py`, `scripts/run_blind_r0.py`, `tests/backtest/test_blind_r0.py`, `src/paper/blind_r1_event_ledger.py`, `tests/paper/test_blind_r1_event_ledger.py` và hai workflow `cws-blind-r0-once.yml`, `cws-blind-r1-qa-once.yml`.
+6. `research/CWS_AUTOTRADE_EVIDENCE_LIBRARY_REVIEW_2026-09-29.md` (commit `f75f58d242f03b80ba37d3ba9e60924a7cd4598a`, tài liệu học thuật đã kiểm tra từ abstract/nhà xuất bản; phân biệt sách chưa được đọc trọn).
+7. Khi cần sửa mã: `src/backtest/blind_r0.py`, `scripts/run_blind_r0.py`, `tests/backtest/test_blind_r0.py`, `src/paper/blind_r1_event_ledger.py`, `tests/paper/test_blind_r1_event_ledger.py` và hai workflow `cws-blind-r0-once.yml`, `cws-blind-r1-qa-once.yml`.
 
 ## Chuỗi bằng chứng R0, đã hoàn thành một lần
 - HEAD gốc xác minh: `29548aae06c7d068d0c0aed37a8ae0ddb978271d`.
