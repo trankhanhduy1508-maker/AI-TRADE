@@ -1,3 +1,4 @@
+# One normal GET DOM-form-schema inspection: no POST or ZIP download.
 name: CWS R1 HistData public free ZIP normal-link probe once
 
 on:
