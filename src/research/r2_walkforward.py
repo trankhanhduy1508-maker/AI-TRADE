@@ -210,7 +210,21 @@ def run_walkforward(bars: Sequence[Bar], *, study: Study,
         else:
             result = _play(usable[:boundary+STEP], boundary, boundary+STEP,
                            selected, short=study.allow_short, cost=cost)
+        # Freeze the selected candidate from base training; stress changes
+        # cost only, never changes selection or reuses future test scores.
+        stress = {}
+        if selected is not None and cost > 0:
+            for multiplier in (2, 3):
+                stressed = _play(usable[:boundary+STEP], boundary, boundary+STEP,
+                                 selected, short=study.allow_short,
+                                 cost=cost*multiplier)
+                stress[f"{multiplier}x"] = {
+                    "closed_trades": stressed["closed_trades"],
+                    "realized_r": stressed["realized_r"],
+                    "unrealized_r": stressed["unrealized_r"],
+                    "cost_status": "MODELED_ONLY"}
         episodes.append({"decision_bar_index": boundary,
+                         "modeled_cost_stress": stress,
                          "decision_open_ts": usable[boundary].ts,
                          "evaluation_end_open_ts": usable[boundary+STEP-1].ts,
                          "training_bar_count": boundary-training_start,
