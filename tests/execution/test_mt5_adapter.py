@@ -121,6 +121,29 @@ def test_readonly_demo_can_use_in_memory_ledger_without_order_access():
     assert terminal.send_calls == 0
 
 
+def test_investor_readonly_demo_can_read_but_never_mutate():
+    terminal = FakeTerminal()
+    terminal.account.trade_allowed = False
+    terminal.account.trade_expert = False
+    terminal.account.currency = "USD"
+    terminal.account.balance = 1500.0
+    terminal.account.equity = 1507.0
+    terminal.positions_get = lambda **kwargs: ()
+    adapter = MT5BrokerAdapter(
+        terminal, mode=ExecutionMode.DEMO, allow_order_send=False,
+    )
+    assert adapter.positions() == ()
+    fresh = adapter.account_snapshot(
+        expected_login="123456", expected_server="MetaQuotes-Demo",
+    )
+    assert (fresh.balance, fresh.equity) == (1500.0, 1507.0)
+    assert fresh.trade_allowed is False
+    with pytest.raises(TradingDisabledError, match="order submission is disabled"):
+        adapter.submit(_request("investor-no-order"))
+    assert terminal.send_calls == 0
+    adapter.close()
+
+
 def test_disabled_adapter_never_initializes_or_sends():
     terminal = FakeTerminal()
     with _ledger_path() as db_path:

@@ -292,9 +292,10 @@ class MT5BrokerAdapter:
         if trade_mode != DEMO_ACCOUNT_TRADE_MODE:
             self._terminal.shutdown()
             raise TradingDisabledError("DEMO account is required")
-        if getattr(info, "trade_allowed", None) is not True or getattr(
-            info, "trade_expert", None
-        ) is not True:
+        if self._allow_order_send and (
+            getattr(info, "trade_allowed", None) is not True
+            or getattr(info, "trade_expert", None) is not True
+        ):
             self._terminal.shutdown()
             raise TradingDisabledError("account trading disabled")
         login = getattr(info, "login", None)
@@ -348,7 +349,7 @@ class MT5BrokerAdapter:
         getter = getattr(self._terminal, "positions_get", None)
         if not callable(getter):
             raise RuntimeError("positions_get is unavailable")
-        self._assert_demo_account()
+        self._assert_demo_account(require_trade_permissions=False)
         records = getter(symbol=symbol) if symbol is not None else getter()
         if records is None:
             raise RuntimeError("positions_get failed")
@@ -578,16 +579,18 @@ class MT5BrokerAdapter:
             comment=str(getattr(record, "comment", "") or ""),
         )
 
-    def _assert_demo_account(self) -> None:
-        """Recheck immediately before and after order_check: terminals can switch accounts."""
+    def _assert_demo_account(self, *, require_trade_permissions: bool = True) -> None:
+        """Recheck DEMO identity; only broker mutations require trading rights."""
         getter = getattr(self._terminal, "account_info", None)
         info = getter() if callable(getter) else None
         if not self._connected or info is None:
             raise TradingDisabledError("MT5 session unavailable")
         if getattr(info, "trade_mode", None) != DEMO_ACCOUNT_TRADE_MODE:
             raise TradingDisabledError("DEMO account is required")
-        if (getattr(info, "trade_allowed", None) is not True
-                or getattr(info, "trade_expert", None) is not True):
+        if require_trade_permissions and (
+            getattr(info, "trade_allowed", None) is not True
+            or getattr(info, "trade_expert", None) is not True
+        ):
             raise TradingDisabledError("account trading disabled")
         if self._bound_identity is None:
             raise TradingDisabledError("DEMO account identity required")
