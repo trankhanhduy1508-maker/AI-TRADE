@@ -1,0 +1,1138 @@
+{
+  "schema": "CWS_R2_LONG_HORIZON_INPUT_CATALOG_V1",
+  "prereg_commit": "6934a383b145369bb2447da29b3232e7ef04ab4d",
+  "original_r0_manifest_blob_sha": "57c4075587ff9f97b27f8480ddffb1061f264fc4",
+  "classification": "HISTORICAL_REUSED; NO_NEW_HOLDOUT",
+  "coverage": {
+    "registered_cells": 56,
+    "files_available_to_current_cloud_runner": 0,
+    "eligible_empirical_backtests_in_this_session": 0,
+    "previously_exploratory_r0": 30,
+    "prior_missing_native_h4": 26
+  },
+  "input_requirements": "Explicit local normalized full UTC OHLC + rights for research + known session; never silently fabricate historical prices",
+  "entries": [
+    {
+      "cell": "AAPL_D1",
+      "symbol": "AAPL",
+      "timeframe": "D1",
+      "source_kind": "NATIVE_D1",
+      "csv_path": null,
+      "research_rights_confirmed": false,
+      "session": "UNVERIFIED_MARKET_CALENDAR",
+      "allow_short": false,
+      "assumed_round_trip_cost_price": 0
+    },
+    {
+      "cell": "AAPL_H4",
+      "symbol": "AAPL",
+      "timeframe": "H4",
+      "source_kind": "NATIVE_H4",
+      "csv_path": null,
+      "research_rights_confirmed": false,
+      "session": "UNVERIFIED_MARKET_CALENDAR",
+      "allow_short": false,
+      "assumed_round_trip_cost_price": 0
+    },
+    {
+      "cell": "AMZN_D1",
+      "symbol": "AMZN",
+      "timeframe": "D1",
+      "source_kind": "NATIVE_D1",
+      "csv_path": null,
+      "research_rights_confirmed": false,
+      "session": "UNVERIFIED_MARKET_CALENDAR",
+      "allow_short": false,
+      "assumed_round_trip_cost_price": 0
+    },
+    {
+      "cell": "AMZN_H4",
+      "symbol": "AMZN",
+      "timeframe": "H4",
+      "source_kind": "NATIVE_H4",
+      "csv_path": null,
+      "research_rights_confirmed": false,
+      "session": "UNVERIFIED_MARKET_CALENDAR",
+      "allow_short": false,
+      "assumed_round_trip_cost_price": 0
+    },
+    {
+      "cell": "AUDJPY_D1",
+      "symbol": "AUDJPY",
+      "timeframe": "D1",
+      "source_kind": "NATIVE_D1",
+      "csv_path": null,
+      "research_rights_confirmed": false,
+      "session": "UNVERIFIED_MARKET_CALENDAR",
+      "allow_short": false,
+      "assumed_round_trip_cost_price": 0
+    },
+    {
+      "cell": "AUDJPY_H4",
+      "symbol": "AUDJPY",
+      "timeframe": "H4",
+      "source_kind": "NATIVE_H4",
+      "csv_path": null,
+      "research_rights_confirmed": false,
+      "session": "UNVERIFIED_MARKET_CALENDAR",
+      "allow_short": false,
+      "assumed_round_trip_cost_price": 0
+    },
+    {
+      "cell": "AUDUSD_D1",
+      "symbol": "AUDUSD",
+      "timeframe": "D1",
+      "source_kind": "NATIVE_D1",
+      "csv_path": null,
+      "research_rights_confirmed": false,
+      "session": "UNVERIFIED_MARKET_CALENDAR",
+      "allow_short": false,
+      "assumed_round_trip_cost_price": 0
+    },
+    {
+      "cell": "AUDUSD_H4",
+      "symbol": "AUDUSD",
+      "timeframe": "H4",
+      "source_kind": "NATIVE_H4",
+      "csv_path": null,
+      "research_rights_confirmed": false,
+      "session": "UNVERIFIED_MARKET_CALENDAR",
+      "allow_short": false,
+      "assumed_round_trip_cost_price": 0
+    },
+    {
+      "cell": "BTCUSD_D1",
+      "symbol": "BTCUSD",
+      "timeframe": "D1",
+      "source_kind": "NATIVE_D1",
+      "csv_path": null,
+      "research_rights_confirmed": false,
+      "session": "24_7",
+      "allow_short": false,
+      "assumed_round_trip_cost_price": 0
+    },
+    {
+      "cell": "BTCUSD_H4",
+      "symbol": "BTCUSD",
+      "timeframe": "H4",
+      "source_kind": "NATIVE_H4",
+      "csv_path": null,
+      "research_rights_confirmed": false,
+      "session": "24_7",
+      "allow_short": false,
+      "assumed_round_trip_cost_price": 0
+    },
+    {
+      "cell": "Brent_D1",
+      "symbol": "Brent",
+      "timeframe": "D1",
+      "source_kind": "NATIVE_D1",
+      "csv_path": null,
+      "research_rights_confirmed": false,
+      "session": "UNVERIFIED_MARKET_CALENDAR",
+      "allow_short": false,
+      "assumed_round_trip_cost_price": 0
+    },
+    {
+      "cell": "Brent_H4",
+      "symbol": "Brent",
+      "timeframe": "H4",
+      "source_kind": "NATIVE_H4",
+      "csv_path": null,
+      "research_rights_confirmed": false,
+      "session": "UNVERIFIED_MARKET_CALENDAR",
+      "allow_short": false,
+      "assumed_round_trip_cost_price": 0
+    },
+    {
+      "cell": "Dow Jones_D1",
+      "symbol": "Dow Jones",
+      "timeframe": "D1",
+      "source_kind": "NATIVE_D1",
+      "csv_path": null,
+      "research_rights_confirmed": false,
+      "session": "UNVERIFIED_MARKET_CALENDAR",
+      "allow_short": false,
+      "assumed_round_trip_cost_price": 0
+    },
+    {
+      "cell": "Dow Jones_H4",
+      "symbol": "Dow Jones",
+      "timeframe": "H4",
+      "source_kind": "NATIVE_H4",
+      "csv_path": null,
+      "research_rights_confirmed": false,
+      "session": "UNVERIFIED_MARKET_CALENDAR",
+      "allow_short": false,
+      "assumed_round_trip_cost_price": 0
+    },
+    {
+      "cell": "ETHUSD_D1",
+      "symbol": "ETHUSD",
+      "timeframe": "D1",
+      "source_kind": "NATIVE_D1",
+      "csv_path": null,
+      "research_rights_confirmed": false,
+      "session": "24_7",
+      "allow_short": false,
+      "assumed_round_trip_cost_price": 0
+    },
+    {
+      "cell": "ETHUSD_H4",
+      "symbol": "ETHUSD",
+      "timeframe": "H4",
+      "source_kind": "NATIVE_H4",
+      "csv_path": null,
+      "research_rights_confirmed": false,
+      "session": "24_7",
+      "allow_short": false,
+      "assumed_round_trip_cost_price": 0
+    },
+    {
+      "cell": "EURCHF_D1",
+      "symbol": "EURCHF",
+      "timeframe": "D1",
+      "source_kind": "NATIVE_D1",
+      "csv_path": null,
+      "research_rights_confirmed": false,
+      "session": "UNVERIFIED_MARKET_CALENDAR",
+      "allow_short": false,
+      "assumed_round_trip_cost_price": 0
+    },
+    {
+      "cell": "EURCHF_H4",
+      "symbol": "EURCHF",
+      "timeframe": "H4",
+      "source_kind": "NATIVE_H4",
+      "csv_path": null,
+      "research_rights_confirmed": false,
+      "session": "UNVERIFIED_MARKET_CALENDAR",
+      "allow_short": false,
+      "assumed_round_trip_cost_price": 0
+    },
+    {
+      "cell": "EURGBP_D1",
+      "symbol": "EURGBP",
+      "timeframe": "D1",
+      "source_kind": "NATIVE_D1",
+      "csv_path": null,
+      "research_rights_confirmed": false,
+      "session": "UNVERIFIED_MARKET_CALENDAR",
+      "allow_short": false,
+      "assumed_round_trip_cost_price": 0
+    },
+    {
+      "cell": "EURGBP_H4",
+      "symbol": "EURGBP",
+      "timeframe": "H4",
+      "source_kind": "NATIVE_H4",
+      "csv_path": null,
+      "research_rights_confirmed": false,
+      "session": "UNVERIFIED_MARKET_CALENDAR",
+      "allow_short": false,
+      "assumed_round_trip_cost_price": 0
+    },
+    {
+      "cell": "EURJPY_D1",
+      "symbol": "EURJPY",
+      "timeframe": "D1",
+      "source_kind": "NATIVE_D1",
+      "csv_path": null,
+      "research_rights_confirmed": false,
+      "session": "UNVERIFIED_MARKET_CALENDAR",
+      "allow_short": false,
+      "assumed_round_trip_cost_price": 0
+    },
+    {
+      "cell": "EURJPY_H4",
+      "symbol": "EURJPY",
+      "timeframe": "H4",
+      "source_kind": "NATIVE_H4",
+      "csv_path": null,
+      "research_rights_confirmed": false,
+      "session": "UNVERIFIED_MARKET_CALENDAR",
+      "allow_short": false,
+      "assumed_round_trip_cost_price": 0
+    },
+    {
+      "cell": "EURUSD_D1",
+      "symbol": "EURUSD",
+      "timeframe": "D1",
+      "source_kind": "NATIVE_D1",
+      "csv_path": null,
+      "research_rights_confirmed": false,
+      "session": "UNVERIFIED_MARKET_CALENDAR",
+      "allow_short": false,
+      "assumed_round_trip_cost_price": 0
+    },
+    {
+      "cell": "EURUSD_H4",
+      "symbol": "EURUSD",
+      "timeframe": "H4",
+      "source_kind": "NATIVE_H4",
+      "csv_path": null,
+      "research_rights_confirmed": false,
+      "session": "UNVERIFIED_MARKET_CALENDAR",
+      "allow_short": false,
+      "assumed_round_trip_cost_price": 0
+    },
+    {
+      "cell": "GBPJPY_D1",
+      "symbol": "GBPJPY",
+      "timeframe": "D1",
+      "source_kind": "NATIVE_D1",
+      "csv_path": null,
+      "research_rights_confirmed": false,
+      "session": "UNVERIFIED_MARKET_CALENDAR",
+      "allow_short": false,
+      "assumed_round_trip_cost_price": 0
+    },
+    {
+      "cell": "GBPJPY_H4",
+      "symbol": "GBPJPY",
+      "timeframe": "H4",
+      "source_kind": "NATIVE_H4",
+      "csv_path": null,
+      "research_rights_confirmed": false,
+      "session": "UNVERIFIED_MARKET_CALENDAR",
+      "allow_short": false,
+      "assumed_round_trip_cost_price": 0
+    },
+    {
+      "cell": "GBPUSD_D1",
+      "symbol": "GBPUSD",
+      "timeframe": "D1",
+      "source_kind": "NATIVE_D1",
+      "csv_path": null,
+      "research_rights_confirmed": false,
+      "session": "UNVERIFIED_MARKET_CALENDAR",
+      "allow_short": false,
+      "assumed_round_trip_cost_price": 0
+    },
+    {
+      "cell": "GBPUSD_H4",
+      "symbol": "GBPUSD",
+      "timeframe": "H4",
+      "source_kind": "NATIVE_H4",
+      "csv_path": null,
+      "research_rights_confirmed": false,
+      "session": "UNVERIFIED_MARKET_CALENDAR",
+      "allow_short": false,
+      "assumed_round_trip_cost_price": 0
+    },
+    {
+      "cell": "GOOGL_D1",
+      "symbol": "GOOGL",
+      "timeframe": "D1",
+      "source_kind": "NATIVE_D1",
+      "csv_path": null,
+      "research_rights_confirmed": false,
+      "session": "UNVERIFIED_MARKET_CALENDAR",
+      "allow_short": false,
+      "assumed_round_trip_cost_price": 0
+    },
+    {
+      "cell": "GOOGL_H4",
+      "symbol": "GOOGL",
+      "timeframe": "H4",
+      "source_kind": "NATIVE_H4",
+      "csv_path": null,
+      "research_rights_confirmed": false,
+      "session": "UNVERIFIED_MARKET_CALENDAR",
+      "allow_short": false,
+      "assumed_round_trip_cost_price": 0
+    },
+    {
+      "cell": "META_D1",
+      "symbol": "META",
+      "timeframe": "D1",
+      "source_kind": "NATIVE_D1",
+      "csv_path": null,
+      "research_rights_confirmed": false,
+      "session": "UNVERIFIED_MARKET_CALENDAR",
+      "allow_short": false,
+      "assumed_round_trip_cost_price": 0
+    },
+    {
+      "cell": "META_H4",
+      "symbol": "META",
+      "timeframe": "H4",
+      "source_kind": "NATIVE_H4",
+      "csv_path": null,
+      "research_rights_confirmed": false,
+      "session": "UNVERIFIED_MARKET_CALENDAR",
+      "allow_short": false,
+      "assumed_round_trip_cost_price": 0
+    },
+    {
+      "cell": "MSFT_D1",
+      "symbol": "MSFT",
+      "timeframe": "D1",
+      "source_kind": "NATIVE_D1",
+      "csv_path": null,
+      "research_rights_confirmed": false,
+      "session": "UNVERIFIED_MARKET_CALENDAR",
+      "allow_short": false,
+      "assumed_round_trip_cost_price": 0
+    },
+    {
+      "cell": "MSFT_H4",
+      "symbol": "MSFT",
+      "timeframe": "H4",
+      "source_kind": "NATIVE_H4",
+      "csv_path": null,
+      "research_rights_confirmed": false,
+      "session": "UNVERIFIED_MARKET_CALENDAR",
+      "allow_short": false,
+      "assumed_round_trip_cost_price": 0
+    },
+    {
+      "cell": "NVDA_D1",
+      "symbol": "NVDA",
+      "timeframe": "D1",
+      "source_kind": "NATIVE_D1",
+      "csv_path": null,
+      "research_rights_confirmed": false,
+      "session": "UNVERIFIED_MARKET_CALENDAR",
+      "allow_short": false,
+      "assumed_round_trip_cost_price": 0
+    },
+    {
+      "cell": "NVDA_H4",
+      "symbol": "NVDA",
+      "timeframe": "H4",
+      "source_kind": "NATIVE_H4",
+      "csv_path": null,
+      "research_rights_confirmed": false,
+      "session": "UNVERIFIED_MARKET_CALENDAR",
+      "allow_short": false,
+      "assumed_round_trip_cost_price": 0
+    },
+    {
+      "cell": "NZDJPY_D1",
+      "symbol": "NZDJPY",
+      "timeframe": "D1",
+      "source_kind": "NATIVE_D1",
+      "csv_path": null,
+      "research_rights_confirmed": false,
+      "session": "UNVERIFIED_MARKET_CALENDAR",
+      "allow_short": false,
+      "assumed_round_trip_cost_price": 0
+    },
+    {
+      "cell": "NZDJPY_H4",
+      "symbol": "NZDJPY",
+      "timeframe": "H4",
+      "source_kind": "NATIVE_H4",
+      "csv_path": null,
+      "research_rights_confirmed": false,
+      "session": "UNVERIFIED_MARKET_CALENDAR",
+      "allow_short": false,
+      "assumed_round_trip_cost_price": 0
+    },
+    {
+      "cell": "NZDUSD_D1",
+      "symbol": "NZDUSD",
+      "timeframe": "D1",
+      "source_kind": "NATIVE_D1",
+      "csv_path": null,
+      "research_rights_confirmed": false,
+      "session": "UNVERIFIED_MARKET_CALENDAR",
+      "allow_short": false,
+      "assumed_round_trip_cost_price": 0
+    },
+    {
+      "cell": "NZDUSD_H4",
+      "symbol": "NZDUSD",
+      "timeframe": "H4",
+      "source_kind": "NATIVE_H4",
+      "csv_path": null,
+      "research_rights_confirmed": false,
+      "session": "UNVERIFIED_MARKET_CALENDAR",
+      "allow_short": false,
+      "assumed_round_trip_cost_price": 0
+    },
+    {
+      "cell": "Nasdaq 100_D1",
+      "symbol": "Nasdaq 100",
+      "timeframe": "D1",
+      "source_kind": "NATIVE_D1",
+      "csv_path": null,
+      "research_rights_confirmed": false,
+      "session": "UNVERIFIED_MARKET_CALENDAR",
+      "allow_short": false,
+      "assumed_round_trip_cost_price": 0
+    },
+    {
+      "cell": "Nasdaq 100_H4",
+      "symbol": "Nasdaq 100",
+      "timeframe": "H4",
+      "source_kind": "NATIVE_H4",
+      "csv_path": null,
+      "research_rights_confirmed": false,
+      "session": "UNVERIFIED_MARKET_CALENDAR",
+      "allow_short": false,
+      "assumed_round_trip_cost_price": 0
+    },
+    {
+      "cell": "S&P 500_D1",
+      "symbol": "S&P 500",
+      "timeframe": "D1",
+      "source_kind": "NATIVE_D1",
+      "csv_path": null,
+      "research_rights_confirmed": false,
+      "session": "UNVERIFIED_MARKET_CALENDAR",
+      "allow_short": false,
+      "assumed_round_trip_cost_price": 0
+    },
+    {
+      "cell": "S&P 500_H4",
+      "symbol": "S&P 500",
+      "timeframe": "H4",
+      "source_kind": "NATIVE_H4",
+      "csv_path": null,
+      "research_rights_confirmed": false,
+      "session": "UNVERIFIED_MARKET_CALENDAR",
+      "allow_short": false,
+      "assumed_round_trip_cost_price": 0
+    },
+    {
+      "cell": "USDCAD_D1",
+      "symbol": "USDCAD",
+      "timeframe": "D1",
+      "source_kind": "NATIVE_D1",
+      "csv_path": null,
+      "research_rights_confirmed": false,
+      "session": "UNVERIFIED_MARKET_CALENDAR",
+      "allow_short": false,
+      "assumed_round_trip_cost_price": 0
+    },
+    {
+      "cell": "USDCAD_H4",
+      "symbol": "USDCAD",
+      "timeframe": "H4",
+      "source_kind": "NATIVE_H4",
+      "csv_path": null,
+      "research_rights_confirmed": false,
+      "session": "UNVERIFIED_MARKET_CALENDAR",
+      "allow_short": false,
+      "assumed_round_trip_cost_price": 0
+    },
+    {
+      "cell": "USDCHF_D1",
+      "symbol": "USDCHF",
+      "timeframe": "D1",
+      "source_kind": "NATIVE_D1",
+      "csv_path": null,
+      "research_rights_confirmed": false,
+      "session": "UNVERIFIED_MARKET_CALENDAR",
+      "allow_short": false,
+      "assumed_round_trip_cost_price": 0
+    },
+    {
+      "cell": "USDCHF_H4",
+      "symbol": "USDCHF",
+      "timeframe": "H4",
+      "source_kind": "NATIVE_H4",
+      "csv_path": null,
+      "research_rights_confirmed": false,
+      "session": "UNVERIFIED_MARKET_CALENDAR",
+      "allow_short": false,
+      "assumed_round_trip_cost_price": 0
+    },
+    {
+      "cell": "USDJPY_D1",
+      "symbol": "USDJPY",
+      "timeframe": "D1",
+      "source_kind": "NATIVE_D1",
+      "csv_path": null,
+      "research_rights_confirmed": false,
+      "session": "UNVERIFIED_MARKET_CALENDAR",
+      "allow_short": false,
+      "assumed_round_trip_cost_price": 0
+    },
+    {
+      "cell": "USDJPY_H4",
+      "symbol": "USDJPY",
+      "timeframe": "H4",
+      "source_kind": "NATIVE_H4",
+      "csv_path": null,
+      "research_rights_confirmed": false,
+      "session": "UNVERIFIED_MARKET_CALENDAR",
+      "allow_short": false,
+      "assumed_round_trip_cost_price": 0
+    },
+    {
+      "cell": "WTI_D1",
+      "symbol": "WTI",
+      "timeframe": "D1",
+      "source_kind": "NATIVE_D1",
+      "csv_path": null,
+      "research_rights_confirmed": false,
+      "session": "UNVERIFIED_MARKET_CALENDAR",
+      "allow_short": false,
+      "assumed_round_trip_cost_price": 0
+    },
+    {
+      "cell": "WTI_H4",
+      "symbol": "WTI",
+      "timeframe": "H4",
+      "source_kind": "NATIVE_H4",
+      "csv_path": null,
+      "research_rights_confirmed": false,
+      "session": "UNVERIFIED_MARKET_CALENDAR",
+      "allow_short": false,
+      "assumed_round_trip_cost_price": 0
+    },
+    {
+      "cell": "XAGUSD_D1",
+      "symbol": "XAGUSD",
+      "timeframe": "D1",
+      "source_kind": "NATIVE_D1",
+      "csv_path": null,
+      "research_rights_confirmed": false,
+      "session": "UNVERIFIED_MARKET_CALENDAR",
+      "allow_short": false,
+      "assumed_round_trip_cost_price": 0
+    },
+    {
+      "cell": "XAGUSD_H4",
+      "symbol": "XAGUSD",
+      "timeframe": "H4",
+      "source_kind": "NATIVE_H4",
+      "csv_path": null,
+      "research_rights_confirmed": false,
+      "session": "UNVERIFIED_MARKET_CALENDAR",
+      "allow_short": false,
+      "assumed_round_trip_cost_price": 0
+    },
+    {
+      "cell": "XAUUSD_D1",
+      "symbol": "XAUUSD",
+      "timeframe": "D1",
+      "source_kind": "NATIVE_D1",
+      "csv_path": null,
+      "research_rights_confirmed": false,
+      "session": "UNVERIFIED_MARKET_CALENDAR",
+      "allow_short": false,
+      "assumed_round_trip_cost_price": 0
+    },
+    {
+      "cell": "XAUUSD_H4",
+      "symbol": "XAUUSD",
+      "timeframe": "H4",
+      "source_kind": "NATIVE_H4",
+      "csv_path": null,
+      "research_rights_confirmed": false,
+      "session": "UNVERIFIED_MARKET_CALENDAR",
+      "allow_short": false,
+      "assumed_round_trip_cost_price": 0
+    }
+  ],
+  "prior_metadata": [
+    {
+      "cell": "AAPL_D1",
+      "prior_r0_status": "READY_EXPLORATORY",
+      "prior_source": "Yahoo Finance chart unofficial",
+      "prior_kind": "YAHOO_STOCK_UNADJUSTED_DIVIDEND",
+      "prior_bars": 4208,
+      "prior_raw_sha256": "d5b44fc9738c0d2da1aeaf4696d6d2df6c513fbad4dda175bfdaa1de6d38a2c3",
+      "source_file_not_available_current_session": true
+    },
+    {
+      "cell": "AAPL_H4",
+      "prior_r0_status": "DATA_UNAVAILABLE_NATIVE_H4",
+      "prior_source": null,
+      "prior_kind": "YAHOO_STOCK_UNADJUSTED_DIVIDEND",
+      "prior_bars": null,
+      "prior_raw_sha256": null,
+      "source_file_not_available_current_session": true
+    },
+    {
+      "cell": "AMZN_D1",
+      "prior_r0_status": "READY_EXPLORATORY",
+      "prior_source": "Yahoo Finance chart unofficial",
+      "prior_kind": "YAHOO_STOCK_UNADJUSTED_DIVIDEND",
+      "prior_bars": 4208,
+      "prior_raw_sha256": "5c2cb840ec6fcd7bd24df4f6fa9cc24ce5954c2f945fe6e92317391df8988f95",
+      "source_file_not_available_current_session": true
+    },
+    {
+      "cell": "AMZN_H4",
+      "prior_r0_status": "DATA_UNAVAILABLE_NATIVE_H4",
+      "prior_source": null,
+      "prior_kind": "YAHOO_STOCK_UNADJUSTED_DIVIDEND",
+      "prior_bars": null,
+      "prior_raw_sha256": null,
+      "source_file_not_available_current_session": true
+    },
+    {
+      "cell": "AUDJPY_D1",
+      "prior_r0_status": "READY_EXPLORATORY",
+      "prior_source": "Yahoo Finance chart unofficial",
+      "prior_kind": "YAHOO_INDICATIVE_FX",
+      "prior_bars": 4145,
+      "prior_raw_sha256": "cea8a3923cc7c019096723f242199934455a69f7671094c810c0357d447aa4ff",
+      "source_file_not_available_current_session": true
+    },
+    {
+      "cell": "AUDJPY_H4",
+      "prior_r0_status": "DATA_UNAVAILABLE_NATIVE_H4",
+      "prior_source": null,
+      "prior_kind": "YAHOO_INDICATIVE_FX",
+      "prior_bars": null,
+      "prior_raw_sha256": null,
+      "source_file_not_available_current_session": true
+    },
+    {
+      "cell": "AUDUSD_D1",
+      "prior_r0_status": "READY_EXPLORATORY",
+      "prior_source": "Yahoo Finance chart unofficial",
+      "prior_kind": "YAHOO_INDICATIVE_FX",
+      "prior_bars": 4211,
+      "prior_raw_sha256": "c25be581c295b9bab138166d2186a24bd2d215a144bc1962316e76f1cec9a686",
+      "source_file_not_available_current_session": true
+    },
+    {
+      "cell": "AUDUSD_H4",
+      "prior_r0_status": "DATA_UNAVAILABLE_NATIVE_H4",
+      "prior_source": null,
+      "prior_kind": "YAHOO_INDICATIVE_FX",
+      "prior_bars": null,
+      "prior_raw_sha256": null,
+      "source_file_not_available_current_session": true
+    },
+    {
+      "cell": "BTCUSD_D1",
+      "prior_r0_status": "READY_EXPLORATORY",
+      "prior_source": "Bitstamp public OHLC",
+      "prior_kind": "BITSTAMP_USD_SPOT",
+      "prior_bars": 2400,
+      "prior_raw_sha256": "8d916fa64d9195add5810cf17dce75412a614aa5b32026709a82564eab21fe6b",
+      "source_file_not_available_current_session": true
+    },
+    {
+      "cell": "BTCUSD_H4",
+      "prior_r0_status": "READY_EXPLORATORY",
+      "prior_source": "Bitstamp public OHLC",
+      "prior_kind": "BITSTAMP_USD_SPOT",
+      "prior_bars": 3000,
+      "prior_raw_sha256": "169ab35c29093a41028ab1439918ab7a997d044980dd13014a8769d862862efa",
+      "source_file_not_available_current_session": true
+    },
+    {
+      "cell": "Brent_D1",
+      "prior_r0_status": "READY_EXPLORATORY",
+      "prior_source": "Yahoo Finance chart unofficial",
+      "prior_kind": "YAHOO_FRONT_MONTH_FUTURES_PROXY",
+      "prior_bars": 4147,
+      "prior_raw_sha256": "c332c359303be4afda02169ce3506ed9c190d05cc2f2645fe0ca54fea906cd85",
+      "source_file_not_available_current_session": true
+    },
+    {
+      "cell": "Brent_H4",
+      "prior_r0_status": "DATA_UNAVAILABLE_NATIVE_H4",
+      "prior_source": null,
+      "prior_kind": "YAHOO_FRONT_MONTH_FUTURES_PROXY",
+      "prior_bars": null,
+      "prior_raw_sha256": null,
+      "source_file_not_available_current_session": true
+    },
+    {
+      "cell": "Dow Jones_D1",
+      "prior_r0_status": "READY_EXPLORATORY",
+      "prior_source": "Yahoo Finance chart unofficial",
+      "prior_kind": "YAHOO_NONTRADEABLE_INDEX",
+      "prior_bars": 4208,
+      "prior_raw_sha256": "34f8785d60bb5896c6f05669e9c57d813abba75fffcba032766d54ad9c65d809",
+      "source_file_not_available_current_session": true
+    },
+    {
+      "cell": "Dow Jones_H4",
+      "prior_r0_status": "DATA_UNAVAILABLE_NATIVE_H4",
+      "prior_source": null,
+      "prior_kind": "YAHOO_NONTRADEABLE_INDEX",
+      "prior_bars": null,
+      "prior_raw_sha256": null,
+      "source_file_not_available_current_session": true
+    },
+    {
+      "cell": "ETHUSD_D1",
+      "prior_r0_status": "READY_EXPLORATORY",
+      "prior_source": "Bitstamp public OHLC",
+      "prior_kind": "BITSTAMP_USD_SPOT",
+      "prior_bars": 2400,
+      "prior_raw_sha256": "303db02638a4f8836735399c55390357882ff2779977840aae188e22396d72e1",
+      "source_file_not_available_current_session": true
+    },
+    {
+      "cell": "ETHUSD_H4",
+      "prior_r0_status": "READY_EXPLORATORY",
+      "prior_source": "Bitstamp public OHLC",
+      "prior_kind": "BITSTAMP_USD_SPOT",
+      "prior_bars": 3000,
+      "prior_raw_sha256": "ff29f7f97418eb2fe9b6717ff12bc7b6103703270edfc08c4d4a9b3a725953e5",
+      "source_file_not_available_current_session": true
+    },
+    {
+      "cell": "EURCHF_D1",
+      "prior_r0_status": "READY_EXPLORATORY",
+      "prior_source": "Yahoo Finance chart unofficial",
+      "prior_kind": "YAHOO_INDICATIVE_FX",
+      "prior_bars": 4282,
+      "prior_raw_sha256": "f57835c65fcca2d5832bf9f586f5042dfaec70fc6e5216f43939308ade7389d6",
+      "source_file_not_available_current_session": true
+    },
+    {
+      "cell": "EURCHF_H4",
+      "prior_r0_status": "DATA_UNAVAILABLE_NATIVE_H4",
+      "prior_source": null,
+      "prior_kind": "YAHOO_INDICATIVE_FX",
+      "prior_bars": null,
+      "prior_raw_sha256": null,
+      "source_file_not_available_current_session": true
+    },
+    {
+      "cell": "EURGBP_D1",
+      "prior_r0_status": "READY_EXPLORATORY",
+      "prior_source": "Yahoo Finance chart unofficial",
+      "prior_kind": "YAHOO_INDICATIVE_FX",
+      "prior_bars": 4292,
+      "prior_raw_sha256": "ecffd3b82fa65fad4952d833163cebff991d165bbb3ce76ae44e7668b001d5d1",
+      "source_file_not_available_current_session": true
+    },
+    {
+      "cell": "EURGBP_H4",
+      "prior_r0_status": "DATA_UNAVAILABLE_NATIVE_H4",
+      "prior_source": null,
+      "prior_kind": "YAHOO_INDICATIVE_FX",
+      "prior_bars": null,
+      "prior_raw_sha256": null,
+      "source_file_not_available_current_session": true
+    },
+    {
+      "cell": "EURJPY_D1",
+      "prior_r0_status": "READY_EXPLORATORY",
+      "prior_source": "Yahoo Finance chart unofficial",
+      "prior_kind": "YAHOO_INDICATIVE_FX",
+      "prior_bars": 4138,
+      "prior_raw_sha256": "398f3fe508e1ff8bc754eef28067f09a01aab36236afb682a196585b19fea71a",
+      "source_file_not_available_current_session": true
+    },
+    {
+      "cell": "EURJPY_H4",
+      "prior_r0_status": "DATA_UNAVAILABLE_NATIVE_H4",
+      "prior_source": null,
+      "prior_kind": "YAHOO_INDICATIVE_FX",
+      "prior_bars": null,
+      "prior_raw_sha256": null,
+      "source_file_not_available_current_session": true
+    },
+    {
+      "cell": "EURUSD_D1",
+      "prior_r0_status": "READY_EXPLORATORY",
+      "prior_source": "Yahoo Finance chart unofficial",
+      "prior_kind": "YAHOO_INDICATIVE_FX",
+      "prior_bars": 4238,
+      "prior_raw_sha256": "f545e0968ea68abe066c76e92f93174fa6e02bb0e7371684374045153522c716",
+      "source_file_not_available_current_session": true
+    },
+    {
+      "cell": "EURUSD_H4",
+      "prior_r0_status": "DATA_UNAVAILABLE_NATIVE_H4",
+      "prior_source": null,
+      "prior_kind": "YAHOO_INDICATIVE_FX",
+      "prior_bars": null,
+      "prior_raw_sha256": null,
+      "source_file_not_available_current_session": true
+    },
+    {
+      "cell": "GBPJPY_D1",
+      "prior_r0_status": "READY_EXPLORATORY",
+      "prior_source": "Yahoo Finance chart unofficial",
+      "prior_kind": "YAHOO_INDICATIVE_FX",
+      "prior_bars": 4182,
+      "prior_raw_sha256": "5a36ddc47766ff8534e69b72fe6d1cc0f0e6f501047628181aee04b3c1dda149",
+      "source_file_not_available_current_session": true
+    },
+    {
+      "cell": "GBPJPY_H4",
+      "prior_r0_status": "DATA_UNAVAILABLE_NATIVE_H4",
+      "prior_source": null,
+      "prior_kind": "YAHOO_INDICATIVE_FX",
+      "prior_bars": null,
+      "prior_raw_sha256": null,
+      "source_file_not_available_current_session": true
+    },
+    {
+      "cell": "GBPUSD_D1",
+      "prior_r0_status": "READY_EXPLORATORY",
+      "prior_source": "Yahoo Finance chart unofficial",
+      "prior_kind": "YAHOO_INDICATIVE_FX",
+      "prior_bars": 4267,
+      "prior_raw_sha256": "49e811722f851c405317ab50dc7e45a612fd03362b4b3c7937588932c71a5558",
+      "source_file_not_available_current_session": true
+    },
+    {
+      "cell": "GBPUSD_H4",
+      "prior_r0_status": "DATA_UNAVAILABLE_NATIVE_H4",
+      "prior_source": null,
+      "prior_kind": "YAHOO_INDICATIVE_FX",
+      "prior_bars": null,
+      "prior_raw_sha256": null,
+      "source_file_not_available_current_session": true
+    },
+    {
+      "cell": "GOOGL_D1",
+      "prior_r0_status": "READY_EXPLORATORY",
+      "prior_source": "Yahoo Finance chart unofficial",
+      "prior_kind": "YAHOO_STOCK_UNADJUSTED_DIVIDEND",
+      "prior_bars": 4208,
+      "prior_raw_sha256": "c100ffe9761bf53fbfc107de13719906b694ebb701f8a12db8559bcc2bb4d6ec",
+      "source_file_not_available_current_session": true
+    },
+    {
+      "cell": "GOOGL_H4",
+      "prior_r0_status": "DATA_UNAVAILABLE_NATIVE_H4",
+      "prior_source": null,
+      "prior_kind": "YAHOO_STOCK_UNADJUSTED_DIVIDEND",
+      "prior_bars": null,
+      "prior_raw_sha256": null,
+      "source_file_not_available_current_session": true
+    },
+    {
+      "cell": "META_D1",
+      "prior_r0_status": "READY_EXPLORATORY",
+      "prior_source": "Yahoo Finance chart unofficial",
+      "prior_kind": "YAHOO_STOCK_UNADJUSTED_DIVIDEND",
+      "prior_bars": 3609,
+      "prior_raw_sha256": "ae11fffc010469e81206cfbe7cc28d04e8eb239fa556426aef9e98ad4cd537d2",
+      "source_file_not_available_current_session": true
+    },
+    {
+      "cell": "META_H4",
+      "prior_r0_status": "DATA_UNAVAILABLE_NATIVE_H4",
+      "prior_source": null,
+      "prior_kind": "YAHOO_STOCK_UNADJUSTED_DIVIDEND",
+      "prior_bars": null,
+      "prior_raw_sha256": null,
+      "source_file_not_available_current_session": true
+    },
+    {
+      "cell": "MSFT_D1",
+      "prior_r0_status": "READY_EXPLORATORY",
+      "prior_source": "Yahoo Finance chart unofficial",
+      "prior_kind": "YAHOO_STOCK_UNADJUSTED_DIVIDEND",
+      "prior_bars": 4208,
+      "prior_raw_sha256": "4d7fcabf8d7983b8a957fbdc79d067c90cbaf3038bffad384dd8333575348fad",
+      "source_file_not_available_current_session": true
+    },
+    {
+      "cell": "MSFT_H4",
+      "prior_r0_status": "DATA_UNAVAILABLE_NATIVE_H4",
+      "prior_source": null,
+      "prior_kind": "YAHOO_STOCK_UNADJUSTED_DIVIDEND",
+      "prior_bars": null,
+      "prior_raw_sha256": null,
+      "source_file_not_available_current_session": true
+    },
+    {
+      "cell": "NVDA_D1",
+      "prior_r0_status": "READY_EXPLORATORY",
+      "prior_source": "Yahoo Finance chart unofficial",
+      "prior_kind": "YAHOO_STOCK_UNADJUSTED_DIVIDEND",
+      "prior_bars": 4208,
+      "prior_raw_sha256": "ff6fccfa0957b650aa420248eecf728441cfb0c1771840c78bac257cf087edc7",
+      "source_file_not_available_current_session": true
+    },
+    {
+      "cell": "NVDA_H4",
+      "prior_r0_status": "DATA_UNAVAILABLE_NATIVE_H4",
+      "prior_source": null,
+      "prior_kind": "YAHOO_STOCK_UNADJUSTED_DIVIDEND",
+      "prior_bars": null,
+      "prior_raw_sha256": null,
+      "source_file_not_available_current_session": true
+    },
+    {
+      "cell": "NZDJPY_D1",
+      "prior_r0_status": "READY_EXPLORATORY",
+      "prior_source": "Yahoo Finance chart unofficial",
+      "prior_kind": "YAHOO_INDICATIVE_FX",
+      "prior_bars": 4144,
+      "prior_raw_sha256": "385f90cffea115886c10f27a5ea919c5c30504bddc54e7a37dfca14436fc552c",
+      "source_file_not_available_current_session": true
+    },
+    {
+      "cell": "NZDJPY_H4",
+      "prior_r0_status": "DATA_UNAVAILABLE_NATIVE_H4",
+      "prior_source": null,
+      "prior_kind": "YAHOO_INDICATIVE_FX",
+      "prior_bars": null,
+      "prior_raw_sha256": null,
+      "source_file_not_available_current_session": true
+    },
+    {
+      "cell": "NZDUSD_D1",
+      "prior_r0_status": "READY_EXPLORATORY",
+      "prior_source": "Yahoo Finance chart unofficial",
+      "prior_kind": "YAHOO_INDICATIVE_FX",
+      "prior_bars": 4170,
+      "prior_raw_sha256": "b0a700d4c4f26ce0c2bbca5f0b1f22fa058b06cb805550e068199bd3a596e5c7",
+      "source_file_not_available_current_session": true
+    },
+    {
+      "cell": "NZDUSD_H4",
+      "prior_r0_status": "DATA_UNAVAILABLE_NATIVE_H4",
+      "prior_source": null,
+      "prior_kind": "YAHOO_INDICATIVE_FX",
+      "prior_bars": null,
+      "prior_raw_sha256": null,
+      "source_file_not_available_current_session": true
+    },
+    {
+      "cell": "Nasdaq 100_D1",
+      "prior_r0_status": "READY_EXPLORATORY",
+      "prior_source": "Yahoo Finance chart unofficial",
+      "prior_kind": "YAHOO_NONTRADEABLE_INDEX",
+      "prior_bars": 4208,
+      "prior_raw_sha256": "ed0fcc7cdd6ffed8a42ec2e2ebdf39b36d12ec13250daa56a5bcc71ee0ffc26d",
+      "source_file_not_available_current_session": true
+    },
+    {
+      "cell": "Nasdaq 100_H4",
+      "prior_r0_status": "DATA_UNAVAILABLE_NATIVE_H4",
+      "prior_source": null,
+      "prior_kind": "YAHOO_NONTRADEABLE_INDEX",
+      "prior_bars": null,
+      "prior_raw_sha256": null,
+      "source_file_not_available_current_session": true
+    },
+    {
+      "cell": "S&P 500_D1",
+      "prior_r0_status": "READY_EXPLORATORY",
+      "prior_source": "Yahoo Finance chart unofficial",
+      "prior_kind": "YAHOO_NONTRADEABLE_INDEX",
+      "prior_bars": 4208,
+      "prior_raw_sha256": "3551ea3aab548f42e7f33cc468f66774237c518a076e58230abe63ea16078a90",
+      "source_file_not_available_current_session": true
+    },
+    {
+      "cell": "S&P 500_H4",
+      "prior_r0_status": "DATA_UNAVAILABLE_NATIVE_H4",
+      "prior_source": null,
+      "prior_kind": "YAHOO_NONTRADEABLE_INDEX",
+      "prior_bars": null,
+      "prior_raw_sha256": null,
+      "source_file_not_available_current_session": true
+    },
+    {
+      "cell": "USDCAD_D1",
+      "prior_r0_status": "READY_EXPLORATORY",
+      "prior_source": "Yahoo Finance chart unofficial",
+      "prior_kind": "YAHOO_INDICATIVE_FX",
+      "prior_bars": 4248,
+      "prior_raw_sha256": "47bda09bbc3fb106e9d362dab5038211acbdcdb5dd68747b624b2c972dd4302e",
+      "source_file_not_available_current_session": true
+    },
+    {
+      "cell": "USDCAD_H4",
+      "prior_r0_status": "DATA_UNAVAILABLE_NATIVE_H4",
+      "prior_source": null,
+      "prior_kind": "YAHOO_INDICATIVE_FX",
+      "prior_bars": null,
+      "prior_raw_sha256": null,
+      "source_file_not_available_current_session": true
+    },
+    {
+      "cell": "USDCHF_D1",
+      "prior_r0_status": "READY_EXPLORATORY",
+      "prior_source": "Yahoo Finance chart unofficial",
+      "prior_kind": "YAHOO_INDICATIVE_FX",
+      "prior_bars": 4256,
+      "prior_raw_sha256": "9f997ce091c37ab410086bf98932bca72a0392c79a440cf5d88b005fe3f1f277",
+      "source_file_not_available_current_session": true
+    },
+    {
+      "cell": "USDCHF_H4",
+      "prior_r0_status": "DATA_UNAVAILABLE_NATIVE_H4",
+      "prior_source": null,
+      "prior_kind": "YAHOO_INDICATIVE_FX",
+      "prior_bars": null,
+      "prior_raw_sha256": null,
+      "source_file_not_available_current_session": true
+    },
+    {
+      "cell": "USDJPY_D1",
+      "prior_r0_status": "READY_EXPLORATORY",
+      "prior_source": "Yahoo Finance chart unofficial",
+      "prior_kind": "YAHOO_INDICATIVE_FX",
+      "prior_bars": 4104,
+      "prior_raw_sha256": "81ceb3dd4600ed76815087106fd2d1577371b8eb3368c09f170ab68c17bd0871",
+      "source_file_not_available_current_session": true
+    },
+    {
+      "cell": "USDJPY_H4",
+      "prior_r0_status": "DATA_UNAVAILABLE_NATIVE_H4",
+      "prior_source": null,
+      "prior_kind": "YAHOO_INDICATIVE_FX",
+      "prior_bars": null,
+      "prior_raw_sha256": null,
+      "source_file_not_available_current_session": true
+    },
+    {
+      "cell": "WTI_D1",
+      "prior_r0_status": "READY_EXPLORATORY",
+      "prior_source": "Yahoo Finance chart unofficial",
+      "prior_kind": "YAHOO_FRONT_MONTH_FUTURES_PROXY",
+      "prior_bars": 4206,
+      "prior_raw_sha256": "390f4efd0f0449be25a4f0d4609c23faad72210d52a94b8c1ac49f26c38d9e9e",
+      "source_file_not_available_current_session": true
+    },
+    {
+      "cell": "WTI_H4",
+      "prior_r0_status": "DATA_UNAVAILABLE_NATIVE_H4",
+      "prior_source": null,
+      "prior_kind": "YAHOO_FRONT_MONTH_FUTURES_PROXY",
+      "prior_bars": null,
+      "prior_raw_sha256": null,
+      "source_file_not_available_current_session": true
+    },
+    {
+      "cell": "XAGUSD_D1",
+      "prior_r0_status": "READY_EXPLORATORY",
+      "prior_source": "Yahoo Finance chart unofficial",
+      "prior_kind": "YAHOO_FRONT_MONTH_FUTURES_PROXY",
+      "prior_bars": 4150,
+      "prior_raw_sha256": "36434e8c3db0f59546d9a4aa8bba5833e62a780c4b93da93622aa68ae38a5ab4",
+      "source_file_not_available_current_session": true
+    },
+    {
+      "cell": "XAGUSD_H4",
+      "prior_r0_status": "DATA_UNAVAILABLE_NATIVE_H4",
+      "prior_source": null,
+      "prior_kind": "YAHOO_FRONT_MONTH_FUTURES_PROXY",
+      "prior_bars": null,
+      "prior_raw_sha256": null,
+      "source_file_not_available_current_session": true
+    },
+    {
+      "cell": "XAUUSD_D1",
+      "prior_r0_status": "READY_EXPLORATORY",
+      "prior_source": "Yahoo Finance chart unofficial",
+      "prior_kind": "YAHOO_FRONT_MONTH_FUTURES_PROXY",
+      "prior_bars": 4183,
+      "prior_raw_sha256": "f1ee67412ed4b98a4d2453722321b06618190baa3c2cf2ae67f99a4b670ec2c5",
+      "source_file_not_available_current_session": true
+    },
+    {
+      "cell": "XAUUSD_H4",
+      "prior_r0_status": "DATA_UNAVAILABLE_NATIVE_H4",
+      "prior_source": null,
+      "prior_kind": "YAHOO_FRONT_MONTH_FUTURES_PROXY",
+      "prior_bars": null,
+      "prior_raw_sha256": null,
+      "source_file_not_available_current_session": true
+    }
+  ]
+}
