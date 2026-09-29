@@ -363,11 +363,14 @@ public final class DemoLoginActivity extends Activity {
                 }
                 String asOf = broker.optString("asOf", "");
                 if (asOf.isEmpty()) throw new IOException("BROKER_TIMESTAMP_MISSING");
+                java.util.List<NativePortfolioSummary.Position> nativePositions =
+                    new java.util.ArrayList<>();
+                StringBuilder details = new StringBuilder();
                 StringBuilder shown = new StringBuilder("Login: ")
                     .append(linkedLogin).append(" | ").append(linkedServer)
-                    .append("\\nBalance: ").append(balance).append(" ").append(currency)
-                    .append("\\nEquity: ").append(equity).append(" ").append(currency)
-                    .append("\\nPositions: ").append(positions.length());
+                    .append("\nBalance: ").append(balance).append(" ").append(currency)
+                    .append("\nEquity: ").append(equity).append(" ").append(currency)
+                    .append("\nPositions: ").append(positions.length());
                 for (int i = 0; i < positions.length(); i++) {
                     JSONObject p = positions.optJSONObject(i);
                     if (p == null
@@ -384,15 +387,21 @@ public final class DemoLoginActivity extends Activity {
                     if (!Double.isFinite(lot) || lot <= 0 || !Double.isFinite(pnl)) {
                         throw new IOException("BROKER_POSITION_INVALID");
                     }
-                    shown.append("\\n").append(p.getString("symbol"))
+                    nativePositions.add(new NativePortfolioSummary.Position(
+                        p.getString("symbol"), p.getString("side"), lot, pnl));
+                    details.append("\n").append(p.getString("symbol"))
                         .append(" ").append(p.getString("side"))
                         .append(" | Lot: ").append(lot)
                         .append(" | P/L: ").append(pnl).append(" ").append(currency)
                         .append(" | #").append(p.getString("ticket"));
                 }
+                NativePortfolioSummary summary =
+                    NativePortfolioSummary.of(nativePositions);
                 final String display = shown
-                    .append("\\nĐọc từ broker lúc: ").append(asOf)
-                    .append("\\nAuto Trade: LOCKED | LIVE: LOCKED").toString();
+                    .append(summary.display(currency))
+                    .append("\nVị thế chi tiết:").append(details)
+                    .append("\nĐọc từ broker lúc: ").append(asOf)
+                    .append("\nAuto Trade: LOCKED | LIVE: LOCKED").toString();
                 runOnUiThread(() -> {
                     if (generation != sessionGeneration) return;
                     account.setText(display);
