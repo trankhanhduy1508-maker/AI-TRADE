@@ -82,6 +82,12 @@ class Runtime(unittest.TestCase):
                           as_of_utc=START+1000*DAY)
         self.assertEqual(x['fee_status'],'MODELED_ONLY')
         self.assertIsNone(x['account_currency_pnl'])
+        for e in x['episodes']:
+            if e['selected'] != 'FLAT':
+                self.assertLessEqual(e['modeled_cost_stress']['2x']['realized_r'],
+                                     e['realized_r']+1e-12)
+                self.assertLessEqual(e['modeled_cost_stress']['3x']['realized_r'],
+                                     e['modeled_cost_stress']['2x']['realized_r']+1e-12)
 
 
 class Fault(unittest.TestCase):
