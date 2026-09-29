@@ -32,3 +32,16 @@
 - Thiếu release signing key ổn định do chủ sở hữu quản lý, phiên bản release ký, install/update giữ dữ liệu, Android device migration và bản recovery cùng signer có versionCode tăng.
 
 **Trạng thái đúng: source-only QA và Python broker investor preflight PASS; Founder API v6 ACTIVE; verifier v4 ACTIVE; quyền order, LIVE và release vẫn khóa. KHÔNG CÓ APK HOÀN CHỈNH.**
+
+
+## Kiểm tra độc lập chỉ đọc — HEAD 6fe34206 (29/09/2026)
+
+**Phạm vi:** Đọc đúng nhánh `codex/p0-covel-knowledge-audit`, hai handoff bắt buộc, nguồn adapter, log CI và trạng thái Supabase hiện hành. Không thao tác Main/Stable/Production; không thực hiện lệnh broker; không bật DEMO-send, risk hoặc LIVE; không xuất APK debug làm release.
+
+- **HEAD kiểm tra trước ghi:** `6fe34206a01009e3f8ceb6465d8aa93acdd84eac` (commit chỉ cập nhật tài liệu so với `8d620ec221c866c42f7e313e1e64d6278377b3b5`). Mã adapter hiện hành `src/execution/mt5_adapter.py` blob `49df36b9c9d6dad5c0cfe5b22a715369caf07e87`.
+- **Bằng chứng QA tồn tại, không phải QA mới:** [source-only run 36529015884](https://github.com/trankhanhduy1508-maker/AI-TRADE/actions/runs/36529015884), job `109278250398` có kết luận SUCCESS, log ghi **204 Python passed**, job biên dịch Android Java + lint và kiểm release-gate âm thành công; job chủ động xác nhận **không assemble/không giao APK**. Test Node được ghi nhận **16** trong handoff, không suy ra Android device E2E.
+- **Lỗi protective SL chưa khắc phục:** `MT5OrderRequest.stop_loss` còn tùy chọn; `MT5BrokerAdapter.submit()` chưa từ chối SL thiếu/không hữu hạn trước khi đi vào `_validate_contract`. `MT5SymbolContract.rejection_reason()` chỉ xét SL khi giá trị khác `None`; `_request_dict()` bỏ trường `sl` nếu thiếu. Vì vậy đường gọi adapter trực tiếp có khả năng tạo lệnh mở không gắn protective SL **nếu** gate gửi DEMO được mở trong tương lai. Chưa sửa/chưa báo PASS; lịch sử handoff ghi thao tác tạo test bảo vệ từng bị công cụ an toàn chặn, không được lách chặn đó.
+- **Supabase đọc trực tiếp tại phiên này:** dự án `oziktadfeenydvgobudr`, `ai_trade.runtime_config.enabled=false`, `demo_send_enabled=false`, `risk_profile_approved=false`; `order_intents=0`; baseline được duyệt cho broker order = **0**. Hai Edge hiện triển khai: `ai-trade-founder-mt5` **ACTIVE v6** và `ai-trade-mt5-demo-validate` **ACTIVE v4**. Không tuyên bố verifier source mới đã được deploy.
+- **BLOCKER nghiệm thu release:** chưa có owner-managed signer/keystore bên ngoài repo, key pin, `product/CWS_AI_TRADE_RELEASE_APPROVAL.json` và bằng chứng ký+cài đặt+cập nhật/khôi phục trên Android thực; chưa có full Founder-token → verifier → broker → Android E2E; chưa có model/risk được phê duyệt, broker DEMO order acknowledgement và reconciliation thực. **Chưa có APK release hoàn chỉnh.** Google OAuth native vẫn HOÃN nhưng xác thực/entitlement Founder hiện có phải được giữ nguyên.
+
+**Hướng hoàn thiện còn được phép:** kiểm thử và sửa độc lập với OAuth khi công cụ cho phép; mọi protective SL, retry, ledger và broker reconciliation phải có test/evidence thật; không bật gate và không tạo bản release trước khi có signer, phê duyệt và Android E2E hợp lệ. Không coi kết quả đọc broker hoặc source QA là bằng chứng auto-trade thực.
