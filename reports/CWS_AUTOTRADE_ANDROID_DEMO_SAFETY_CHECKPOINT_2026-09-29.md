@@ -45,3 +45,34 @@
 - **BLOCKER nghiệm thu release:** chưa có owner-managed signer/keystore bên ngoài repo, key pin, `product/CWS_AI_TRADE_RELEASE_APPROVAL.json` và bằng chứng ký+cài đặt+cập nhật/khôi phục trên Android thực; chưa có full Founder-token → verifier → broker → Android E2E; chưa có model/risk được phê duyệt, broker DEMO order acknowledgement và reconciliation thực. **Chưa có APK release hoàn chỉnh.** Google OAuth native vẫn HOÃN nhưng xác thực/entitlement Founder hiện có phải được giữ nguyên.
 
 **Hướng hoàn thiện còn được phép:** kiểm thử và sửa độc lập với OAuth khi công cụ cho phép; mọi protective SL, retry, ledger và broker reconciliation phải có test/evidence thật; không bật gate và không tạo bản release trước khi có signer, phê duyệt và Android E2E hợp lệ. Không coi kết quả đọc broker hoặc source QA là bằng chứng auto-trade thực.
+
+
+## Mã nguồn MT5 DEMO sau sửa protective SL và idempotence (29/09/2026)
+
+**Trạng thái đúng theo evidence:** mã nguồn kiểm thử PASS; **APK release tự giao dịch MT5 DEMO chưa hoàn thành và chưa được ký.** Các ghi nhận lịch sử nói protective SL chưa sửa ở trên đã được thay thế bằng commit mới dưới đây, nhưng không được suy ra broker DEMO E2E PASS.
+
+### Thay đổi trên đúng nhánh `codex/p0-covel-knowledge-audit`
+
+- `a3a388c70c2ef9bd78e402a560edc15e21d62d0e` / `af694d9cf7d6d892be5b335fb9fbbb84c7e9a1dc`: yêu cầu protective SL hữu hạn và dương trước lệnh mở MT5 DEMO trực tiếp; từ chối TP không hợp lệ; sửa đường chỉnh SL/TP; hậu kiểm tài khoản DEMO sau khi đọc vị thế. Test âm bao phủ missing/NaN/infinite/nonpositive stop, broker switch và bảo đảm không gọi order-send khi đầu vào sai.
+- `387938602f4ab67f059e45b3529cc173dc0bcdd0`: adapter cloud MetaApi DEMO cũng bắt SL hợp lệ; yêu cầu ledger SQLite bền vững khi có khả năng gửi; thay ghi `SUBMITTING` bằng atomic intent claim trước mở/chỉnh/đóng; test concurrent stale precheck, timeout và restart. Atomic SQLite claim chỉ có hiệu lực với các worker dùng chung **cùng tệp**; không suy ra an toàn đa máy/vùng độc lập. MetaApi cloud không phải đường broker-to-Android đã nghiệm thu và không được tự mua dịch vụ.
+- `08d4a7617606bb33ed3a30bf4a09ff25a98e6742`: expose unresolved `SUBMITTING` intents; chặn **mở rủi ro mới** trong coordinator và cloud engine khi còn mutation chưa đối soát, ngay cả khi SafetySnapshot báo `reconciled=true`. Không tự gửi lại lệnh khi timeout/crash; trạng thái phải đối chiếu broker bằng evidence thật. Không thay đổi chính sách đóng/giảm rủi ro dưới kill-switch.
+- `2407fca941959530f863faac882b1fa4e499b2fb`: sửa fixture cloud test sau lỗi attribute do thụt dòng. `3e12e39a029a394af7f0f2f2e8dbc2e9b3e8d75a`: sửa PaperBrokerAdapter expose pending ledger cho coordinator, thêm test chặn lệnh mới nếu paper intent cũ chưa xác định và bổ sung QA workflow path filters cho paper. Lỗi QA trung gian được sửa tối thiểu và kiểm thử lại, không tính các run lỗi/hủy là PASS.
+
+### Evidence QA tại đúng mã nguồn
+
+- [Source-only QA 36530966738](https://github.com/trankhanhduy1508-maker/AI-TRADE/actions/runs/36530966738), SHA `3e12e39a029a394af7f0f2f2e8dbc2e9b3e8d75a`, job `109284332092`: **SUCCESS**; log **250 Python PASS / 16 Node PASS**, standalone Java security/portfolio contracts, 13 offline Android assets/whitelist, compile debug/release Java + lint PASS, release prerequisite **fail-closed PASS** khi thiếu approval/signer, xác nhận **không tạo APK**. Không có Android physical-device test, APK signing/install/upgrade hoặc broker DEMO order-send E2E.
+- Các broker protocol probe trước đây PASS ở read-only DEMO preflight, **không chứng minh** lệnh mới gửi tới broker hoặc recovery sau lỗi broker. Không biến kết quả mô phỏng ledger thành broker acknowledgment thật.
+
+### Kiểm tra Supabase và release (read-only cùng phiên)
+
+- Dự án `oziktadfeenydvgobudr`: `runtime_config.enabled=false`, `demo_send_enabled=false`, `risk_profile_approved=false`, `order_intents=0`, số model `APPROVED` được phép broker orders = `0`. Không thay đổi các cờ/trạng thái này, không bật LIVE.
+- GitHub Releases trả **0 release**. `product/CWS_AI_TRADE_RELEASE_APPROVAL.json` không tồn tại (GitHub contents API 404). Founder API đang chạy v6, verifier hiện triển khai v4; mã verifier mới đã bị chặn deploy trong handoff và không được lách safety gate để tự triển khai.
+- Google OAuth native tiếp tục HOÃN; Google JWT/Founder entitlement của API hiện hành vẫn bắt buộc, tuyệt đối không được thay bằng anonymous/bypass.
+
+### Blocker bên ngoài source-only QA, chưa được phép gọi DONE
+
+1. Thiếu model/chiến lược deterministic được phê duyệt bằng provenance và kiểm định riêng (OOS, walk-forward, spread/slippage/cost, paper-forward) và risk profile/DEMO send được Founder cho phép; kiến thức Masterbook và rule engine chỉ là nguyên liệu, không tự nâng thành model approved.
+2. Chưa nghiệm thu Android thực và full HTTPS Founder token → `/verify-demo` → verifier → MT5 DEMO broker → `/snapshot` → Android gồm Balance, Equity, positions/P&L; chưa kiểm thử broker **order acknowledgment**, đối soát server-side, timeout và khởi động lại dưới lệnh DEMO thật. Không có quyền/secret để thay thế xác thực chủ tài khoản.
+3. Thiếu keystore ổn định do Founder quản lý bên ngoài Git checkout, release public-key pin, Founder approval manifest và bằng chứng cùng signer/versionCode tăng khi install, update, encrypted-data migration và native recovery trên Android. Không commit keystore/password/secret; debug APK hoặc unit test với signer giả không phải release.
+
+**Kết luận nghiệm thu:** deterministic engine và safety source được củng cố; SOURCE QA PASS tại SHA nêu trên. **Chưa có bản APK release được ký hay khả năng bật auto-trade DEMO đã nghiệm thu.** Giữ fail-closed và chỉ tiếp tục với xác thực, approval, signing và Android/broker evidence thật.
