@@ -203,3 +203,98 @@ def test_cloud_unknown_positions_are_not_silently_treated_as_empty():
         with pytest.raises(MetaApiDemoBlocked, match="BROKER_POSITIONS_INCOMPLETE"):
             run(adapter.positions())
         run(adapter.close())
+
+
+@pytest.mark.parametrize("ledger_path", [":memory:", ""])
+def test_cloud_order_capable_adapter_requires_durable_ledger(ledger_path):
+    with pytest.raises(TradingDisabledError, match="PERSISTENT_ORDER_LEDGER_REQUIRED"):
+        MetaApiCloudAdapter(Account(), Connection(), allow_order_send=True,
+                            ledger_path=ledger_path)
+
+
+@pytest.mark.parametrize("stop_loss", [None, float("nan"), float("inf"), -float("inf"), 0.0, -1.0])
+def test_cloud_direct_submit_rejects_missing_or_invalid_stop(stop_loss):
+    conn = Connection()
+    with ledger() as path:
+        adapter = MetaApiCloudAdapter(Account(), conn, allow_order_send=True,
+                                      ledger_path=path)
+        result = run(adapter.submit(MT5OrderRequest(
+            "cloud-no-protective-sl", "EURUSD", "UP", .01, 1.1052,
+            stop_loss=stop_loss,
+        )))
+        assert (result.status, result.message) == (
+            "RISK_REJECTED", "PROTECTIVE_STOP_REQUIRED"
+        )
+        assert not any(call[0] in {"buy", "connect"} for call in conn.calls)
+        assert adapter._ledger.get("cloud-no-protective-sl") is None
+        run(adapter.close())
+
+
+@pytest.mark.parametrize("stop_loss", [None, float("nan"), float("inf"), 0.0])
+def test_cloud_modify_rejects_invalid_protective_stop(stop_loss):
+    conn = Connection()
+    with ledger() as path:
+        adapter = MetaApiCloudAdapter(Account(), conn, allow_order_send=True,
+                                      ledger_path=path)
+        result = run(adapter.modify_position(
+            "42", client_order_id="cloud-bad-stop-modify", stop_loss=stop_loss,
+        ))
+        assert (result.status, result.message) == (
+            "RISK_REJECTED", "PROTECTIVE_STOP_REQUIRED"
+        )
+        assert not any(call[0] in {"modify", "connect"} for call in conn.calls)
+        assert adapter._ledger.get("cloud-bad-stop-modify") is None
+        run(adapter.close())
+
+
+def test_cloud_stale_precheck_cannot_double_send_with_shared_ledger():
+    with ledger() as path:
+        first_connection = Connection()
+        second_connection = Connection()
+        first = MetaApiCloudAdapter(Account(), first_connection,
+                                    allow_order_send=True, ledger_path=path)
+        second = MetaApiCloudAdapter(Account(), second_connection,
+                                     allow_order_send=True, ledger_path=path)
+        order = MT5OrderRequest("cloud-race", "EURUSD", "UP", .01, 1.1052, 1.10)
+        assert run(first.submit(order)).status == "FILLED"
+        original = second._duplicate_result
+        checks = 0
+
+        def stale_precheck(client_order_id):
+            nonlocal checks
+            checks += 1
+            if checks == 1:
+                return None
+            return original(client_order_id)
+
+        second._duplicate_result = stale_precheck
+        assert run(second.submit(order)).status == "DUPLICATE_SUPPRESSED"
+        assert checks == 2
+        assert len([call for call in first_connection.calls if call[0] == "buy"]) == 1
+        assert not [call for call in second_connection.calls if call[0] == "buy"]
+        run(first.close())
+        run(second.close())
+
+
+def test_cloud_ambiguous_send_is_never_retried_after_restart():
+    with ledger() as path:
+        first_connection = Connection()
+
+        async def timeout(*args):
+            raise TimeoutError("broker acknowledgement unavailable")
+
+        first_connection.create_market_buy_order = timeout
+        first = MetaApiCloudAdapter(Account(), first_connection,
+                                    allow_order_send=True, ledger_path=path)
+        order = MT5OrderRequest("cloud-timeout", "EURUSD", "UP", .01, 1.1052, 1.10)
+        result = run(first.submit(order))
+        assert result.status == "AMBIGUOUS"
+        assert first._ledger.get(order.client_order_id)[0] == "SUBMITTING"
+        run(first.close())
+
+        second_connection = Connection()
+        second = MetaApiCloudAdapter(Account(), second_connection,
+                                     allow_order_send=True, ledger_path=path)
+        assert run(second.submit(order)).status == "DUPLICATE_SUPPRESSED"
+        assert not [call for call in second_connection.calls if call[0] == "buy"]
+        run(second.close())

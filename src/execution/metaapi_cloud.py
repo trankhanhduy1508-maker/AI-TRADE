@@ -44,6 +44,10 @@ class MetaApiCloudAdapter:
     ):
         self.account = account
         self.connection = connection
+        if not isinstance(allow_order_send, bool):
+            raise ValueError("allow_order_send must be a boolean")
+        if allow_order_send and str(ledger_path).strip() in ("", ":memory:"):
+            raise TradingDisabledError("PERSISTENT_ORDER_LEDGER_REQUIRED")
         self.allow_order_send = allow_order_send
         self._ledger = OrderIntentLedger(ledger_path)
         self._connected = False
@@ -165,6 +169,27 @@ class MetaApiCloudAdapter:
         if duplicate is not None:
             return duplicate
         self._ensure_mutation_allowed()
+        # Even a direct cloud adapter call must never create unprotected risk.
+        if (
+            not isinstance(order.stop_loss, (int, float))
+            or isinstance(order.stop_loss, bool)
+            or not math.isfinite(order.stop_loss)
+            or order.stop_loss <= 0
+        ):
+            return MT5OrderResult(
+                order.client_order_id, "RISK_REJECTED",
+                message="PROTECTIVE_STOP_REQUIRED",
+            )
+        if order.take_profit is not None and (
+            not isinstance(order.take_profit, (int, float))
+            or isinstance(order.take_profit, bool)
+            or not math.isfinite(order.take_profit)
+            or order.take_profit <= 0
+        ):
+            return MT5OrderResult(
+                order.client_order_id, "CONTRACT_REJECTED",
+                message="TARGET_INVALID",
+            )
         await self._ensure_connected()
 
         contract = await self.symbol_contract(order.symbol)
@@ -173,7 +198,9 @@ class MetaApiCloudAdapter:
             return MT5OrderResult(order.client_order_id, "CONTRACT_REJECTED", message=rejection)
 
         await self._ensure_connected()
-        self._ledger.record(order.client_order_id, "SUBMITTING")
+        duplicate = self._claim_or_duplicate(order.client_order_id)
+        if duplicate is not None:
+            return duplicate
         client_id = self._broker_client_id(order.client_order_id)
         options = {"clientId": client_id, "magic": order.magic}
         try:
@@ -215,6 +242,26 @@ class MetaApiCloudAdapter:
         if duplicate is not None:
             return duplicate
         self._ensure_mutation_allowed()
+        if (
+            not isinstance(stop_loss, (int, float))
+            or isinstance(stop_loss, bool)
+            or not math.isfinite(stop_loss)
+            or stop_loss <= 0
+        ):
+            return MT5OrderResult(
+                client_order_id, "RISK_REJECTED",
+                message="PROTECTIVE_STOP_REQUIRED",
+            )
+        if take_profit is not None and (
+            not isinstance(take_profit, (int, float))
+            or isinstance(take_profit, bool)
+            or not math.isfinite(take_profit)
+            or take_profit <= 0
+        ):
+            return MT5OrderResult(
+                client_order_id, "CONTRACT_REJECTED",
+                message="TARGET_INVALID",
+            )
         position = await self._require_position(position_id)
         bid, ask, _ = await self.quote(position.symbol)
         contract = await self.symbol_contract(position.symbol)
@@ -239,7 +286,9 @@ class MetaApiCloudAdapter:
                 return MT5OrderResult(client_order_id, "RISK_REJECTED", message="STOP_WOULD_INCREASE_RISK")
 
         await self._ensure_connected()
-        self._ledger.record(client_order_id, "SUBMITTING", position.position_id)
+        duplicate = self._claim_or_duplicate(client_order_id, position.position_id)
+        if duplicate is not None:
+            return duplicate
         try:
             response = await self.connection.modify_position(
                 position_id,
@@ -295,7 +344,9 @@ class MetaApiCloudAdapter:
             return MT5OrderResult(client_order_id, "CONTRACT_REJECTED", message="CLOSE_VOLUME_STEP_INVALID")
 
         await self._ensure_connected()
-        self._ledger.record(client_order_id, "SUBMITTING", position.position_id)
+        duplicate = self._claim_or_duplicate(client_order_id, position.position_id)
+        if duplicate is not None:
+            return duplicate
         try:
             if partial:
                 response = await self.connection.close_position_partially(position_id, close_volume)
@@ -352,6 +403,16 @@ class MetaApiCloudAdapter:
             take_profit=target if target > 0 else None,
             magic=int(_get(record, "magic", 0) or 0),
             comment=str(_get(record, "comment", _get(record, "clientId", "")) or ""),
+        )
+
+    def _claim_or_duplicate(
+        self, client_order_id: str, broker_order_id: str | None = None
+    ) -> MT5OrderResult | None:
+        if self._ledger.claim(client_order_id, broker_order_id=broker_order_id):
+            return None
+        return self._duplicate_result(client_order_id) or MT5OrderResult(
+            client_order_id, "DUPLICATE_SUPPRESSED",
+            message="cloud intent reserved concurrently; reconcile before retry",
         )
 
     def _duplicate_result(self, client_order_id: str) -> MT5OrderResult | None:

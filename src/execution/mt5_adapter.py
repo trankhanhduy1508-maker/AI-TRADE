@@ -200,7 +200,7 @@ class OrderIntentLedger:
         ).fetchone()
         return row if row is not None else None
 
-    def claim(self, client_order_id: str) -> bool:
+    def claim(self, client_order_id: str, broker_order_id: str | None = None) -> bool:
         """Atomically reserve a mutation for processes sharing this SQLite file.
 
         A crash leaves SUBMITTING for reconciliation, never an auto-retry.
@@ -209,11 +209,11 @@ class OrderIntentLedger:
             raise ValueError("client_order_id is required")
         cursor = self._connection.execute(
             """
-            INSERT INTO order_intents(client_order_id, status, updated_at)
-            VALUES (?, 'SUBMITTING', ?)
+            INSERT INTO order_intents(client_order_id, status, broker_order_id, updated_at)
+            VALUES (?, 'SUBMITTING', ?, ?)
             ON CONFLICT(client_order_id) DO NOTHING
             """,
-            (client_order_id, datetime.now(timezone.utc).isoformat()),
+            (client_order_id, broker_order_id, datetime.now(timezone.utc).isoformat()),
         )
         self._connection.commit()
         return cursor.rowcount == 1
