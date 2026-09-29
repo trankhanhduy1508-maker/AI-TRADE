@@ -1,5 +1,8 @@
 # CWS AUTOTRADE — KINH NGHIỆM VÀ CHECKPOINT APK/MT5 DEMO — 29/09/2026
 
+> **BÀN GIAO CHAT MỚI 29/09 (ưu tiên đọc):** [CWS_AUTOTRADE_APK_NEW_CHAT_HANDOFF_2026-09-29.md](CWS_AUTOTRADE_APK_NEW_CHAT_HANDOFF_2026-09-29.md). Checkpoint ghi nhận mã nguồn `a162feada1f2bb2113c2acb6bcef414a9c0d337a`, tài liệu trước đó tại `4acba221d2c4a8769d0a6b32e3c111a213c868de`; kiểm tra HEAD mới nhất trước thao tác. Google OAuth HOÃN; source-only QA 195 Python + 16 Node PASS, broker investor probe PASS; Founder Edge v6 ACTIVE, verifier Edge v4 ACTIVE. Full broker-to-Android E2E, model/risk/send approval, stable signing và APK release vẫn CHƯA PASS. Lệnh Founder: cập nhật kinh nghiệm lên GitHub, giao prompt cho chat mới.
+
+
 > **CHECKPOINT MỚI NHẤT 29/09, tiếp tục APK-first:** [Bằng chứng và blocker hiện hành](../reports/CWS_AUTOTRADE_ANDROID_DEMO_SAFETY_CHECKPOINT_2026-09-29.md). HEAD mã nguồn `a162feada1f2bb2113c2acb6bcef414a9c0d337a`, 195 Python + 16 Node tests, Android compile/lint và Python broker investor probe PASS đúng phạm vi nguồn. Supabase Founder v6 ACTIVE; verifier deployed v4, mã same-server fencing mới chưa được triển khai do tool safety block. Google OAuth HOÃN; model/risk/demo-send và release ký vẫn khóa. **Chưa bàn giao APK; các ghi nhận dưới đây là lịch sử.**
 
 
