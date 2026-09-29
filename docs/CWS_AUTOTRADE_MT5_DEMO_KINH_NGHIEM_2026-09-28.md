@@ -64,3 +64,9 @@ Commit `559fe83fd5bbb5bba21800536e89d6f38a6f30a4` buộc `terminal_info().connec
 ## 8. Checkpoint an toàn MT5 DEMO / Android (29/09/2026)
 
 Đã sửa race lúc readback MT5 (kiểm broker trước/sau positions), thêm MetaApi guard yêu cầu broker xác nhận rõ `ACCOUNT_TRADE_MODE_DEMO` cùng Login/Server, chống account switch và lọc thông tin exception SDK. QA source-only: 37 Python unit tests + 18 Java checks PASS. Không có Android/broker thực E2E, MetaApi full-repo integration chưa chạy, risk/model approval chưa có, không build/phát hành APK. Xem `reports/CWS_AUTOTRADE_DEMO_ANDROID_PROGRESS_2026-09-29.md`. Live/funded LOCKED, mọi quyền gửi lệnh DEMO vẫn tắt.
+
+## 9. Bàn giao mới nhất ngày 29/09/2026: broker DEMO readback thật, Android QA và chat mới
+
+**Tài liệu chính thay thế checkpoint cũ:** docs/CWS_AUTOTRADE_ANDROID_MT5_DEMO_HANDOFF_2026-09-29.md. **Prompt giao việc:** prompts/CWS_AUTOTRADE_ANDROID_MT5_DEMO_CHAT_MOI_2026-09-29.md. Lấy GitHub HEAD mới nhất của nhánh codex/p0-covel-knowledge-audit trước khi làm, không dùng cứng SHA cũ.
+
+Bằng chứng mới quan trọng: workflow https://github.com/trankhanhduy1508-maker/AI-TRADE/actions/runs/36468844897 SUCCESS với investor-only/OIDC lease: balanceRead=true, equityRead=true, positionsRead=true trên broker MT5 DEMO thật, brokerOrders=false, không công bố giá trị tài khoản. Đây là PASS cho preflight read-only trong cloud, **KHÔNG** chứng minh API Founder/APK hiện đã có equity/positions hoặc đã gửi lệnh. Android source-only https://github.com/trankhanhduy1508-maker/AI-TRADE/actions/runs/36468168629 PASS 166 Python offline tests, 43 Java checks, compile debug/release, lint, WebView assets và release gate; **không build APK**. Supabase Founder v3 /snapshot vẫn chỉ trả balance, lease investor-only v1 ACTIVE. Risk/model approval và DEMO send đều đang khóa, hai baseline REJECTED, chưa có lệnh. Nội dung chi tiết, kiến trúc, bug fixes và thứ tự tiếp tục nằm trong tài liệu bàn giao mới.
