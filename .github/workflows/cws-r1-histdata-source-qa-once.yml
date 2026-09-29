@@ -1,0 +1,69 @@
+name: CWS R1 HistData M1 source-conversion QA (one shot)
+
+on:
+  push:
+    branches: [codex/p0-covel-knowledge-audit]
+    paths:
+      - '.github/workflows/cws-r1-histdata-source-qa-once.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: cws-r1-histdata-source-qa-once
+  cancel-in-progress: false
+
+jobs:
+  synthetic-only:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout exact triggering SHA
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 1
+      - name: Compile and verify pure importer boundaries
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+          test "$GITHUB_REF_NAME" = "codex/p0-covel-knowledge-audit"
+          test -s research/CWS_AUTOTRADE_R1_M1_DERIVED_H4_SOURCE_REGISTRATION_2026-09-29.md
+          python3 -m compileall -q src/data_loader/histdata_m1_h4.py tests/data_loader/test_histdata_m1_h4.py
+          python3 - <<'PY'
+          import ast,hashlib
+          from pathlib import Path
+          p=Path("src/data_loader/histdata_m1_h4.py")
+          t=ast.parse(p.read_text())
+          modules=set()
+          for x in ast.walk(t):
+              if isinstance(x,ast.Import):
+                  modules.update(n.name.split(".")[0] for n in x.names)
+              elif isinstance(x,ast.ImportFrom) and x.module:
+                  modules.add(x.module.split(".")[0])
+          forbidden={"socket","requests","urllib","MetaTrader5","ccxt",
+                     "subprocess","supabase"}
+          assert not modules & forbidden, modules & forbidden
+          print("PURE_IMPORTER_SOURCE_AUDIT_PASS",hashlib.sha256(p.read_bytes()).hexdigest())
+          PY
+      - name: Round 1 Smoke
+        run: |
+          set -euo pipefail
+          PYTHONPATH=. python3 -m unittest discover -s tests/data_loader -p 'test_histdata_m1_h4.py' -v
+          echo "SMOKE_PASS synthetic source format"
+      - name: Round 2 Runtime
+        run: |
+          set -euo pipefail
+          PYTHONPATH=. python3 -m unittest discover -s tests/data_loader -p 'test_histdata_m1_h4.py' -v
+          echo "RUNTIME_PASS synthetic H4 full-block conversion"
+      - name: Round 3 Fault
+        run: |
+          set -euo pipefail
+          PYTHONPATH=. python3 -m unittest discover -s tests/data_loader -p 'test_histdata_m1_h4.py' -v
+          echo "FAULT_PASS no fabricated minutes and no broker costs"
+      - name: Record exact QA version
+        run: |
+          set -euo pipefail
+          echo "TESTED_SHA=$(git rev-parse HEAD)"
+          git status --porcelain
+          echo "NO_REAL_HISTDATA_FILE_OR_INDEPENDENT_HOLDOUT_ACCESSED"
