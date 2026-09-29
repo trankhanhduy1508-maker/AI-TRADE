@@ -61,6 +61,10 @@ def check_broker_readback(
             or account.get("is_demo") is not True
             or account.get("server") != server):
         raise InvestorReadbackBlocked("BROKER_NOT_EXACT_DEMO")
+    # A Vault investor credential must remain investor/read-only at the broker.
+    # Treat absent or unrecognized rights as unavailable, never master trading.
+    if account.get("is_investor") is not True and account.get("is_read_only") is not True:
+        raise InvestorReadbackBlocked("BROKER_INVESTOR_RIGHTS_MISSING")
     if account.get("login") is not None and str(account["login"]) != str(login):
         raise InvestorReadbackBlocked("BROKER_LOGIN_MISMATCH")
     number(account.get("balance"), "BALANCE")

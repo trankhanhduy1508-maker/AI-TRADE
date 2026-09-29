@@ -14,7 +14,8 @@ def sample_lease():
 
 def sample_account():
     return {"account_type": 1, "is_demo": True, "server": "MetaQuotes-Demo",
-            "currency": "USD", "balance": 1000.0, "equity": 1003.0}
+            "currency": "USD", "balance": 1000.0, "equity": 1003.0,
+            "is_investor": True, "is_read_only": True}
 
 
 def sample_positions():
@@ -63,6 +64,19 @@ class InvestorContractTest(unittest.TestCase):
                 with self.assertRaises(InvestorReadbackBlocked):
                     check_broker_readback(account, sample_positions(),
                                           login=123456, server="MetaQuotes-Demo")
+
+    def test_broker_rights_fail_closed(self):
+        for investor, read_only in [(False, False), (None, None),
+                                    (False, None), (None, False)]:
+            with self.subTest(investor=investor, read_only=read_only):
+                account = sample_account()
+                account["is_investor"] = investor
+                account["is_read_only"] = read_only
+                with self.assertRaisesRegex(
+                    InvestorReadbackBlocked, "BROKER_INVESTOR_RIGHTS_MISSING"
+                ):
+                    check_broker_readback(account, [], login=123456,
+                                          server="MetaQuotes-Demo")
 
     def test_reject_ambiguous_positions(self):
         for key, value in [
