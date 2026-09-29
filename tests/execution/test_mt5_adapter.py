@@ -97,6 +97,30 @@ def _ledger_path():
         path.unlink(missing_ok=True)
 
 
+@pytest.mark.parametrize("ledger_path", [":memory:", ""])
+def test_order_capable_demo_requires_a_persistent_ledger(ledger_path):
+    terminal = FakeTerminal()
+    with pytest.raises(TradingDisabledError, match="PERSISTENT_ORDER_LEDGER_REQUIRED"):
+        MT5BrokerAdapter(
+            terminal, mode=ExecutionMode.DEMO,
+            allow_order_send=True, ledger_path=ledger_path,
+        )
+    assert terminal.initialize_calls == 0
+    assert terminal.send_calls == 0
+
+
+def test_readonly_demo_can_use_in_memory_ledger_without_order_access():
+    terminal = FakeTerminal()
+    adapter = MT5BrokerAdapter(
+        terminal, mode=ExecutionMode.DEMO,
+        allow_order_send=False,
+    )
+    with pytest.raises(TradingDisabledError, match="order submission is disabled"):
+        adapter.submit(_request("readonly-no-send"))
+    adapter.close()
+    assert terminal.send_calls == 0
+
+
 def test_disabled_adapter_never_initializes_or_sends():
     terminal = FakeTerminal()
     with _ledger_path() as db_path:

@@ -201,7 +201,7 @@ class OrderIntentLedger:
         return row if row is not None else None
 
     def claim(self, client_order_id: str) -> bool:
-        """Atomically reserve one broker mutation across workers/processes.
+        """Atomically reserve a mutation for processes sharing this SQLite file.
 
         A crash leaves SUBMITTING for reconciliation, never an auto-retry.
         """
@@ -263,6 +263,10 @@ class MT5BrokerAdapter:
     ):
         self._terminal = terminal
         self._mode = ExecutionMode(mode)
+        if not isinstance(allow_order_send, bool):
+            raise ValueError("allow_order_send must be a boolean")
+        if allow_order_send and str(ledger_path).strip() in ("", ":memory:"):
+            raise TradingDisabledError("PERSISTENT_ORDER_LEDGER_REQUIRED")
         self._allow_order_send = allow_order_send
         self._ledger = OrderIntentLedger(ledger_path)
         self._connected = False
