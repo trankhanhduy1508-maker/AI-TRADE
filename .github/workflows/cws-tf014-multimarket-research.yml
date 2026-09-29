@@ -1,0 +1,40 @@
+name: CWS TF014 public H4 cross-market research
+
+on:
+  push:
+    branches: [codex/p0-covel-knowledge-audit]
+    paths:
+      - '.github/workflows/cws-tf014-multimarket-research.yml'
+      - 'scripts/backtest_tf014_multimarket_h4.py'
+permissions:
+  contents: read
+concurrency:
+  group: tf014-cross-market
+  cancel-in-progress: true
+jobs:
+  public-data-study:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      max-parallel: 2
+      matrix:
+        group: [fx_majors, fx_crosses, crypto_commodities, us_indices_stocks]
+    steps:
+      - name: Checkout exact research commit
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      - name: Unit self-test, offline
+        run: python3 scripts/backtest_tf014_multimarket_h4.py --self-test
+      - name: Frozen multi-market historical OOS / walk-forward
+        run: |
+          python3 scripts/backtest_tf014_multimarket_h4.py \
+            --group '${{ matrix.group }}' \
+            --output 'research-results/tf014-${{ matrix.group }}.json'
+      - name: Archive metrics only, not raw data
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: tf014-${{ matrix.group }}
+          path: research-results/tf014-${{ matrix.group }}.json
+          if-no-files-found: warn
+          retention-days: 7
