@@ -83,9 +83,10 @@ def risk_preflight(value: RiskInputs) -> dict:
         return reject("PRODUCT_NOT_EXECUTABLE")
     if value.product_type not in ("SPOT","FX", "FUTURES", "BROKER_CFD", "STOCK"):
         return reject("PRODUCT_TYPE_UNVERIFIED")
-    if value.direction=="SHORT" and not value.short_allowed:
+    if value.direction=="SHORT" and value.short_allowed is not True:
         return reject("SHORT_VEHICLE_NOT_VERIFIED")
-    if not all((value.feed_audited,value.execution_costs_audited,
+    if not all(flag is True for flag in (
+                value.feed_audited,value.execution_costs_audited,
                 value.contract_audited,value.fx_conversion_audited,
                 value.margin_audited,value.authorization_verified,
                 value.kill_switch_off,value.protective_stop_available)):
