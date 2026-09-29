@@ -1,5 +1,8 @@
 # CWS AUTOTRADE — KINH NGHIỆM VÀ CHECKPOINT APK/MT5 DEMO — 29/09/2026
 
+> **CHECKPOINT SOURCE QA MỚI NHẤT 29/09:** [Bằng chứng Native Portfolio + MT5 identity fencing](../reports/CWS_AUTOTRADE_ANDROID_PRE_RELEASE_EVIDENCE_2026-09-29.md). Mã tại `b0dbbf34f3e82231fd2156de3520b610c535fa9a`: 187 Python / 11 Node tests, Java native portfolio, Android source compile/lint, broker investor protocol PASS trong phạm vi báo cáo. Google OAuth vẫn HOÃN. DEMO model/risk/send chưa duyệt; release approval + keystore + Android E2E thiếu nên không có APK hoàn chỉnh. Các checkpoint dưới là lịch sử.
+
+
 > **CẬP NHẬT ƯU TIÊN MỚI 29/09:** Founder hoãn Google OAuth; tiếp tục MT5 DEMO, Risk Engine và Android. Xem [checkpoint không OAuth mới nhất](../reports/CWS_AUTOTRADE_ANDROID_MT5_DEMO_NO_OAUTH_CHECKPOINT_2026-09-29.md). HEAD mã nguồn `a618d88c954b41beccdab3c0275462ad47b9d64e`; Supabase verifier ACTIVE v4, Founder API ACTIVE v5; 176 Python + 11 Node offline tests, Android source compile/lint và broker investor probe PASS. **Chưa có APK hoàn chỉnh; không tự bật demo execution hoặc LIVE.** Các cập nhật dưới đây giữ nguyên làm lịch sử, không thay thế trạng thái này.
 
 
