@@ -86,3 +86,64 @@ def test_independent_risk_engine_blocks_non_finite_market_context():
 
     assert not decision.allowed
     assert "INVALID_CONTEXT" in decision.reasons
+
+
+def _fractional_engine():
+    return IndependentRiskEngine(RiskLimits(
+        max_volume=.01, max_open_positions=1, max_spread_points=20,
+        max_daily_loss=100.0, max_total_volume_per_symbol=.01,
+        max_risk_per_trade_fraction=.0025, max_daily_loss_fraction=.01,
+        required_account_currency="USD",
+    ))
+
+
+def _broker_context(**changes):
+    fields = {
+        "open_positions": 0, "spread_points": 10.0, "daily_loss": 0.0,
+        "account_equity": 10000.0, "tick_size": .00001,
+        "tick_value_per_lot": 1.0, "account_currency": "USD",
+    }
+    fields.update(changes)
+    return RiskContext(**fields)
+
+
+def test_fractional_demo_risk_requires_verified_broker_equity_and_tick_value():
+    engine = _fractional_engine()
+    assert engine.evaluate(_order(), _broker_context()).allowed
+    assert "BROKER_EQUITY_REQUIRED" in engine.evaluate(
+        _order(), _broker_context(account_equity=None)
+    ).reasons
+    assert "BROKER_TICK_VALUE_REQUIRED" in engine.evaluate(
+        _order(), _broker_context(tick_value_per_lot=None)
+    ).reasons
+    assert "ACCOUNT_CURRENCY_MISMATCH" in engine.evaluate(
+        _order(), _broker_context(account_currency="EUR")
+    ).reasons
+
+
+def test_fractional_demo_risk_blocks_oversized_stop_loss_and_daily_loss():
+    engine = _fractional_engine()
+    assert "MAX_TRADE_STOP_RISK" in engine.evaluate(
+        _order(stop_loss=1.00), _broker_context(account_equity=1000.0)
+    ).reasons
+    assert "MAX_DAILY_LOSS_FRACTION" in engine.evaluate(
+        _order(stop_loss=1.099), _broker_context(account_equity=1000.0, daily_loss=-10.0)
+    ).reasons
+    assert "MAX_DAILY_LOSS" in engine.evaluate(
+        _order(stop_loss=1.099), _broker_context(daily_loss=-100.0)
+    ).reasons
+
+
+def test_fractional_demo_risk_rejects_nan_and_nonpositive_tick_value():
+    engine = _fractional_engine()
+    for tick in (None, float("nan"), float("inf"), 0.0, -1.0):
+        assert "BROKER_TICK_VALUE_REQUIRED" in engine.evaluate(
+            _order(), _broker_context(tick_value_per_lot=tick)
+        ).reasons
+
+
+def test_fractional_demo_risk_policy_rejects_invalid_fraction_configuration():
+    import pytest
+    for amount in (-.01, 0.0, 1.01, float("nan"), float("inf"), True):
+        with pytest.raises(ValueError):
+            RiskLimits(.01, 1, 20, 100, max_risk_per_trade_fraction=amount)

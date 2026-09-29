@@ -13,6 +13,9 @@ class RiskLimits:
     max_spread_points: float
     max_daily_loss: float
     max_total_volume_per_symbol: float | None = None
+    max_risk_per_trade_fraction: float | None = None
+    max_daily_loss_fraction: float | None = None
+    required_account_currency: str | None = None
 
     def __post_init__(self) -> None:
         if not math.isfinite(self.max_volume) or self.max_volume <= 0:
@@ -28,6 +31,18 @@ class RiskLimits:
             or self.max_total_volume_per_symbol <= 0
         ):
             raise ValueError("max_total_volume_per_symbol must be finite and positive")
+        for name in ("max_risk_per_trade_fraction", "max_daily_loss_fraction"):
+            value = getattr(self, name)
+            if value is not None and (
+                isinstance(value, bool) or not isinstance(value, (float, int))
+                or not math.isfinite(value) or not 0 < value <= 1
+            ):
+                raise ValueError(f"{name} must be a finite fraction in (0, 1]")
+        if self.required_account_currency is not None and (
+            not isinstance(self.required_account_currency, str)
+            or not self.required_account_currency.strip()
+        ):
+            raise ValueError("required_account_currency must be a nonempty string")
 
 
 @dataclass(frozen=True)
@@ -37,6 +52,10 @@ class RiskContext:
     daily_loss: float
     current_symbol_volume: float = 0.0
     increases_existing_position: bool = False
+    account_equity: float | None = None
+    tick_size: float | None = None
+    tick_value_per_lot: float | None = None
+    account_currency: str | None = None
 
     def __post_init__(self) -> None:
         if self.open_positions < 0:
@@ -90,6 +109,55 @@ class IndependentRiskEngine:
             reasons.append("INVALID_STOPS")
         elif direction == "DOWN" and order.stop_loss <= order.price:
             reasons.append("INVALID_STOPS")
+
+        # Optional broker-equity limits are strict whenever configured. Broker
+        # tick value must be in the verified account currency per 1.0 lot;
+        # callers cannot substitute pip guesses or an Android-supplied quote.
+        use_fractional = (
+            self._limits.max_risk_per_trade_fraction is not None
+            or self._limits.max_daily_loss_fraction is not None
+        )
+        equity = context.account_equity
+        equity_valid = (
+            isinstance(equity, (int, float)) and not isinstance(equity, bool)
+            and math.isfinite(equity) and equity > 0
+        )
+        if use_fractional and not equity_valid:
+            reasons.append("BROKER_EQUITY_REQUIRED")
+        if self._limits.required_account_currency is not None and (
+            not isinstance(context.account_currency, str)
+            or context.account_currency.upper()
+            != self._limits.required_account_currency.upper()
+        ):
+            reasons.append("ACCOUNT_CURRENCY_MISMATCH")
+        if equity_valid and self._limits.max_daily_loss_fraction is not None and (
+            context.daily_loss <= -equity * self._limits.max_daily_loss_fraction
+        ):
+            reasons.append("MAX_DAILY_LOSS_FRACTION")
+        if self._limits.max_risk_per_trade_fraction is not None:
+            tick_size = context.tick_size
+            tick_value = context.tick_value_per_lot
+            metadata_valid = all(
+                isinstance(value, (int, float))
+                and not isinstance(value, bool)
+                and math.isfinite(value) and value > 0
+                for value in (tick_size, tick_value)
+            )
+            if not metadata_valid:
+                reasons.append("BROKER_TICK_VALUE_REQUIRED")
+            elif equity_valid and order.stop_loss is not None and (
+                isinstance(order.stop_loss, (int, float))
+                and math.isfinite(order.stop_loss) and order.stop_loss > 0
+            ):
+                estimated_stop_loss = (
+                    abs(order.price - order.stop_loss)
+                    / tick_size * tick_value * order.volume
+                )
+                if not math.isfinite(estimated_stop_loss) or (
+                    estimated_stop_loss
+                    > equity * self._limits.max_risk_per_trade_fraction
+                ):
+                    reasons.append("MAX_TRADE_STOP_RISK")
 
         # Fixed TP is optional because TRAILING_ONLY and PARTIAL_THEN_TRAIL are
         # first-class. Capital protection still requires a broker-side SL.
