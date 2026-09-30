@@ -337,7 +337,10 @@ class MethodLabV2:
     def _apply_feedback(self, tags: tuple[str, ...], index: int) -> None:
         self.feedback_tags.append(tags)
         flat = [tag for group in self.feedback_tags for tag in group]
-        if sum(tag in ("FAST_STOP", "FAILED_BREAKOUT") for tag in flat) >= QUALITY_FAILURE_TRIGGER:
+        quality_bad_trades = sum(
+            any(tag in ("FAST_STOP", "FAILED_BREAKOUT") for tag in group)
+            for group in self.feedback_tags)
+        if quality_bad_trades >= QUALITY_FAILURE_TRIGGER:
             self.quality_quarantine_until = max(self.quality_quarantine_until,
                                                 index+FEEDBACK_PAUSE+1)
         if flat.count("REGIME_REVERSAL") >= REVERSAL_TRIGGER:
