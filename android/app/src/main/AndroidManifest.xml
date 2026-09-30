@@ -16,7 +16,7 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        <!-- External Android browser OAuth callback only; never use WebView for Google OAuth. -->
+        <activity android:name=".Mt5ConnectActivity"\n                  android:exported="false"\n                  android:windowSoftInputMode="adjustResize" />\n        <!-- External Android browser OAuth callback only; never use WebView for Google OAuth. -->
         <activity android:name=".DemoLoginActivity"
                   android:exported="true"
                   android:launchMode="singleTask"
