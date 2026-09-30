@@ -124,10 +124,10 @@ public final class MainActivity extends Activity {
         LinearLayout chrome = new LinearLayout(this);
         chrome.setOrientation(LinearLayout.VERTICAL);
         Button demo = new Button(this);
-        demo.setText("MT5 DEMO · Đăng nhập");
+        demo.setText("MT5 DEMO · Kết nối");
         demo.setAllCaps(false);
         demo.setOnClickListener(view ->
-            startActivity(new Intent(this, DemoLoginActivity.class))
+            startActivity(new Intent(this, Mt5ConnectActivity.class))
         );
         chrome.addView(demo, new LinearLayout.LayoutParams(
             LinearLayout.LayoutParams.MATCH_PARENT,
