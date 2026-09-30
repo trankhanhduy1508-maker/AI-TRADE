@@ -4,10 +4,11 @@ import unittest
 ROOT=Path(__file__).parents[2]
 ACT=(ROOT/"android/app/src/main/java/vn/cws/aitrade/Mt5ConnectActivity.java").read_text()
 CONTRACT=(ROOT/"android/app/src/main/java/vn/cws/aitrade/NativeMt5SessionContract.java").read_text()
+STORE=(ROOT/"android/app/src/main/java/vn/cws/aitrade/NativeMt5EncryptedSession.java").read_text()
 
 class AndroidMt5Source(unittest.TestCase):
     def test_required_fields_and_controls(self):
-        for term in ["Broker / MT5 Server","Login / Account Number","Password","Hiện mật khẩu","Remember login","KẾT NỐI MT5","Disconnect"]:
+        for term in ["Broker / MT5 Server","Login / Account Number","Password","Hiện mật khẩu","Tự động ghi nhớ đăng nhập (mã hóa)","KẾT NỐI MT5","Disconnect"]:
             self.assertIn(term,ACT)
     def test_demo_and_autotrade_off_are_visible(self):
         self.assertIn("DEMO",ACT); self.assertIn("AutoTrade: OFF",ACT)
@@ -24,5 +25,14 @@ class AndroidMt5Source(unittest.TestCase):
     def test_opaque_session_only(self):
         self.assertIn("sessionId=token",ACT)
         self.assertNotIn("String savedPassword",ACT)
+        self.assertIn("encryptedSession.save(token)",ACT)
+        self.assertIn("restoreSession()",ACT)
+        self.assertIn('request("GET","/mt5/session/account"',ACT)
+
+    def test_mt5_session_store_uses_keystore_not_password(self):
+        self.assertIn("AndroidKeyStore",STORE)
+        self.assertIn("AES/GCM/NoPadding",STORE)
+        self.assertIn("vn.cws.aitrade|mt5_session|v1",STORE)
+        self.assertNotIn("password",STORE.lower())
     def test_masking(self):
         self.assertIn("maskLogin",CONTRACT); self.assertIn("••••",CONTRACT)
