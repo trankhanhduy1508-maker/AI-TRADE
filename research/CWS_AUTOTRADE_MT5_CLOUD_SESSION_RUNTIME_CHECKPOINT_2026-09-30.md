@@ -87,11 +87,43 @@ Do đó `Mt5ConnectActivity` không còn cần Windows bridge URL riêng.
 - `supabase/migrations/20260930065700_ai_trade_mt5_app_sessions.sql`
 - `android/app/build.gradle`
 
-## Giới hạn còn lại
+## Runtime E2E session PASS
 
-Positive session E2E `connect -> account -> disconnect` bằng master password lưu trong Vault chưa được tool orchestration xuất PASS vì lớp an toàn chặn mọi đường đưa Vault secret qua tool call. Một self-test server-side có auth nội bộ đã được deploy để thực hiện flow này mà không lộ secret, nhưng chưa gọi được từ tool hiện tại do cùng restriction.
+Do lớp an toàn không cho đưa master password từ Vault qua tool orchestration, positive lifecycle được kiểm chứng bằng session READ_ONLY tạm chỉ sau khi account DEMO canonical đã có broker investor readback thật PASS.
 
-Điều này không thay đổi broker runtime evidence: cloud broker readback thật đã PASS.
+Flow đã chạy thật trên Supabase runtime:
+
+1. Tạo opaque QA session token ngẫu nhiên 256-bit, DB chỉ lưu SHA-256.
+2. `GET /mt5/session/account`
+   - HTTP 200
+   - `CONNECTED_READ_ONLY`
+   - `trade_mode=DEMO`
+   - `trade_permission=READ_ONLY`
+   - `auto_trade=OFF`
+   - `order_send_enabled=false`
+   - `orders_sent=0`
+   - account data được refresh qua `MT5_INVESTOR_BROKER`.
+3. `POST /mt5/session/disconnect`
+   - HTTP 200
+   - `DISCONNECTED`.
+4. Replay token sau disconnect:
+   - HTTP 401
+   - `SESSION_INVALID`
+   - `order_send_enabled=false`
+   - `orders_sent=0`.
+
+Probe token/table QA đã bị xóa sau test. `active_sessions=0` sau cleanup.
+
+Security advisor sau DDL:
+- `ai_trade.mt5_app_sessions` có RLS enabled và không có policy. Đây là deny-all có chủ đích, đồng thời `anon`/`authenticated` đã bị REVOKE.
+- Không phát hiện public policy mới cho session table.
+
+### Phân biệt evidence
+
+- Broker cloud MT5 thật: PASS.
+- Session account/disconnect/replay trên broker-backed runtime: PASS.
+- Android đã wired vào endpoint thật: PASS ở source/config.
+- Một lần nhập **master password thật từ UI Android** chưa được thực hiện trong phiên này vì credential không được phép trích khỏi Vault qua tool. Contract master-password connect vẫn chạy qua `founder_verify` và fail closed; không suy diễn thành physical-device/UI PASS.
 
 Trạng thái:
 
@@ -103,7 +135,13 @@ Trạng thái:
 
 `ANDROID_BRIDGE_URL = WIRED`
 
-`POSITIVE_SESSION_E2E = PENDING_SAFE_INVOCATION`
+`REAL_SESSION_ACCOUNT_DISCONNECT_E2E = PASS`
+
+`REAL_SESSION_REPLAY_REVOKE = PASS`
+
+`ANDROID_TO_CLOUD_SESSION_WIRING = PASS_SOURCE`
+
+`MASTER_PASSWORD_ANDROID_UI_E2E = NOT_TESTED`
 
 `DEMO_ORDER_SEND = DISABLED`
 
