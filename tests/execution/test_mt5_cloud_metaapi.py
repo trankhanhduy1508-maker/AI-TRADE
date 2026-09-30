@@ -22,7 +22,7 @@ def demo_info(**patch):
 
 class Smoke(unittest.TestCase):
     def test_cloud_master_connects_without_windows_terminal(self):
-        t=Transport([(201,{"id":"cloud-account-1"}),(200,demo_info())])
+        t=Transport([(201,{"id":"cloud-account-1"}),(200,demo_info()),(200,demo_info())])
         b=MetaApiCloudBridge(cfg(),transport=t,sleeper=lambda _:None)
         self.assertTrue(b.initialize()); self.assertTrue(b.login(12345678,password="mock-password-only",server="Broker-Server-Demo"))
         info=b.account_info()
