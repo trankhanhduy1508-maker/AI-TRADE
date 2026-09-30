@@ -120,7 +120,7 @@ public final class Mt5ConnectActivity extends Activity {
         final boolean persist=true;
         final String previousSession=sessionId;
         sessionId="";
-        encryptedSession.clear();
+        try{ encryptedSession.clear(); }catch(Exception ignored){ }
         password.setText("");
         if(!NativeMt5SessionContract.validServer(host)
             || !NativeMt5SessionContract.validLogin(accountLogin)
