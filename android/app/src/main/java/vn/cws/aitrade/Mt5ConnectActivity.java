@@ -27,7 +27,7 @@ public final class Mt5ConnectActivity extends Activity {
     private final ExecutorService network=Executors.newSingleThreadExecutor();
     private EditText server,login,password;
     private CheckBox remember,showPassword;
-    private Button connect,disconnect;
+    private Button connect,disconnect,autoTrade;
     private TextView status,account;
     private volatile String sessionId="";
     private volatile long generation=0L;
@@ -74,6 +74,12 @@ public final class Mt5ConnectActivity extends Activity {
         disconnect.setEnabled(false);
         disconnect.setOnClickListener(v->disconnect());
         form.addView(disconnect);
+
+        autoTrade=new Button(this);
+        autoTrade.setText("BẬT AUTOTRADE DEMO");
+        autoTrade.setEnabled(false);
+        autoTrade.setOnClickListener(v->toggleAutoTrade());
+        form.addView(autoTrade);
 
         account=new TextView(this);
         account.setText("Disconnected\nDEMO\nBalance: —\nEquity: —\nAutoTrade: OFF");
@@ -144,6 +150,7 @@ public final class Mt5ConnectActivity extends Activity {
                         :"Đã kết nối MT5 DEMO. AutoTrade: OFF.");
                     connect.setEnabled(true);
                     disconnect.setEnabled(true);
+                    autoTrade.setEnabled("CONNECTED".equals(state));
                 });
             }catch(Exception error){
                 sessionId="";
@@ -153,6 +160,7 @@ public final class Mt5ConnectActivity extends Activity {
                     status.setText("Kết nối thất bại: "+safeError(error));
                     connect.setEnabled(bridgeConfigured());
                     disconnect.setEnabled(false);
+                    autoTrade.setEnabled(false);
                 });
             }
         });
@@ -179,6 +187,36 @@ public final class Mt5ConnectActivity extends Activity {
             throw new IOException("INVALID_BRIDGE_RESPONSE");
     }
 
+
+    private void toggleAutoTrade(){
+        final String token=sessionId;
+        if(token.isEmpty()){
+            status.setText("SESSION_INVALID");
+            autoTrade.setEnabled(false);
+            return;
+        }
+        autoTrade.setEnabled(false);
+        status.setText("Đang kiểm tra gate AutoTrade DEMO…");
+        network.execute(()->{
+            try{
+                JSONObject reply=request("POST","/mt5/session/autotrade",new JSONObject(),token,30000);
+                final String state=reply.optString("status","AUTOTRADE_BLOCKED");
+                final boolean enabled=reply.optBoolean("auto_trade_enabled",false);
+                runOnUiThread(()->{
+                    status.setText(state);
+                    account.setText(account.getText()+"\nAutoTrade: "+(enabled?"ON":"OFF"));
+                    autoTrade.setText(enabled?"TẮT AUTOTRADE DEMO":"BẬT AUTOTRADE DEMO");
+                    autoTrade.setEnabled(true);
+                });
+            }catch(Exception error){
+                runOnUiThread(()->{
+                    status.setText("AutoTrade chưa bật: "+safeError(error));
+                    autoTrade.setEnabled(!sessionId.isEmpty());
+                });
+            }
+        });
+    }
+
     private void disconnect(){
         final String token=sessionId;
         final long op=++generation;
@@ -186,6 +224,7 @@ public final class Mt5ConnectActivity extends Activity {
         password.setText("");
         connect.setEnabled(false);
         disconnect.setEnabled(false);
+        autoTrade.setEnabled(false);
         network.execute(()->{
             try{
                 if(!token.isEmpty()) request("POST","/mt5/session/disconnect",null,token,15000);
