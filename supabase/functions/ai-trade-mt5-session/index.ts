@@ -261,7 +261,24 @@ async function disconnect(req:Request){
 }
 
 
-function brokers(){
+async function brokers(){
+  const rows=await sql`
+    select enabled,demo_send_enabled,risk_profile_approved
+    from ai_trade.runtime_config
+    where id=1
+    limit 1
+  `;
+  const cfg=rows[0]??{};
+  const providerReady=Boolean(
+    Deno.env.get("METAAPI_TOKEN")?.trim()
+    && Deno.env.get("METAAPI_ACCOUNT_ID")?.trim()
+  );
+  const demoAutoTradeReady=Boolean(
+    cfg.enabled===true
+    && cfg.demo_send_enabled===true
+    && cfg.risk_profile_approved===true
+    && providerReady
+  );
   return json({
     status:"OK",
     brokers:[
@@ -273,8 +290,10 @@ function brokers(){
         ]
       }
     ],
+    provider_ready:providerReady,
+    demo_autotrade_ready:demoAutoTradeReady,
     live_money_locked:true,
-    order_send_enabled:false,
+    order_send_enabled:demoAutoTradeReady,
     orders_sent:0
   });
 }
@@ -282,7 +301,7 @@ function brokers(){
 Deno.serve(async(req)=>{
   try{
     const path = new URL(req.url).pathname;
-    if(req.method==="GET" && path.endsWith("/mt5/brokers")) return brokers();
+    if(req.method==="GET" && path.endsWith("/mt5/brokers")) return await brokers();
     if(req.method==="POST" && path.endsWith("/mt5/session/connect")) return await connect(req);
     if(req.method==="GET" && path.endsWith("/mt5/session/account")) return await account(req);
     if(req.method==="POST" && path.endsWith("/mt5/session/disconnect")) return await disconnect(req);
