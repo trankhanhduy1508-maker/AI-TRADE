@@ -10,6 +10,13 @@ class AndroidMt5Source(unittest.TestCase):
     def test_required_fields_and_controls(self):
         for term in ["Broker / MT5 Server","Login / Account Number","Password","Hiện mật khẩu","Tự động ghi nhớ đăng nhập (mã hóa)","KẾT NỐI MT5","Disconnect"]:
             self.assertIn(term,ACT)
+
+    def test_broker_is_selected_not_typed(self):
+        self.assertIn("Spinner",ACT)
+        self.assertIn("NativeMt5BrokerOption",ACT)
+        self.assertIn('request("GET","/mt5/brokers"',ACT)
+        self.assertIn('"MetaQuotes Ltd.","MetaQuotes-Demo"',ACT)
+        self.assertNotIn('server=input(form,"Broker / MT5 Server"',ACT)
     def test_demo_and_autotrade_off_are_visible(self):
         self.assertIn("DEMO",ACT); self.assertIn("AutoTrade: OFF",ACT)
     def test_password_cleared_and_not_persisted_locally(self):
