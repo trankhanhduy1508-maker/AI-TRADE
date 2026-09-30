@@ -52,10 +52,36 @@ jobs:
 
       - name: Create and boot emulator
         run: |
-          echo no | "$ANDROID_HOME/cmdline-tools/latest/bin/avdmanager" create avd             -n cws-smoke -k "system-images;android-35;google_apis;x86_64" --force
-          nohup "$ANDROID_HOME/emulator/emulator" -avd cws-smoke -no-window -no-audio -no-boot-anim -gpu swiftshader_indirect -accel off >/tmp/emulator.log 2>&1 &
-          timeout 120 "$ANDROID_HOME/platform-tools/adb" wait-for-device
-          timeout 300 bash -c 'until [ "$("$ANDROID_HOME/platform-tools/adb" shell getprop sys.boot_completed | tr -d "\r")" = "1" ]; do sleep 3; done'
+          echo no | "$ANDROID_HOME/cmdline-tools/latest/bin/avdmanager" create avd \
+            -n cws-smoke -k "system-images;android-35;google_apis;x86_64" --force
+
+          ACCEL="-accel off"
+          if [ -e /dev/kvm ]; then
+            sudo chmod 666 /dev/kvm || true
+            if "$ANDROID_HOME/emulator/emulator" -accel-check 2>&1 | grep -qi "accel"; then
+              ACCEL="-accel on"
+            fi
+          fi
+          echo "Emulator acceleration: $ACCEL"
+
+          nohup "$ANDROID_HOME/emulator/emulator" \
+            -avd cws-smoke -no-window -no-audio -no-boot-anim \
+            -gpu swiftshader_indirect $ACCEL \
+            >/tmp/emulator.log 2>&1 &
+
+          if ! timeout 180 "$ANDROID_HOME/platform-tools/adb" wait-for-device; then
+            echo "ADB device wait failed"
+            cat /tmp/emulator.log || true
+            exit 1
+          fi
+
+          if ! timeout 420 bash -c 'until [ "$("$ANDROID_HOME/platform-tools/adb" shell getprop sys.boot_completed 2>/dev/null | tr -d "\r")" = "1" ]; do sleep 3; done'; then
+            echo "Emulator boot timeout"
+            "$ANDROID_HOME/platform-tools/adb" devices -l || true
+            cat /tmp/emulator.log || true
+            exit 1
+          fi
+
           "$ANDROID_HOME/platform-tools/adb" shell settings put global window_animation_scale 0
           "$ANDROID_HOME/platform-tools/adb" shell settings put global transition_animation_scale 0
           "$ANDROID_HOME/platform-tools/adb" shell settings put global animator_duration_scale 0
