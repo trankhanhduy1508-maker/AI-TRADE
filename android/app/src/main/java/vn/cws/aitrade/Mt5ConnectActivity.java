@@ -78,7 +78,9 @@ public final class Mt5ConnectActivity extends Activity {
         autoTrade=new Button(this);
         autoTrade.setText("BẬT AUTOTRADE DEMO");
         autoTrade.setEnabled(false);
-        autoTrade.setOnClickListener(v->{\n            status.setText("AUTOTRADE_BLOCKED: chưa có execution provider DEMO được phê duyệt.");\n        });
+        autoTrade.setOnClickListener(v->{
+            status.setText("AUTOTRADE_BLOCKED: chưa có execution provider DEMO được phê duyệt.");
+        });
         form.addView(autoTrade);
 
         account=new TextView(this);
