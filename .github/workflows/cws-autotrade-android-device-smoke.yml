@@ -14,8 +14,8 @@ permissions:
   contents: read
 
 concurrency:
-  group: autotrade-device-smoke-${{ github.ref }}
-  cancel-in-progress: true
+  group: autotrade-device-smoke-${{ github.sha }}
+  cancel-in-progress: false
 
 jobs:
   emulator-smoke:
