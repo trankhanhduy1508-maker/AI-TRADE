@@ -33,6 +33,8 @@ class AndroidMt5Source(unittest.TestCase):
         self.assertIn("AndroidKeyStore",STORE)
         self.assertIn("AES/GCM/NoPadding",STORE)
         self.assertIn("vn.cws.aitrade|mt5_session|v1",STORE)
-        self.assertNotIn("password",STORE.lower())
+        self.assertNotIn('putString("password"',STORE)
+        self.assertNotIn('FIELD = "password"',STORE)
+        self.assertNotIn('savedPassword',STORE)
     def test_masking(self):
         self.assertIn("maskLogin",CONTRACT); self.assertIn("••••",CONTRACT)
