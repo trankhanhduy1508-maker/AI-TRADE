@@ -114,7 +114,7 @@ jobs:
       - name: Capture logcat
         if: always()
         run: |
-          "$ANDROID_HOME/platform-tools/adb" logcat -d -t 500 > "$RUNNER_TEMP/logcat.txt" || true
+          timeout 20 "$ANDROID_HOME/platform-tools/adb" logcat -d -t 500 > "$RUNNER_TEMP/logcat.txt" 2>&1 || true
           if grep -E "FATAL EXCEPTION|AndroidRuntime.*Process: vn.cws.aitrade" "$RUNNER_TEMP/logcat.txt"; then
             cat "$RUNNER_TEMP/logcat.txt"
             exit 1
