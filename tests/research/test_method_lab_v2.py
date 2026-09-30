@@ -154,10 +154,11 @@ class Runtime(unittest.TestCase):
         m._apply_feedback(('WIN',),1)
         m._apply_feedback(('FAST_STOP','FAILED_BREAKOUT'),2)
         m._apply_feedback(('WIN',),3)
-        self.assertEqual(m.quality_quarantine_until,0)
         m._apply_feedback(('FAST_STOP',),4)
         m._apply_feedback(('FAILED_BREAKOUT',),5)
-        self.assertGreaterEqual(m.quality_quarantine_until,5+20+1)
+        self.assertEqual(m.quality_quarantine_until,0)  # three bad trades, not four tags
+        m._apply_feedback(('FAST_STOP','FAILED_BREAKOUT'),6)
+        self.assertGreaterEqual(m.quality_quarantine_until,6+20+1)
         self.assertLessEqual(len(m.feedback_tags),8)
 
     def test_reversal_feedback_downgrades_trade_to_watch(self):
