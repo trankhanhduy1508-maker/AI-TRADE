@@ -4,13 +4,16 @@ import android.app.Activity;
 import android.os.Bundle;
 import android.text.InputType;
 import android.view.WindowManager;
+import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.widget.ScrollView;
+import android.widget.Spinner;
 import android.widget.TextView;
 
+import org.json.JSONArray;
 import org.json.JSONObject;
 
 import java.io.ByteArrayOutputStream;
@@ -20,12 +23,17 @@ import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 public final class Mt5ConnectActivity extends Activity {
     private final ExecutorService network=Executors.newSingleThreadExecutor();
-    private EditText server,login,password;
+    private EditText login,password;
+    private Spinner brokerSpinner;
+    private final List<NativeMt5BrokerOption> brokerOptions=new ArrayList<>();
+    private ArrayAdapter<NativeMt5BrokerOption> brokerAdapter;
     private CheckBox remember,showPassword;
     private Button connect,disconnect,autoTrade;
     private TextView status,account;
@@ -48,7 +56,17 @@ public final class Mt5ConnectActivity extends Activity {
         status.setText(bridgeConfigured() ? "Chưa kết nối. AutoTrade: OFF. DEMO only." : "MT5 Bridge chưa cấu hình. AutoTrade: OFF.");
         form.addView(status);
 
-        server=input(form,"Broker / MT5 Server",InputType.TYPE_CLASS_TEXT);
+        TextView brokerLabel=new TextView(this);
+        brokerLabel.setText("Broker / MT5 Server");
+        form.addView(brokerLabel);
+        brokerSpinner=new Spinner(this);
+        brokerAdapter=new ArrayAdapter<>(this,
+            android.R.layout.simple_spinner_item,brokerOptions);
+        brokerAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        brokerSpinner.setAdapter(brokerAdapter);
+        form.addView(brokerSpinner);
+        seedBrokerCatalog();
+
         login=input(form,"Login / Account Number",InputType.TYPE_CLASS_NUMBER);
         password=input(form,"Password",InputType.TYPE_CLASS_TEXT|InputType.TYPE_TEXT_VARIATION_PASSWORD);
 
@@ -94,7 +112,49 @@ public final class Mt5ConnectActivity extends Activity {
         ScrollView scroll=new ScrollView(this);
         scroll.addView(form);
         setContentView(scroll);
+        refreshBrokerCatalog();
         restoreSession();
+    }
+
+
+    private void seedBrokerCatalog(){
+        brokerOptions.clear();
+        brokerOptions.add(new NativeMt5BrokerOption("MetaQuotes Ltd.","MetaQuotes-Demo"));
+        if(brokerAdapter!=null) brokerAdapter.notifyDataSetChanged();
+    }
+
+    private void refreshBrokerCatalog(){
+        network.execute(()->{
+            try{
+                JSONObject reply=request("GET","/mt5/brokers",null,null,15000);
+                JSONArray brokers=reply.optJSONArray("brokers");
+                if(brokers==null) throw new IOException("BROKER_CATALOG_INVALID");
+                ArrayList<NativeMt5BrokerOption> fresh=new ArrayList<>();
+                for(int i=0;i<brokers.length();i++){
+                    JSONObject broker=brokers.optJSONObject(i);
+                    if(broker==null) continue;
+                    String name=broker.optString("name","").trim();
+                    JSONArray servers=broker.optJSONArray("servers");
+                    if(name.isEmpty()||servers==null) continue;
+                    for(int j=0;j<servers.length();j++){
+                        JSONObject item=servers.optJSONObject(j);
+                        if(item==null||!item.optBoolean("supported",false)) continue;
+                        String host=item.optString("server","").trim();
+                        String mode=item.optString("mode","");
+                        if(!"DEMO".equals(mode)||!NativeMt5SessionContract.validServer(host)) continue;
+                        fresh.add(new NativeMt5BrokerOption(name,host));
+                    }
+                }
+                if(fresh.isEmpty()) throw new IOException("BROKER_CATALOG_EMPTY");
+                runOnUiThread(()->{
+                    brokerOptions.clear();
+                    brokerOptions.addAll(fresh);
+                    brokerAdapter.notifyDataSetChanged();
+                });
+            }catch(Exception ignored){
+                // Keep the bundled catalog. Never replace it with unverified entries.
+            }
+        });
     }
 
     private EditText input(LinearLayout form,String hint,int type){
@@ -114,7 +174,8 @@ public final class Mt5ConnectActivity extends Activity {
 
     private void connect(){
         final long op=++generation;
-        final String host=server.getText().toString().trim();
+        final NativeMt5BrokerOption selected=(NativeMt5BrokerOption)brokerSpinner.getSelectedItem();
+        final String host=selected==null?"":selected.server;
         final String accountLogin=login.getText().toString().trim();
         final String secret=password.getText().toString();
         final boolean persist=true;
