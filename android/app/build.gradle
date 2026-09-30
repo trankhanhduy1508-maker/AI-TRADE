@@ -3,7 +3,7 @@ def cwsReleaseSpki = providers.gradleProperty('cwsReleasePublicKeySpkiBase64').g
 if (cwsReleaseSpki && !(cwsReleaseSpki ==~ /[A-Za-z0-9+\/=]+/)) {
     throw new GradleException('Malformed external release public key')
 }
-def cwsMt5BridgeBaseUrl = providers.gradleProperty('cwsMt5BridgeBaseUrl').getOrElse('')
+def cwsMt5BridgeBaseUrl = providers.gradleProperty('cwsMt5BridgeBaseUrl').getOrElse('https://oziktadfeenydvgobudr.supabase.co/functions/v1/ai-trade-mt5-session')
 if (cwsMt5BridgeBaseUrl && (!cwsMt5BridgeBaseUrl.startsWith('https://') || cwsMt5BridgeBaseUrl.endsWith('/'))) {
     throw new GradleException('cwsMt5BridgeBaseUrl must be an HTTPS origin without trailing slash')
 }
