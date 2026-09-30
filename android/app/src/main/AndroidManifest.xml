@@ -17,7 +17,7 @@
             </intent-filter>
         </activity>
         <activity android:name=".Mt5ConnectActivity"
-                  android:exported="false"
+                  android:exported="true"
                   android:windowSoftInputMode="adjustResize" />
         <!-- External Android browser OAuth callback only; never use WebView for Google OAuth. -->
         <activity android:name=".DemoLoginActivity"
