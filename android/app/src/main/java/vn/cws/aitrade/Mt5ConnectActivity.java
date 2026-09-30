@@ -30,10 +30,12 @@ public final class Mt5ConnectActivity extends Activity {
     private Button connect,disconnect,autoTrade;
     private TextView status,account;
     private volatile String sessionId="";
+    private NativeMt5EncryptedSession encryptedSession;
     private volatile long generation=0L;
 
     @Override public void onCreate(Bundle state){
         super.onCreate(state);
+        encryptedSession=new NativeMt5EncryptedSession(this);
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_SECURE);
         LinearLayout form=new LinearLayout(this);
         form.setOrientation(LinearLayout.VERTICAL);
@@ -60,7 +62,9 @@ public final class Mt5ConnectActivity extends Activity {
         form.addView(showPassword);
 
         remember=new CheckBox(this);
-        remember.setText("Remember login");
+        remember.setText("Tự động ghi nhớ đăng nhập (mã hóa)");
+        remember.setChecked(true);
+        remember.setEnabled(false);
         form.addView(remember);
 
         connect=new Button(this);
@@ -90,6 +94,7 @@ public final class Mt5ConnectActivity extends Activity {
         ScrollView scroll=new ScrollView(this);
         scroll.addView(form);
         setContentView(scroll);
+        restoreSession();
     }
 
     private EditText input(LinearLayout form,String hint,int type){
@@ -112,7 +117,10 @@ public final class Mt5ConnectActivity extends Activity {
         final String host=server.getText().toString().trim();
         final String accountLogin=login.getText().toString().trim();
         final String secret=password.getText().toString();
-        final boolean persist=remember.isChecked();
+        final boolean persist=true;
+        final String previousSession=sessionId;
+        sessionId="";
+        encryptedSession.clear();
         password.setText("");
         if(!NativeMt5SessionContract.validServer(host)
             || !NativeMt5SessionContract.validLogin(accountLogin)
@@ -130,10 +138,21 @@ public final class Mt5ConnectActivity extends Activity {
                 body.put("login",Long.parseLong(accountLogin));
                 body.put("password",secret);
                 body.put("remember",persist);
-                JSONObject reply=request("POST","/mt5/session/connect",body,null,25000);
+                if(!previousSession.isEmpty()){
+                    try{ request("POST","/mt5/session/disconnect",null,previousSession,15000); }
+                    catch(Exception ignored){ }
+                }
+                JSONObject reply=request("POST","/mt5/session/connect",body,null,125000);
                 if(op!=generation) return;
                 validateConnected(reply,host,accountLogin);
                 String token=reply.getString("session_id");
+                try{
+                    encryptedSession.save(token);
+                }catch(Exception storageError){
+                    try{ request("POST","/mt5/session/disconnect",null,token,15000); }
+                    catch(Exception ignored){ }
+                    throw new IOException("LOCAL_SESSION_STORE_FAILED");
+                }
                 JSONObject info=reply.getJSONObject("account");
                 final String state=reply.getString("status");
                 final String display=("CONNECTED_READ_ONLY".equals(state)?"Read-only":"Connected")
@@ -168,6 +187,59 @@ public final class Mt5ConnectActivity extends Activity {
         });
     }
 
+
+    private void restoreSession(){
+        final String token=encryptedSession.load();
+        if(token==null||token.isEmpty()) return;
+        final long op=++generation;
+        connect.setEnabled(false);
+        disconnect.setEnabled(false);
+        status.setText("Đang tự khôi phục MT5 DEMO…");
+        network.execute(()->{
+            try{
+                JSONObject reply=request("GET","/mt5/session/account",null,token,125000);
+                String state=reply.optString("status","");
+                JSONObject info=reply.optJSONObject("account");
+                if(!NativeMt5SessionContract.connectedStatus(state)
+                    || info==null
+                    || !"DEMO".equals(info.optString("trade_mode",""))
+                    || !(info.opt("balance") instanceof Number)
+                    || !(info.opt("equity") instanceof Number)
+                    || reply.optBoolean("order_send_enabled",true)
+                    || reply.optInt("orders_sent",-1)!=0
+                    || !"OFF".equals(reply.optString("auto_trade",""))){
+                    throw new IOException("INVALID_BRIDGE_RESPONSE");
+                }
+                final String display=("CONNECTED_READ_ONLY".equals(state)?"Read-only":"Connected")
+                    +"\nServer: "+info.getString("server")
+                    +"\nAccount: "+NativeMt5SessionContract.maskLogin(String.valueOf(info.getLong("login")))
+                    +"\nDEMO"
+                    +"\nBalance: "+info.getDouble("balance")
+                    +"\nEquity: "+info.getDouble("equity")
+                    +"\nAutoTrade: OFF";
+                sessionId=token;
+                runOnUiThread(()->{
+                    if(op!=generation) return;
+                    account.setText(display);
+                    status.setText("Đã tự khôi phục phiên MT5 DEMO. Không cần nhập lại mật khẩu.");
+                    connect.setEnabled(true);
+                    disconnect.setEnabled(true);
+                    autoTrade.setEnabled(false);
+                });
+            }catch(Exception error){
+                sessionId="";
+                try{ encryptedSession.clear(); }catch(Exception ignored){ }
+                runOnUiThread(()->{
+                    if(op!=generation) return;
+                    status.setText("Phiên cũ hết hạn hoặc bị thu hồi. Đăng nhập MT5 lại.");
+                    connect.setEnabled(bridgeConfigured());
+                    disconnect.setEnabled(false);
+                    autoTrade.setEnabled(false);
+                });
+            }
+        });
+    }
+
     private void validateConnected(JSONObject reply,String expectedServer,String expectedLogin) throws Exception{
         String state=reply.optString("status","");
         JSONObject info=reply.optJSONObject("account");
@@ -194,6 +266,7 @@ public final class Mt5ConnectActivity extends Activity {
         final String token=sessionId;
         final long op=++generation;
         sessionId="";
+        try{ encryptedSession.clear(); }catch(Exception ignored){ }
         password.setText("");
         connect.setEnabled(false);
         disconnect.setEnabled(false);
