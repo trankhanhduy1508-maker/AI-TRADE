@@ -3,6 +3,10 @@ def cwsReleaseSpki = providers.gradleProperty('cwsReleasePublicKeySpkiBase64').g
 if (cwsReleaseSpki && !(cwsReleaseSpki ==~ /[A-Za-z0-9+\/=]+/)) {
     throw new GradleException('Malformed external release public key')
 }
+def cwsMt5BridgeBaseUrl = providers.gradleProperty('cwsMt5BridgeBaseUrl').getOrElse('')
+if (cwsMt5BridgeBaseUrl && (!cwsMt5BridgeBaseUrl.startsWith('https://') || cwsMt5BridgeBaseUrl.endsWith('/'))) {
+    throw new GradleException('cwsMt5BridgeBaseUrl must be an HTTPS origin without trailing slash')
+}
 android {
     namespace 'vn.cws.aitrade'
     compileSdk 36
@@ -13,6 +17,7 @@ android {
         versionCode 3
         versionName '0.3.0-debug'
         buildConfigField 'String', 'CWS_RELEASE_PUBLIC_KEY_SPKI_B64', '"' + cwsReleaseSpki + '"'
+        buildConfigField 'String', 'CWS_MT5_BRIDGE_BASE_URL', '"' + cwsMt5BridgeBaseUrl + '"'
     }
     buildFeatures { buildConfig true }
     compileOptions {
