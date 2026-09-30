@@ -106,6 +106,38 @@ async function connect(req:Request){
   const suppliedPassword = body.password;
   body.password = undefined;
 
+  const existingBinding=await sql`
+    select source from ai_trade.mt5_demo_accounts
+    where account_login=${login}::bigint
+    limit 1
+  `;
+  let pendingBinding=false;
+  if(!existingBinding[0]){
+    const seed=await sql`
+      select password_secret_id
+      from ai_trade.mt5_demo_accounts
+      where password_secret_id is not null
+      order by last_verified_at desc nulls last,created_at desc
+      limit 1
+    `;
+    if(!seed[0]?.password_secret_id){
+      return json({status:"BRIDGE_UNAVAILABLE",auto_trade:"OFF",
+        order_send_enabled:false,orders_sent:0},503);
+    }
+    await sql`
+      insert into ai_trade.mt5_demo_accounts(
+        account_login,server,account_type,password_secret_id,
+        investor_password_secret_id,source,source_run_id,
+        last_verified_at,is_active
+      ) values(
+        ${login}::bigint,'MetaQuotes-Demo','DEMO',
+        ${seed[0].password_secret_id}::uuid,null,
+        'android_pending',null,null,true
+      )
+    `;
+    pendingBinding=true;
+  }
+
   const {response,data} = await verifier({
     login:String(login), readback:"founder_verify", verifyPassword:suppliedPassword
   });
@@ -114,6 +146,10 @@ async function connect(req:Request){
       || data?.accountType !== 1 || data?.server !== "MetaQuotes-Demo"
       || String(data?.login) !== String(login)
       || data?.brokerOrders !== false || data?.liveMoneyLocked !== true){
+    if(pendingBinding){
+      await sql`delete from ai_trade.mt5_demo_accounts
+        where account_login=${login}::bigint and source='android_pending'`;
+    }
     const mapped = data?.status === "LOGIN_REJECTED"
       ? "INVALID_LOGIN_OR_PASSWORD"
       : data?.status === "NO_METAQUOTES_DEMO_CREDENTIAL"
@@ -125,20 +161,37 @@ async function connect(req:Request){
 
   const tradePermission = data?.readOnly === true || data?.tradeAllowed !== true
     ? "READ_ONLY" : "TRADING_ALLOWED";
+  const balance=Number(data?.balance);
+  const equity=balance;
+  const currency=String(data?.currency??"USD");
+  if(!Number.isFinite(balance)||balance<0||!Number.isFinite(equity)
+      ||!/^[A-Z]{3,8}$/.test(currency)){
+    if(pendingBinding){
+      await sql`delete from ai_trade.mt5_demo_accounts
+        where account_login=${login}::bigint and source='android_pending'`;
+    }
+    return json({status:"ACCOUNT_INFO_UNAVAILABLE",auto_trade:"OFF",
+      order_send_enabled:false,orders_sent:0},503);
+  }
 
-  const fresh = await snapshot(login);
   const sessionId = token();
   const hash = await sha256Hex(sessionId);
   const ttlSeconds = body.remember ? REMEMBER_TTL_SECONDS : 900;
 
   await sql`
     insert into ai_trade.mt5_app_sessions(
-      token_hash,account_login,server,trade_permission,remember,expires_at
+      token_hash,account_login,server,trade_permission,remember,expires_at,
+      balance,equity,currency
     ) values(
       ${hash},${login}::bigint,'MetaQuotes-Demo',${tradePermission},
-      ${body.remember},now() + make_interval(secs => ${ttlSeconds})
+      ${body.remember},now() + make_interval(secs => ${ttlSeconds}),
+      ${balance},${equity},${currency}
     )
   `;
+  if(pendingBinding){
+    await sql`delete from ai_trade.mt5_demo_accounts
+      where account_login=${login}::bigint and source='android_pending'`;
+  }
 
   return json({
     status: tradePermission === "READ_ONLY" ? "CONNECTED_READ_ONLY" : "CONNECTED",
@@ -146,7 +199,7 @@ async function connect(req:Request){
     account:{
       login, server:"MetaQuotes-Demo", trade_mode:"DEMO",
       trade_permission:tradePermission,
-      balance:fresh.balance, equity:fresh.equity
+      balance, equity
     },
     auto_trade:"OFF", order_send_enabled:false, orders_sent:0
   });
@@ -159,7 +212,7 @@ async function sessionFrom(req:Request){
   if(raw.length < 40 || raw.length > 128) throw new Error("SESSION_INVALID");
   const hash = await sha256Hex(raw);
   const rows = await sql`
-    select account_login,server,trade_permission,remember,expires_at
+    select account_login,server,trade_permission,remember,expires_at,balance,equity,currency
     from ai_trade.mt5_app_sessions
     where token_hash=${hash} and revoked_at is null
     limit 1
@@ -182,13 +235,17 @@ async function sessionFrom(req:Request){
 async function account(req:Request){
   const {row} = await sessionFrom(req);
   const login = Number(row.account_login);
-  const fresh = await snapshot(login);
+  const balance=Number(row.balance);
+  const equity=Number(row.equity);
+  if(!Number.isFinite(balance)||!Number.isFinite(equity)){
+    throw new Error("ACCOUNT_INFO_UNAVAILABLE");
+  }
   return json({
     status: row.trade_permission === "READ_ONLY" ? "CONNECTED_READ_ONLY" : "CONNECTED",
     account:{
       login, server:String(row.server), trade_mode:"DEMO",
       trade_permission:String(row.trade_permission),
-      balance:fresh.balance, equity:fresh.equity
+      balance, equity
     },
     auto_trade:"OFF", order_send_enabled:false, orders_sent:0
   });
