@@ -78,7 +78,7 @@ public final class Mt5ConnectActivity extends Activity {
         autoTrade=new Button(this);
         autoTrade.setText("BẬT AUTOTRADE DEMO");
         autoTrade.setEnabled(false);
-        autoTrade.setOnClickListener(v->toggleAutoTrade());
+        autoTrade.setOnClickListener(v->{\n            status.setText("AUTOTRADE_BLOCKED: chưa có execution provider DEMO được phê duyệt.");\n        });
         form.addView(autoTrade);
 
         account=new TextView(this);
@@ -150,7 +150,7 @@ public final class Mt5ConnectActivity extends Activity {
                         :"Đã kết nối MT5 DEMO. AutoTrade: OFF.");
                     connect.setEnabled(true);
                     disconnect.setEnabled(true);
-                    autoTrade.setEnabled("CONNECTED".equals(state));
+                    autoTrade.setEnabled(false);
                 });
             }catch(Exception error){
                 sessionId="";
@@ -187,35 +187,6 @@ public final class Mt5ConnectActivity extends Activity {
             throw new IOException("INVALID_BRIDGE_RESPONSE");
     }
 
-
-    private void toggleAutoTrade(){
-        final String token=sessionId;
-        if(token.isEmpty()){
-            status.setText("SESSION_INVALID");
-            autoTrade.setEnabled(false);
-            return;
-        }
-        autoTrade.setEnabled(false);
-        status.setText("Đang kiểm tra gate AutoTrade DEMO…");
-        network.execute(()->{
-            try{
-                JSONObject reply=request("POST","/mt5/session/autotrade",new JSONObject(),token,30000);
-                final String state=reply.optString("status","AUTOTRADE_BLOCKED");
-                final boolean enabled=reply.optBoolean("auto_trade_enabled",false);
-                runOnUiThread(()->{
-                    status.setText(state);
-                    account.setText(account.getText()+"\nAutoTrade: "+(enabled?"ON":"OFF"));
-                    autoTrade.setText(enabled?"TẮT AUTOTRADE DEMO":"BẬT AUTOTRADE DEMO");
-                    autoTrade.setEnabled(true);
-                });
-            }catch(Exception error){
-                runOnUiThread(()->{
-                    status.setText("AutoTrade chưa bật: "+safeError(error));
-                    autoTrade.setEnabled(!sessionId.isEmpty());
-                });
-            }
-        });
-    }
 
     private void disconnect(){
         final String token=sessionId;
