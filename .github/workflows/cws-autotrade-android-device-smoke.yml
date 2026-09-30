@@ -54,20 +54,20 @@ jobs:
         run: |
           echo no | "$ANDROID_HOME/cmdline-tools/latest/bin/avdmanager" create avd             -n cws-smoke -k "system-images;android-35;google_apis;x86_64" --force
           nohup "$ANDROID_HOME/emulator/emulator" -avd cws-smoke -no-window -no-audio -no-boot-anim -gpu swiftshader_indirect >/tmp/emulator.log 2>&1 &
-          adb wait-for-device
-          timeout 300 bash -c 'until [ "$(adb shell getprop sys.boot_completed | tr -d "\r")" = "1" ]; do sleep 3; done'
-          adb shell settings put global window_animation_scale 0
-          adb shell settings put global transition_animation_scale 0
-          adb shell settings put global animator_duration_scale 0
+          "$ANDROID_HOME/platform-tools/adb" wait-for-device
+          timeout 300 bash -c 'until [ "$("$ANDROID_HOME/platform-tools/adb" shell getprop sys.boot_completed | tr -d "\r")" = "1" ]; do sleep 3; done'
+          "$ANDROID_HOME/platform-tools/adb" shell settings put global window_animation_scale 0
+          "$ANDROID_HOME/platform-tools/adb" shell settings put global transition_animation_scale 0
+          "$ANDROID_HOME/platform-tools/adb" shell settings put global animator_duration_scale 0
 
       - name: Install and launch MT5 connect screen
         run: |
-          adb install -r "$RUNNER_TEMP/app-debug.apk"
-          adb shell am force-stop vn.cws.aitrade
-          adb shell am start -n vn.cws.aitrade/.Mt5ConnectActivity
+          "$ANDROID_HOME/platform-tools/adb" install -r "$RUNNER_TEMP/app-debug.apk"
+          "$ANDROID_HOME/platform-tools/adb" shell am force-stop vn.cws.aitrade
+          "$ANDROID_HOME/platform-tools/adb" shell am start -n vn.cws.aitrade/.Mt5ConnectActivity
           sleep 3
-          adb shell uiautomator dump /sdcard/window.xml
-          adb pull /sdcard/window.xml "$RUNNER_TEMP/window.xml"
+          "$ANDROID_HOME/platform-tools/adb" shell uiautomator dump /sdcard/window.xml
+          "$ANDROID_HOME/platform-tools/adb" pull /sdcard/window.xml "$RUNNER_TEMP/window.xml"
           cat "$RUNNER_TEMP/window.xml"
           grep -q "Broker / MT5 Server" "$RUNNER_TEMP/window.xml"
           grep -q "MetaQuotes Ltd. · MetaQuotes-Demo" "$RUNNER_TEMP/window.xml"
@@ -77,18 +77,18 @@ jobs:
 
       - name: Relaunch smoke
         run: |
-          adb shell am force-stop vn.cws.aitrade
-          adb shell am start -n vn.cws.aitrade/.Mt5ConnectActivity
+          "$ANDROID_HOME/platform-tools/adb" shell am force-stop vn.cws.aitrade
+          "$ANDROID_HOME/platform-tools/adb" shell am start -n vn.cws.aitrade/.Mt5ConnectActivity
           sleep 2
-          adb shell uiautomator dump /sdcard/window2.xml
-          adb pull /sdcard/window2.xml "$RUNNER_TEMP/window2.xml"
+          "$ANDROID_HOME/platform-tools/adb" shell uiautomator dump /sdcard/window2.xml
+          "$ANDROID_HOME/platform-tools/adb" pull /sdcard/window2.xml "$RUNNER_TEMP/window2.xml"
           grep -q "Broker / MT5 Server" "$RUNNER_TEMP/window2.xml"
           grep -q "KẾT NỐI MT5" "$RUNNER_TEMP/window2.xml"
 
       - name: Capture logcat
         if: always()
         run: |
-          adb logcat -d -t 500 > "$RUNNER_TEMP/logcat.txt" || true
+          "$ANDROID_HOME/platform-tools/adb" logcat -d -t 500 > "$RUNNER_TEMP/logcat.txt" || true
           if grep -E "FATAL EXCEPTION|AndroidRuntime.*Process: vn.cws.aitrade" "$RUNNER_TEMP/logcat.txt"; then
             cat "$RUNNER_TEMP/logcat.txt"
             exit 1
