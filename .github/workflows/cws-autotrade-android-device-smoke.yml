@@ -51,9 +51,14 @@ jobs:
           cp "$APK" "$RUNNER_TEMP/app-debug.apk"
 
       - name: Create and boot emulator
+        env:
+          ANDROID_AVD_HOME: ${{ runner.temp }}/android-avd
         run: |
+          mkdir -p "$ANDROID_AVD_HOME"
           echo no | "$ANDROID_HOME/cmdline-tools/latest/bin/avdmanager" create avd \
             -n cws-smoke -k "system-images;android-35;google_apis;x86_64" --force
+          test -f "$ANDROID_AVD_HOME/cws-smoke.ini"
+          "$ANDROID_HOME/emulator/emulator" -list-avds
 
           ACCEL="-accel off"
           if [ -e /dev/kvm ]; then
