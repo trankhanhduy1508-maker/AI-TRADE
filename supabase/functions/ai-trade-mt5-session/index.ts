@@ -5,6 +5,7 @@ const sql = postgres(Deno.env.get("SUPABASE_DB_URL")!, {
   prepare:false, max:1, connect_timeout:10, idle_timeout:20
 });
 const ROOT = Deno.env.get("SUPABASE_URL")!;
+const REMEMBER_TTL_SECONDS = 31_536_000; // 365 days, renewed on successful use
 
 const json = (body: unknown, status=200) => new Response(JSON.stringify(body), {
   status,
@@ -128,7 +129,7 @@ async function connect(req:Request){
   const fresh = await snapshot(login);
   const sessionId = token();
   const hash = await sha256Hex(sessionId);
-  const ttlSeconds = body.remember ? 604800 : 900;
+  const ttlSeconds = body.remember ? REMEMBER_TTL_SECONDS : 900;
 
   await sql`
     insert into ai_trade.mt5_app_sessions(
@@ -158,7 +159,7 @@ async function sessionFrom(req:Request){
   if(raw.length < 40 || raw.length > 128) throw new Error("SESSION_INVALID");
   const hash = await sha256Hex(raw);
   const rows = await sql`
-    select account_login,server,trade_permission,expires_at
+    select account_login,server,trade_permission,remember,expires_at
     from ai_trade.mt5_app_sessions
     where token_hash=${hash} and revoked_at is null
     limit 1
@@ -169,7 +170,11 @@ async function sessionFrom(req:Request){
       where token_hash=${hash} and revoked_at is null`;
     throw new Error("SESSION_EXPIRED");
   }
-  await sql`update ai_trade.mt5_app_sessions set last_seen_at=now()
+  await sql`update ai_trade.mt5_app_sessions
+    set last_seen_at=now(),
+        expires_at=case when remember
+          then now() + make_interval(secs => ${REMEMBER_TTL_SECONDS})
+          else expires_at end
     where token_hash=${hash}`;
   return {hash,row:rows[0]};
 }
