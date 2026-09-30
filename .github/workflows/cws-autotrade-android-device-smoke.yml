@@ -53,8 +53,8 @@ jobs:
       - name: Create and boot emulator
         run: |
           echo no | "$ANDROID_HOME/cmdline-tools/latest/bin/avdmanager" create avd             -n cws-smoke -k "system-images;android-35;google_apis;x86_64" --force
-          nohup "$ANDROID_HOME/emulator/emulator" -avd cws-smoke -no-window -no-audio -no-boot-anim -gpu swiftshader_indirect >/tmp/emulator.log 2>&1 &
-          "$ANDROID_HOME/platform-tools/adb" wait-for-device
+          nohup "$ANDROID_HOME/emulator/emulator" -avd cws-smoke -no-window -no-audio -no-boot-anim -gpu swiftshader_indirect -accel off >/tmp/emulator.log 2>&1 &
+          timeout 120 "$ANDROID_HOME/platform-tools/adb" wait-for-device
           timeout 300 bash -c 'until [ "$("$ANDROID_HOME/platform-tools/adb" shell getprop sys.boot_completed | tr -d "\r")" = "1" ]; do sleep 3; done'
           "$ANDROID_HOME/platform-tools/adb" shell settings put global window_animation_scale 0
           "$ANDROID_HOME/platform-tools/adb" shell settings put global transition_animation_scale 0
