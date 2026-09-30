@@ -260,9 +260,29 @@ async function disconnect(req:Request){
     order_send_enabled:false,orders_sent:0});
 }
 
+
+function brokers(){
+  return json({
+    status:"OK",
+    brokers:[
+      {
+        id:"metaquotes",
+        name:"MetaQuotes Ltd.",
+        servers:[
+          {server:"MetaQuotes-Demo",mode:"DEMO",supported:true}
+        ]
+      }
+    ],
+    live_money_locked:true,
+    order_send_enabled:false,
+    orders_sent:0
+  });
+}
+
 Deno.serve(async(req)=>{
   try{
     const path = new URL(req.url).pathname;
+    if(req.method==="GET" && path.endsWith("/mt5/brokers")) return brokers();
     if(req.method==="POST" && path.endsWith("/mt5/session/connect")) return await connect(req);
     if(req.method==="GET" && path.endsWith("/mt5/session/account")) return await account(req);
     if(req.method==="POST" && path.endsWith("/mt5/session/disconnect")) return await disconnect(req);
