@@ -297,16 +297,15 @@ class MethodLabV2:
         if previous is None:
             return
         tr = max(bar.high-bar.low, abs(bar.high-previous.close), abs(bar.low-previous.close))
-        if len(self.bars) <= ATR_PERIOD:
-            if len(self.bars) == ATR_PERIOD+1:
-                trs = []
-                for i in range(1, len(self.bars)):
-                    b, p = self.bars[i], self.bars[i-1]
-                    trs.append(max(b.high-b.low, abs(b.high-p.close), abs(b.low-p.close)))
-                self.atr_history.append(sum(trs[-ATR_PERIOD:])/ATR_PERIOD)
-            return
         if not self.atr_history:
-            raise ValueError("ATR_STATE_CORRUPT")
+            if len(self.bars) < ATR_PERIOD+1:
+                return
+            trs = []
+            for i in range(1, len(self.bars)):
+                b, p = self.bars[i], self.bars[i-1]
+                trs.append(max(b.high-b.low, abs(b.high-p.close), abs(b.low-p.close)))
+            self.atr_history.append(sum(trs[-ATR_PERIOD:])/ATR_PERIOD)
+            return
         self.atr_history.append((self.atr_history[-1]*(ATR_PERIOD-1)+tr)/ATR_PERIOD)
 
     def _failure_tags(self, position: Position, exit_bar: ClosedBar,
