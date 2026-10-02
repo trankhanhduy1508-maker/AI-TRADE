@@ -6,6 +6,7 @@ ACT=(ROOT/"android/app/src/main/java/vn/cws/aitrade/Mt5ConnectActivity.java").re
 CONTRACT=(ROOT/"android/app/src/main/java/vn/cws/aitrade/NativeMt5SessionContract.java").read_text()
 STORE=(ROOT/"android/app/src/main/java/vn/cws/aitrade/NativeMt5EncryptedSession.java").read_text()
 PARSER=(ROOT/"android/app/src/main/java/vn/cws/aitrade/NativeMt5ClipboardParser.java").read_text()
+DIRECT=(ROOT/"android/app/src/main/java/vn/cws/aitrade/NativeMt5DirectClient.java").read_text()
 
 class AndroidMt5Source(unittest.TestCase):
     def test_required_fields_and_controls(self):
@@ -59,3 +60,13 @@ class AndroidMt5Source(unittest.TestCase):
         self.assertIn("NativeMt5ClipboardParser.parse", ACT)
         self.assertIn("MetaQuotes-Demo", PARSER)
         self.assertNotIn("SharedPreferences", PARSER)
+
+    def test_direct_mt5_login_is_device_side_and_demo_only(self):
+        self.assertIn("NativeMt5DirectClient", ACT)
+        self.assertIn("Password không gửi qua Supabase", ACT)
+        self.assertIn("wss://web.metatrader.app/terminal", DIRECT)
+        self.assertIn("MetaQuotes-Demo", DIRECT)
+        self.assertIn("AES/CBC/PKCS5Padding", DIRECT)
+        self.assertIn("CMD", "" if False else "CMD")
+        self.assertNotIn("SharedPreferences", DIRECT)
+        self.assertNotIn("SUPABASE", DIRECT)

@@ -232,8 +232,6 @@ public final class Mt5ConnectActivity extends Activity {
         final String host=selected==null?"":selected.server;
         final String accountLogin=login.getText().toString().trim();
         final String secret=password.getText().toString();
-        final boolean persist=true;
-        final String previousSession=sessionId;
         if(!NativeMt5SessionContract.validServer(host)
             || !NativeMt5SessionContract.validLogin(accountLogin)
             || !NativeMt5SessionContract.validPassword(secret)){
@@ -244,58 +242,38 @@ public final class Mt5ConnectActivity extends Activity {
         try{ encryptedSession.clear(); }catch(Exception ignored){ }
         connect.setEnabled(false);
         disconnect.setEnabled(false);
-        status.setText("Đang kết nối MT5 DEMO…");
+        status.setText("Đang xác thực trực tiếp với MetaQuotes-Demo…");
         network.execute(()->{
-            try{
-                JSONObject body=new JSONObject();
-                body.put("server",host);
-                body.put("login",Long.parseLong(accountLogin));
-                body.put("password",secret);
-                body.put("remember",persist);
-                if(!previousSession.isEmpty()){
-                    try{ request("POST","/mt5/session/disconnect",null,previousSession,15000); }
-                    catch(Exception ignored){ }
-                }
-                JSONObject reply=request("POST","/mt5/session/connect",body,null,125000);
+            try(NativeMt5DirectClient direct=new NativeMt5DirectClient()){
+                NativeMt5DirectClient.Result result=direct.verify(Long.parseLong(accountLogin),secret);
                 if(op!=generation) return;
-                validateConnected(reply,host,accountLogin);
-                String token=reply.getString("session_id");
-                try{
-                    encryptedSession.save(token);
-                }catch(Exception storageError){
-                    try{ request("POST","/mt5/session/disconnect",null,token,15000); }
-                    catch(Exception ignored){ }
-                    throw new IOException("LOCAL_SESSION_STORE_FAILED");
-                }
-                JSONObject info=reply.getJSONObject("account");
-                final String state=reply.getString("status");
-                final String display=("CONNECTED_READ_ONLY".equals(state)?"Read-only":"Connected")
-                    +"\nServer: "+info.getString("server")
-                    +"\nAccount: "+NativeMt5SessionContract.maskLogin(String.valueOf(info.getLong("login")))
+                if(!result.ok) throw new IOException("MT5_DIRECT_LOGIN_CODE_"+result.loginCode);
+                final String permission=result.readOnly?"READ_ONLY":
+                    (result.tradeAllowed?"TRADING_ALLOWED":"NO_TRADE_PERMISSION");
+                final String display="Direct verified"
+                    +"\nServer: "+result.server
+                    +"\nAccount: "+NativeMt5SessionContract.maskLogin(accountLogin)
                     +"\nDEMO"
-                    +"\nBalance: "+info.getDouble("balance")
-                    +"\nEquity: "+info.getDouble("equity")
+                    +"\nCurrency: "+result.currency
+                    +"\nBalance: "+result.balance
+                    +"\nPermission: "+permission
                     +"\nAutoTrade: OFF";
-                sessionId=token;
                 runOnUiThread(()->{
                     if(op!=generation) return;
                     password.setText("");
                     account.setText(display);
-                    status.setText("CONNECTED_READ_ONLY".equals(state)
-                        ?"Đã kết nối READ_ONLY. AutoTrade: OFF."
-                        :"Đã kết nối MT5 DEMO. AutoTrade: OFF.");
+                    status.setText("Đã xác thực trực tiếp MT5 DEMO. Password không gửi qua Supabase. AutoTrade: OFF.");
                     connect.setEnabled(true);
                     disconnect.setEnabled(true);
                     autoTrade.setEnabled(false);
                 });
             }catch(Exception error){
-                sessionId="";
                 runOnUiThread(()->{
                     if(op!=generation) return;
                     account.setText("Disconnected\nDEMO\nBalance: —\nEquity: —\nAutoTrade: OFF");
-                    status.setText("Kết nối thất bại: "+safeError(error)
-                        +". Có thể dùng DÁN TỪ MT5 để tránh gõ sai.");
-                    connect.setEnabled(bridgeConfigured());
+                    status.setText("Direct MT5 thất bại: "+safeError(error)
+                        +". Password vẫn chỉ ở thiết bị; có thể dùng DÁN TỪ MT5 để kiểm tra.");
+                    connect.setEnabled(true);
                     disconnect.setEnabled(false);
                     autoTrade.setEnabled(false);
                 });
