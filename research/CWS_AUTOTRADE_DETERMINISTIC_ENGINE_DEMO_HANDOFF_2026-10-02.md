@@ -257,3 +257,51 @@ Render làm ít nhất có thể:
 - commit/push khi checkpoint có giá trị;
 - không để secrets lọt vào diff/log/artifact;
 - không mở live money.
+
+
+## 2026-10-02 late checkpoint — MetaQuotes phone gate + bootstrap v7
+
+Cloud grounding:
+- Supabase project: `oziktadfeenydvgobudr`
+- `ai-trade-mt5-demo-bootstrap` deployed version: **7**
+- deployed ezbr sha256: `873adfafa0e67ec2218e4de0c9f0f090076053484cfbbc4f485c8b8206a9fb4e`
+- GitHub/source byte parity after deploy: **TRUE**
+- source fix commit: `b68133ad36860e7c58b76afa6896b0674e0308cc`
+
+What changed:
+- Added explicit `phone` input and `phone_code` field to the DEMO opening contract.
+- Phone is serialized into the exact `request.phone` 64-byte UTF-16 slot used by pinned `cloudQuant/pymt5`.
+- Added international-format validation `^\\+[1-9]\\d{7,14}$`.
+- Phone is not persisted or logged by this function.
+- `open_demo_temp` now fails closed before broker transport when phone is absent/invalid.
+- `brokerOrders=false` and `liveMoneyLocked=true` remain unchanged.
+
+Runtime evidence after v7 deploy:
+- Authenticated cloud invocation with no phone:
+  - HTTP 400
+  - `status=PHONE_INPUT_REQUIRED`
+  - `brokerOrders=false`
+  - `liveMoneyLocked=true`
+- Authenticated cloud invocation with invalid phone `123`:
+  - HTTP 400
+  - `status=INVALID_PHONE_FORMAT`
+  - `phoneStored=false`
+  - `brokerOrders=false`
+  - `liveMoneyLocked=true`
+- DB remains:
+  - verified new DEMO credentials: 0
+  - one active encrypted temporary mailbox
+
+Official MetaTrader 5 account-opening documentation requires a contact phone in international format. Android help further says a mobile number is required and landline numbers are not accepted.
+
+Current legal blocker:
+- A legitimate Founder-controlled mobile phone number in international format is required for the next `cmd 27` attempt.
+- Do not invent/use temporary SMS numbers.
+- If MetaQuotes requests SMS/phone verification, expose `PHONE_VERIFICATION_REQUIRED` and stop for human verification. Do not bypass.
+- No new DEMO account has been created yet.
+- No broker DEMO order has been sent.
+- `MAX_TOTAL_VOLUME_DEMO` remains unset and must not be invented.
+- Live/funded money remains HARD LOCKED.
+
+Engine boundary unchanged:
+`TF-013A-FORWARD-DIVERSIFIED-TREND` only; no LLM in the hot path, no pyramiding, visible-stop/risk/kill-switch/dedupe/server-authoritative DEMO gates remain mandatory.
