@@ -277,12 +277,14 @@
 - Render governance đã chốt: Render làm ít việc nhất có thể; không dùng filesystem Render làm file/state storage bền vững. Xem `docs/CWS_RENDER_MINIMAL_USAGE_POLICY_2026-10-02.md`.
 - Render Free AutoTrade thin proxy đã LIVE và stateless; Supabase vẫn là source of truth.
 - MT5 session backend REAL DEMO E2E: PASS (connect -> account -> disconnect), order_send=false, orders_sent=0.
-- Android MT5 fix source HEAD evidence: `64f64c368d1d7965d39bac9091a8fbb5c94f6145`.
+- Android MT5 fix source HEAD evidence: `a35999c8c62e6bc2632f301aa755bec1f4182845`.
 - Android source QA: PASS.
 - Android device smoke: PASS.
 - Android DEMO APK build: PASS.
-- APK SHA-256: `c9e09f4c3e1fc4242ad96d3d37bbe8b942f73b76b5d2abf8be1bb3973186b7da`.
+- APK SHA-256: `ff20a195d4acb3ca809d1075798727105aea098441c87550d2f440e71a979601`.
 - Founder physical Android + real credential E2E trên APK mới: NOT_YET_PASS.
 - AutoTrade DEMO order execution: DISABLED / NOT_YET_PASS.
 - Live money: LOCKED.
 - VNext không xây lại engine; tiếp tục từ `ai-trade-mt5-session` + `ai-trade-tick`. Xem `research/CWS_AUTOTRADE_ANDROID_MT5_VNEXT_2026-10-02.md`.
+
+- Supabase MT5 session v6 hiện trả blocker AutoTrade cụ thể cho Android và xác nhận `render_required=false`.
