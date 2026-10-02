@@ -355,3 +355,19 @@
 - Chưa claim new-account broker DEMO order PASS; live/funded money tiếp tục HARD LOCKED.
 - Handoff: `research/CWS_AUTOTRADE_DETERMINISTIC_ENGINE_DEMO_HANDOFF_2026-10-02.md`.
 - New-chat prompt: `prompts/CWS_AUTOTRADE_CHAT_MOI_DETERMINISTIC_ENGINE_2026-10-02.md`.
+
+
+---
+
+## 2026-10-02 — MT5 new DEMO phone-verification blocker
+
+- Supabase deployed `ai-trade-mt5-demo-bootstrap` v6 đã được mirror byte-for-byte về GitHub ở commit `c286e5fdcfedd64149f393cac8eebd4f3e2b2480`; không deploy source cũ đè runtime mới.
+- Runtime transport probe: `TRANSPORT_READY`, MetaQuotes WebTerminal build `6231`, WebSocket ready, AES key length 32; `brokerOrders=false`, `liveMoneyLocked=true`.
+- `open_demo_temp` đã chạy thật đến MetaQuotes nhưng dừng fail-closed: `TEMP_MAIL_DEMO_OPEN_BLOCKED` -> `VERIFICATION_PROBE_FAILED`, broker code `1`.
+- `ai_trade.mt5_demo_credentials` vẫn 0 row: chưa có DEMO mới được tạo/verify; không được gọi PASS.
+- Protocol byte layout cmd 27/40/30 của v6 khớp pinned `cloudQuant/pymt5@e7b5a8d28201879576e6cd22a39b9ea8677d4ee1`; upstream pymt5 HEAD hiện vẫn cùng implementation và chỉ ghi nhận re-verify build 5687.
+- MetaTrader 5 Help hiện yêu cầu First name, Second name, Email và **Phone ở định dạng quốc tế** khi mở account. Runtime v6 đang để phone field trống trong opening payload, nên đây là blocker có bằng chứng phù hợp với broker validation code 1.
+- Không bịa số điện thoại, không dùng SMS/identity bypass, không dùng temporary phone, không fake OTP/CAPTCHA.
+- Supabase connector đã chặn attempt deploy patch thử nghiệm; deployed runtime vẫn v6 nguyên trạng.
+- AutoTrade DEMO broker execution: NOT_YET_PASS. TF-013A engine không đổi. Promotion gate không bypass. Live/funded money HARD LOCKED.
+- Evidence chi tiết: `research/CWS_AUTOTRADE_MT5_DEMO_PHONE_VERIFICATION_BLOCKER_2026-10-02.md`.
