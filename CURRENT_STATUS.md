@@ -341,3 +341,17 @@
 - Live money: LOCKED.
 - AutoTrade orders: still fail-closed / orders_sent=0.
 - Full evidence: `research/CWS_AUTOTRADE_MT5_LOGIN_PYMT5_FALLBACK_CHECKPOINT_2026-10-02.md`.
+
+---
+
+## 2026-10-02 — Deterministic engine + DEMO handoff
+
+- Founder chốt runtime trading không dùng LLM làm trading brain; AI chỉ nghiên cứu/backtest/audit/cải tiến code.
+- Tiếp tục reuse TF-013A deterministic engine; không xây brain mới.
+- Supabase cron forward-shadow/reconcile/evaluate/training-arena đang ACTIVE; run 2026-10-02 đều succeeded.
+- Training arena snapshot: 14/14 paper positions open, 9 floating-R dương, 5 âm, aggregate floating R xấp xỉ +0.475652R; đây là paper evidence, không phải broker fills.
+- True-forward lane vẫn COLLECTING: 0 closed forward trades, 0 flagged bars, 0 entry thiếu visible stop; không bypass promotion gate.
+- Supabase deployed `ai-trade-mt5-demo-bootstrap` v6 có direct MetaQuotes create/verify path và `open_demo_temp`; GitHub/local source có khả năng stale so với deployed runtime, phải sync safety-forward trước khi sửa/deploy.
+- Chưa claim new-account broker DEMO order PASS; live/funded money tiếp tục HARD LOCKED.
+- Handoff: `research/CWS_AUTOTRADE_DETERMINISTIC_ENGINE_DEMO_HANDOFF_2026-10-02.md`.
+- New-chat prompt: `prompts/CWS_AUTOTRADE_CHAT_MOI_DETERMINISTIC_ENGINE_2026-10-02.md`.
