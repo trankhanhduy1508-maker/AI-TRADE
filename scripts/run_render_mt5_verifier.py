@@ -84,8 +84,19 @@ class Handler(BaseHTTPRequestHandler):
         except (BrokenPipeError, ConnectionResetError):
             pass
 
+    def do_HEAD(self) -> None:
+        if self.path.rstrip("/") in ("", "/health"):
+            self.send_response(200)
+            self.send_header("cache-control", "no-store")
+            self.send_header("content-length", "0")
+            self.end_headers()
+            return
+        self.send_response(404)
+        self.send_header("content-length", "0")
+        self.end_headers()
+
     def do_GET(self) -> None:
-        if self.path.rstrip("/") == "/health":
+        if self.path.rstrip("/") in ("", "/health"):
             self.respond(
                 200,
                 {
