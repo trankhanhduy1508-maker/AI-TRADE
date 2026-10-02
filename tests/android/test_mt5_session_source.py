@@ -51,3 +51,6 @@ class AndroidMt5Source(unittest.TestCase):
         self.assertIn("value.length() > 32", CONTRACT)
         self.assertIn('"X-CWS-Client","android-native-mt5"', ACT)
         self.assertIn('"X-CWS-Client-Version",BuildConfig.VERSION_NAME', ACT)
+        self.assertIn("demo_autotrade_blockers", ACT)
+        self.assertIn("AutoTrade DEMO: BLOCKED", ACT)
+        self.assertIn("onResume()", ACT)

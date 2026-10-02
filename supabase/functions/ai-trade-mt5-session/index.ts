@@ -273,12 +273,12 @@ async function brokers(){
     Deno.env.get("METAAPI_TOKEN")?.trim()
     && Deno.env.get("METAAPI_ACCOUNT_ID")?.trim()
   );
-  const demoAutoTradeReady=Boolean(
-    cfg.enabled===true
-    && cfg.demo_send_enabled===true
-    && cfg.risk_profile_approved===true
-    && providerReady
-  );
+  const blockers:string[]=[];
+  if(cfg.enabled!==true) blockers.push("RUNTIME_DISABLED");
+  if(cfg.demo_send_enabled!==true) blockers.push("DEMO_SEND_DISABLED");
+  if(cfg.risk_profile_approved!==true) blockers.push("RISK_NOT_APPROVED");
+  if(!providerReady) blockers.push("PROVIDER_NOT_READY");
+  const demoAutoTradeReady=blockers.length===0;
   return json({
     status:"OK",
     brokers:[
@@ -292,6 +292,9 @@ async function brokers(){
     ],
     provider_ready:providerReady,
     demo_autotrade_ready:demoAutoTradeReady,
+    demo_autotrade_blockers:blockers,
+    control_plane:"SERVER_AUTHORITATIVE",
+    render_required:false,
     live_money_locked:true,
     order_send_enabled:demoAutoTradeReady,
     orders_sent:0

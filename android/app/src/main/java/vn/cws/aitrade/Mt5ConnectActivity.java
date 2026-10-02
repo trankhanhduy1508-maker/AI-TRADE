@@ -36,7 +36,7 @@ public final class Mt5ConnectActivity extends Activity {
     private ArrayAdapter<NativeMt5BrokerOption> brokerAdapter;
     private CheckBox remember,showPassword;
     private Button connect,disconnect,autoTrade;
-    private TextView status,account;
+    private TextView status,account,autoTradeReadiness;
     private volatile String sessionId="";
     private NativeMt5EncryptedSession encryptedSession;
     private volatile long generation=0L;
@@ -105,6 +105,10 @@ public final class Mt5ConnectActivity extends Activity {
         });
         form.addView(autoTrade);
 
+        autoTradeReadiness=new TextView(this);
+        autoTradeReadiness.setText("AutoTrade DEMO: đang kiểm tra readiness…");
+        form.addView(autoTradeReadiness);
+
         account=new TextView(this);
         account.setText("Disconnected\nDEMO\nBalance: —\nEquity: —\nAutoTrade: OFF");
         form.addView(account);
@@ -146,15 +150,35 @@ public final class Mt5ConnectActivity extends Activity {
                     }
                 }
                 if(fresh.isEmpty()) throw new IOException("BROKER_CATALOG_EMPTY");
+                final boolean demoReady=reply.optBoolean("demo_autotrade_ready",false);
+                final JSONArray blockerArray=reply.optJSONArray("demo_autotrade_blockers");
+                final ArrayList<String> blockers=new ArrayList<>();
+                if(blockerArray!=null){
+                    for(int i=0;i<blockerArray.length();i++){
+                        String item=blockerArray.optString(i,"").trim();
+                        if(!item.isEmpty()) blockers.add(item);
+                    }
+                }
+                final String readinessText=demoReady
+                    ?"AutoTrade DEMO: SERVER READY. Chờ phiên MT5 + control gate."
+                    :"AutoTrade DEMO: BLOCKED · "+(blockers.isEmpty()?"UNKNOWN":String.join(", ",blockers));
                 runOnUiThread(()->{
                     brokerOptions.clear();
                     brokerOptions.addAll(fresh);
                     brokerAdapter.notifyDataSetChanged();
+                    autoTradeReadiness.setText(readinessText);
                 });
             }catch(Exception ignored){
+                runOnUiThread(()->autoTradeReadiness.setText(
+                    "AutoTrade DEMO: readiness unavailable. Giữ OFF."));
                 // Keep the bundled catalog. Never replace it with unverified entries.
             }
         });
+    }
+
+    @Override protected void onResume(){
+        super.onResume();
+        if(autoTradeReadiness!=null) refreshBrokerCatalog();
     }
 
     private EditText input(LinearLayout form,String hint,int type){
