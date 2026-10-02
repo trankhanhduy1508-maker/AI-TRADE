@@ -138,9 +138,24 @@ async function connect(req:Request){
     pendingBinding=true;
   }
 
-  const {response,data} = await verifier({
-    login:String(login), readback:"founder_verify", verifyPassword:suppliedPassword
-  });
+  let response:Response|null=null;
+  let data:any={};
+  let verificationAttempts=0;
+  const loginCodes:number[]=[];
+  for(let attempt=1;attempt<=3;attempt++){
+    const result=await verifier({
+      login:String(login), readback:"founder_verify", verifyPassword:suppliedPassword
+    });
+    response=result.response;
+    data=result.data;
+    verificationAttempts=attempt;
+    const code=Number(data?.loginCode);
+    if(Number.isInteger(code)&&code>=0&&code<=255) loginCodes.push(code);
+    if(response.ok && data?.verified===true && data?.status==="DEMO_VERIFIED") break;
+    if(data?.status!=="LOGIN_REJECTED" || attempt===3) break;
+    await new Promise(resolve=>setTimeout(resolve,attempt*750));
+  }
+  if(!response) throw new Error("BRIDGE_UNAVAILABLE");
 
   if(!response.ok || data?.verified !== true || data?.status !== "DEMO_VERIFIED"
       || data?.accountType !== 1 || data?.server !== "MetaQuotes-Demo"
@@ -155,8 +170,15 @@ async function connect(req:Request){
       : data?.status === "NO_METAQUOTES_DEMO_CREDENTIAL"
       ? "SERVER_NOT_FOUND"
       : "BRIDGE_UNAVAILABLE";
-    return json({status:safeError(mapped),auto_trade:"OFF",
-      order_send_enabled:false,orders_sent:0}, mapped==="INVALID_LOGIN_OR_PASSWORD"?401:503);
+    const lastLoginCode=loginCodes.length?loginCodes[loginCodes.length-1]:null;
+    return json({
+      status:safeError(mapped),
+      verification_attempts:verificationAttempts,
+      broker_login_code:lastLoginCode,
+      login_digits:String(login).length,
+      password_length:suppliedPassword.length,
+      auto_trade:"OFF",order_send_enabled:false,orders_sent:0
+    }, mapped==="INVALID_LOGIN_OR_PASSWORD"?401:503);
   }
 
   const tradePermission = data?.readOnly === true || data?.tradeAllowed !== true
