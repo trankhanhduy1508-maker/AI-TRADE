@@ -19,7 +19,8 @@ public final class NativeMt5SessionContract {
     }
 
     public static boolean validPassword(String value) {
-        if (value == null || value.length() < 1 || value.length() > 256) return false;
+        // Must match ai-trade-mt5-session and ai-trade-mt5-demo-validate.
+        if (value == null || value.length() < 4 || value.length() > 32) return false;
         for (int i=0;i<value.length();i++) {
             char c=value.charAt(i);
             if (c < 32 || c == 127) return false;
