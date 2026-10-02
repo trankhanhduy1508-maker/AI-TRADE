@@ -286,6 +286,11 @@ class Handler(BaseHTTPRequestHandler):
 
 
 def main() -> None:
+    try:
+        probe = asyncio.run(probe_webterminal_config())
+        print("CONFIG_PROBE " + json.dumps(probe, separators=(",", ":")), flush=True)
+    except Exception as exc:
+        print("CONFIG_PROBE_FAIL " + type(exc).__name__, flush=True)
     port = int(os.getenv("PORT", "10000"))
     ThreadingHTTPServer(("0.0.0.0", port), Handler).serve_forever()
 
