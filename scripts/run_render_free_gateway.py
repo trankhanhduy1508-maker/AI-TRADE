@@ -29,7 +29,13 @@ class Handler(BaseHTTPRequestHandler):
         self.send_header("x-content-type-options", "nosniff")
         self.send_header("content-length", str(len(body)))
         self.end_headers()
-        self.wfile.write(body)
+        try:
+            self.wfile.write(body)
+        except (BrokenPipeError, ConnectionResetError):
+            # The caller may time out during a Render Free cold start.
+            # The upstream tick has already completed; never turn a closed
+            # client socket into a second application failure.
+            pass
 
     @staticmethod
     def _token() -> str:
@@ -41,6 +47,17 @@ class Handler(BaseHTTPRequestHandler):
         if not expected or not supplied.startswith("Bearer "):
             return False
         return hmac.compare_digest(supplied[7:], expected)
+
+    def do_HEAD(self) -> None:
+        if self.path.rstrip("/") in ("", "/health"):
+            self.send_response(200)
+            self.send_header("cache-control", "no-store")
+            self.send_header("content-length", "0")
+            self.end_headers()
+            return
+        self.send_response(404)
+        self.send_header("content-length", "0")
+        self.end_headers()
 
     def do_GET(self) -> None:
         if self.path.rstrip("/") == "/health":
