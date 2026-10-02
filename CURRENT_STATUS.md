@@ -268,3 +268,21 @@
    - Viết code Python lập trình Rule Engine (src/rule_engine.py)
    - Unit test từng rule
    - Chạy backtest TF_001 + TF_002 với Rule Engine + Point-in-Time AI Backtesting
+
+
+---
+
+## 2026-10-02 — Render minimal policy + Android MT5 recovery
+
+- Render governance đã chốt: Render làm ít việc nhất có thể; không dùng filesystem Render làm file/state storage bền vững. Xem `docs/CWS_RENDER_MINIMAL_USAGE_POLICY_2026-10-02.md`.
+- Render Free AutoTrade thin proxy đã LIVE và stateless; Supabase vẫn là source of truth.
+- MT5 session backend REAL DEMO E2E: PASS (connect -> account -> disconnect), order_send=false, orders_sent=0.
+- Android MT5 fix source HEAD evidence: `64f64c368d1d7965d39bac9091a8fbb5c94f6145`.
+- Android source QA: PASS.
+- Android device smoke: PASS.
+- Android DEMO APK build: PASS.
+- APK SHA-256: `c9e09f4c3e1fc4242ad96d3d37bbe8b942f73b76b5d2abf8be1bb3973186b7da`.
+- Founder physical Android + real credential E2E trên APK mới: NOT_YET_PASS.
+- AutoTrade DEMO order execution: DISABLED / NOT_YET_PASS.
+- Live money: LOCKED.
+- VNext không xây lại engine; tiếp tục từ `ai-trade-mt5-session` + `ai-trade-tick`. Xem `research/CWS_AUTOTRADE_ANDROID_MT5_VNEXT_2026-10-02.md`.
