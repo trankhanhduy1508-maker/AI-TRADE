@@ -22,7 +22,7 @@ Internal selftest `ai-trade-mt5-session-selftest` đã chạy lại bằng crede
 
 ## Sửa Android
 HEAD source dùng để build APK:
-`64f64c368d1d7965d39bac9091a8fbb5c94f6145`
+`a35999c8c62e6bc2632f301aa755bec1f4182845`
 
 Các sửa:
 1. Password contract: 4–32 ký tự, đồng bộ backend.
@@ -40,29 +40,29 @@ Các sửa:
 
 ## Test
 ### Local source QA
-PC Commander clone đúng HEAD `64f64c3...`.
+PC Commander clone đúng HEAD `a35999c8...`.
 `python -m unittest discover -s tests/android -p test_mt5_session_source.py -v`
 => 10/10 PASS.
 
 Java contract local không chạy vì host hiện không có Java/JDK; không gọi phần đó PASS từ local host.
 
 ### GitHub Android DEMO APK
-Run: `36985196955`
+Run: `36985873836`
 Conclusion: SUCCESS.
 Artifact: `CWS-AutoTrade-DEMO-debug`
-Artifact ID: `11217700771`
+Artifact ID: `11217836696`
 
 APK SHA-256:
-`c9e09f4c3e1fc4242ad96d3d37bbe8b942f73b76b5d2abf8be1bb3973186b7da`
+`ff20a195d4acb3ca809d1075798727105aea098441c87550d2f440e71a979601`
 
 ### GitHub source-only QA
-Run: `36985196954`
-HEAD: `64f64c3...`
+Run: `36985873853`
+HEAD: `a35999c8...`
 Conclusion: SUCCESS.
 
 ### GitHub device smoke
-Run: `36985196986`
-HEAD: `64f64c3...`
+Run: `36985874034`
+HEAD: `a35999c8...`
 Conclusion: SUCCESS.
 
 ## Ranh giới PASS
@@ -88,3 +88,19 @@ Thiết kế VNext:
 
 Render governance:
 `docs/CWS_RENDER_MINIMAL_USAGE_POLICY_2026-10-02.md`
+
+
+## Readiness VNext bổ sung
+Supabase `ai-trade-mt5-session` version 6 đã deploy.
+
+`GET /mt5/brokers` hiện trả:
+- `control_plane = SERVER_AUTHORITATIVE`
+- `render_required = false`
+- `demo_autotrade_ready = false`
+- blockers:
+  - `RUNTIME_DISABLED`
+  - `DEMO_SEND_DISABLED`
+  - `RISK_NOT_APPROVED`
+  - `PROVIDER_NOT_READY`
+
+Android HEAD `a35999c8...` hiển thị blocker này trực tiếp và refresh readiness khi resume.
