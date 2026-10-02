@@ -98,6 +98,67 @@ async def probe_opening(email: str, group: str = "") -> dict[str, object]:
     }
 
 
+async def probe_webterminal_config() -> dict[str, object]:
+    """Read public MT5 WebTerminal demo configuration without creating an account."""
+    import urllib.parse
+    import urllib.request
+
+    body = urllib.parse.urlencode(
+        {
+            "login": "0",
+            "trade_server": "MetaQuotes-Demo",
+            "version": "5",
+            "gwt": "6",
+        }
+    ).encode("ascii")
+    request = urllib.request.Request(
+        "https://metatraderweb.app/trade/json",
+        data=body,
+        headers={
+            "content-type": "application/x-www-form-urlencoded",
+            "user-agent": "AI-TRADE-RENDER-CONFIG-PROBE/1.0",
+            "origin": "https://metatraderweb.app",
+            "referer": "https://metatraderweb.app/trade?version=5",
+        },
+        method="POST",
+    )
+    with urllib.request.urlopen(request, timeout=30) as response:
+        data = json.loads(response.read().decode("utf-8"))
+
+    enabled = data.get("enabled") is True
+    has_token = isinstance(data.get("token"), str) and len(data["token"]) > 0
+    return {
+        "ok": True,
+        "status": "DEMO_HANDSHAKE_READY"
+        if enabled and has_token and int(data.get("version", 0)) == 5
+        else "DEMO_HANDSHAKE_BLOCKED",
+        "tradeServer": str(data.get("trade_server") or "MetaQuotes-Demo"),
+        "version": int(data.get("version", 0) or 0),
+        "enabled": enabled,
+        "hasKey": isinstance(data.get("key"), str) and len(data["key"]) > 0,
+        "hasToken": has_token,
+        "signalServer": data.get("signal_server")
+        if isinstance(data.get("signal_server"), str)
+        else None,
+        "company": data.get("company") if isinstance(data.get("company"), str) else None,
+        "demoType": data.get("demo_type") if isinstance(data.get("demo_type"), list) else [],
+        "demoLeverage": data.get("demo_leverage")
+        if isinstance(data.get("demo_leverage"), list)
+        else [],
+        "geo": {
+            "country": (data.get("geo") or {}).get("country"),
+            "city": (data.get("geo") or {}).get("city"),
+        }
+        if isinstance(data.get("geo"), dict)
+        else None,
+        "secretValuesExposed": False,
+        "accountCreated": False,
+        "brokerOrders": False,
+        "liveMoneyLocked": True,
+        "source": "RENDER_SINGAPORE_WEBTERMINAL_CONFIG",
+    }
+
+
 class Handler(BaseHTTPRequestHandler):
     server_version = "CWSMT5Verifier/1.0"
 
@@ -153,7 +214,7 @@ class Handler(BaseHTTPRequestHandler):
 
     def do_POST(self) -> None:
         path = self.path.rstrip("/")
-        if path not in ("/mt5-verify", "/mt5-opening-probe"):
+        if path not in ("/mt5-verify", "/mt5-opening-probe", "/mt5-config-probe"):
             self.respond(404, {"status": "NOT_FOUND"})
             return
         if not self.authorized():
@@ -170,6 +231,11 @@ class Handler(BaseHTTPRequestHandler):
 
         try:
             body = json.loads(self.rfile.read(length))
+
+            if path == "/mt5-config-probe":
+                result = asyncio.run(probe_webterminal_config())
+                self.respond(200, result)
+                return
 
             if path == "/mt5-opening-probe":
                 email = body.get("email")
