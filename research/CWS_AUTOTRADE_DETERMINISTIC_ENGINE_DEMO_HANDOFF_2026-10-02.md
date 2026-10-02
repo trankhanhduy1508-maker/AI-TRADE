@@ -305,3 +305,31 @@ Current legal blocker:
 
 Engine boundary unchanged:
 `TF-013A-FORWARD-DIVERSIFIED-TREND` only; no LLM in the hot path, no pyramiding, visible-stop/risk/kill-switch/dedupe/server-authoritative DEMO gates remain mandatory.
+
+
+## 2026-10-02 final cloud-onboarding evidence
+
+Read before attempting another autonomous DEMO bootstrap:
+
+`research/CWS_AUTOTRADE_MT5_CLOUD_ONBOARDING_BLOCKER_2026-10-02.md`
+
+New evidence supersedes any assumption that the only current blocker is missing phone input.
+
+Confirmed autonomous cloud egress results:
+- Supabase Mumbai: WebTerminal config `enabled=false`, `hasToken=false`, `demoType=[]`;
+- Render Singapore: same config blocker, plus pinned-pymt5 cmd 27 returns code 1;
+- Render Oregon/US: same config blocker.
+
+Transport remains healthy (WebSocket/AES, build 6231), so do not rebuild transport or the TF-013A trading brain.
+
+A legitimate international mobile phone remains required by the account-opening contract **after** an onboarding-capable client/egress is available. Do not invent phone data or bypass OTP/CAPTCHA/identity.
+
+Current hard state:
+- verified new DEMO account: 0;
+- broker DEMO execution: NOT PASS;
+- TF-013A pending directions: 6 (5 UP, 1 DOWN), still not broker orders;
+- `MAX_TOTAL_VOLUME_DEMO=NULL`;
+- execution/risk approval remains disabled;
+- live/funded money HARD LOCKED.
+
+Do not retry cloud cmd 27 blindly until WebTerminal config grants demo onboarding or a legitimate DEMO is created through a human-authorized normal client path.
