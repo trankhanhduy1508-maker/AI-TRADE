@@ -288,3 +288,22 @@
 - VNext không xây lại engine; tiếp tục từ `ai-trade-mt5-session` + `ai-trade-tick`. Xem `research/CWS_AUTOTRADE_ANDROID_MT5_VNEXT_2026-10-02.md`.
 
 - Supabase MT5 session v6 hiện trả blocker AutoTrade cụ thể cho Android và xác nhận `render_required=false`.
+
+
+---
+
+## 2026-10-02 — MT5 Android exact-credential diagnosis + clipboard fix
+
+- DEMO credential đã được test trực tiếp trên PC qua pinned pymt5: 4/4 handshake variants LOGIN_CODE=0.
+- Cùng credential qua full CWS backend: connect/account/account/disconnect đều PASS; DEMO + TRADING_ALLOWED; order_send=false; orders_sent=0.
+- Root cause còn lại của lần Android fail: manual-entry mismatch dù độ dài login/password đúng; không bắt Founder gõ lại.
+- Android HEAD `f9934031564079836bdaa88f0b580fb3638c310f` thêm `DÁN TỪ MT5`, xử lý clipboard in-memory, không persist credential.
+- APK v0.5.0-demo.
+- GitHub build run `36992239724`: PASS.
+- Source-only QA run `36992239765`: PASS.
+- Device smoke run `36992239775`: PASS.
+- Protocol probe run `36992244610`: PASS.
+- APK SHA-256: `67c7fd155d0d3cf03a2276cddda4194e7fa6f0085c88c09c9c17add5a5539920`.
+- Physical Android clipboard + real DEMO connect on v0.5.0-demo: NOT_YET_PASS.
+- Live money remains LOCKED; order execution remains fail-closed.
+- Chi tiết: `research/CWS_AUTOTRADE_MT5_ANDROID_CLIPBOARD_FIX_2026-10-02.md`.
