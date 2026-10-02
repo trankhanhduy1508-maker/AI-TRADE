@@ -307,3 +307,21 @@
 - Physical Android clipboard + real DEMO connect on v0.5.0-demo: NOT_YET_PASS.
 - Live money remains LOCKED; order execution remains fail-closed.
 - Chi tiết: `research/CWS_AUTOTRADE_MT5_ANDROID_CLIPBOARD_FIX_2026-10-02.md`.
+
+
+---
+
+## 2026-10-02 — MT5 direct Android recovery
+
+- Root cause narrowed: same Founder-authorized DEMO credential returns login code 0 on PC direct protocol in 5 independent variants, while Supabase cloud path returned broker code 3 after 3 retries.
+- Stop asking Founder to repeatedly retype credential for cloud-handshake diagnosis.
+- Android direct login implemented: APK -> MetaQuotes WebTerminal protocol directly; password is memory-only and is not sent to Supabase in the new login path.
+- Direct Android HEAD: `949d9bae07cfbb0b3b03e4eb1a4ec0933c18b2fc`.
+- Source QA: PASS, run `36993594745`.
+- DEMO APK build: PASS, run `36993594339`.
+- Device smoke: PASS, run `36993594344`.
+- Protocol probe: PASS, run `36993597889`.
+- APK SHA-256: `ca9d63a41ed1ef3333ca27f1b637440b52e1415c8fa5d5220137dea708549e07`.
+- Physical Android direct broker login on v0.6.0-demo-direct: NOT_YET_PASS.
+- AutoTrade: OFF; live money: LOCKED; orders_sent remains 0.
+- Detail: `research/CWS_AUTOTRADE_MT5_DIRECT_ANDROID_RECOVERY_2026-10-02.md`.
