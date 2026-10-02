@@ -1,0 +1,129 @@
+name: CWS blind R0 one-shot 28-market research
+
+on:
+  push:
+    branches: [codex/p0-covel-knowledge-audit]
+    paths:
+      - '.github/workflows/cws-blind-r0-once.yml'
+      - 'src/backtest/blind_r0.py'
+      - 'scripts/run_blind_r0.py'
+      - 'tests/backtest/test_blind_r0.py'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: cws-blind-r0-research
+  cancel-in-progress: false
+
+jobs:
+  blind-r0:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - name: Checkout single existing branch, shallow
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7 immutable
+        with:
+          ref: codex/p0-covel-knowledge-audit
+          fetch-depth: 12
+          persist-credentials: true
+
+      - name: Freeze guard, no previous TF performance reads
+        run: |
+          set -euo pipefail
+          git cat-file -e 9041d3de3122abfb41ef8ab2f0fca12f114307cf^{commit}
+          test "$(git branch --show-current)" = "codex/p0-covel-knowledge-audit"
+          git status --short
+          python3 -m compileall -q src/backtest/blind_r0.py scripts/run_blind_r0.py tests/backtest/test_blind_r0.py
+          echo "SMOKE source compile PASS on $(git rev-parse HEAD)"
+
+      - name: Round 1 - Smoke regression
+        run: |
+          set -euo pipefail
+          PYTHONPATH=. python3 -m unittest discover -s tests/backtest -p 'test_blind_r0.py' -v
+          echo "SMOKE PASS"
+
+      - name: Round 2 - Runtime synthetic execution and real-source ingestion
+        run: |
+          set -euo pipefail
+          PYTHONPATH=. python3 -m unittest discover -s tests/backtest -p 'test_blind_r0.py' -v
+          python3 scripts/run_blind_r0.py --stage ingest
+          test -s research/manifests/CWS_BLIND_R0_2026-09-29.json
+          python3 -m json.tool research/manifests/CWS_BLIND_R0_2026-09-29.json >/dev/null
+          echo "RUNTIME INGEST complete; NO HOLDOUT READ"
+
+      - name: Round 3 - Fault isolation, provenance and prereg guard
+        run: |
+          set -euo pipefail
+          PYTHONPATH=. python3 -m unittest discover -s tests/backtest -p 'test_blind_r0.py' -v
+          python3 - <<'PY'
+          import hashlib, json
+          from pathlib import Path
+          d = json.loads(Path("research/manifests/CWS_BLIND_R0_2026-09-29.json").read_bytes())
+          assert d["prereg_commit_sha"] == "9041d3de3122abfb41ef8ab2f0fca12f114307cf"
+          assert d["state"] == "INGESTED_NOT_EVALUATED"
+          assert len(d["dataset"]) == 56, len(d["dataset"])
+          for file, key in [("src/backtest/blind_r0.py", "engine_sha256"),
+                            ("scripts/run_blind_r0.py", "runner_sha256"),
+                            ("backtests/cost_profiles/research_multi_asset_assumption_v1.json", "cost_file_sha256")]:
+              assert hashlib.sha256(Path(file).read_bytes()).hexdigest() == d[key]
+          for item in d["dataset"].values():
+              if item["status"] == "READY_EXPLORATORY":
+                  p = Path(".cws-r0-data") / item["local_data_filename"]
+                  assert hashlib.sha256(p.read_bytes()).hexdigest() == item["normalized_sha256"]
+          print("FAULT/PRE-HOLDOUT HASH GATES PASS; 56/56 ledger entries")
+          PY
+
+      - name: Commit and remotely verify immutable data and split manifest
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add research/manifests/CWS_BLIND_R0_2026-09-29.json
+          git commit -m "research(blind-r0): freeze real-source hashes and 56 chronological splits before OOS"
+          git push origin HEAD:refs/heads/codex/p0-covel-knowledge-audit
+          test "$(git ls-remote origin refs/heads/codex/p0-covel-knowledge-audit | cut -f1)" = "$(git rev-parse HEAD)"
+          echo "MANIFEST COMMITTED BEFORE HISTORICAL OOS: $(git rev-parse HEAD)"
+
+      - name: Open nominal historical holdout once, annotate reused/assumed evidence
+        env:
+          R0_MANIFEST_COMMITTED: verified
+        run: |
+          set -euo pipefail
+          python3 scripts/run_blind_r0.py --stage evaluate
+          test -s research/results/CWS_BLIND_R0_2026-09-29.json
+          python3 -m json.tool research/results/CWS_BLIND_R0_2026-09-29.json >/dev/null
+          echo "R0 EVALUATION complete; historical observations are NOT independently new"
+
+      - name: Commit research outcomes including all failures
+        run: |
+          set -euo pipefail
+          git add research/results/CWS_BLIND_R0_2026-09-29.json
+          git commit -m "research(blind-r0): archive all 56 source/evidence outcomes without promotion"
+          git push origin HEAD:refs/heads/codex/p0-covel-knowledge-audit
+          test "$(git ls-remote origin refs/heads/codex/p0-covel-knowledge-audit | cut -f1)" = "$(git rev-parse HEAD)"
+          python3 - <<'PY'
+          import json
+          from collections import Counter
+          p=json.load(open("research/results/CWS_BLIND_R0_2026-09-29.json"))
+          counts=Counter(x["status"] for x in p["dataset"].values())
+          assert len(p["dataset"]) == 56
+          assert not p["live_order_send"] and not p["demo_order_send"]
+          print("FINAL COUNTS:", dict(counts))
+          if not counts.get("EXPLORATORY_HISTORICAL_REUSED_UNPROVEN"):
+              print("NO_VALID_EVALUATIONS: all dataset limitations preserved on GitHub")
+          PY
+          echo "ARCHIVED SHA: $(git rev-parse HEAD)"
+
+      - name: Temporary reproducibility artifacts (raw provider data NOT public Git)
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7 immutable
+        with:
+          name: cws-blind-r0-raw-and-ledger
+          path: |
+            .cws-r0-data/
+            research/manifests/CWS_BLIND_R0_2026-09-29.json
+            research/results/CWS_BLIND_R0_2026-09-29.json
+          include-hidden-files: true
+          if-no-files-found: warn
+          retention-days: 1

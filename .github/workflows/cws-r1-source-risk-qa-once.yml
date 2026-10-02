@@ -1,0 +1,81 @@
+# Recheck native H4 DST-boundary quarantine; unchanged risk preflight.
+# Rerun after correcting crossed-spread synthetic fixture; prior run 36572916962 failed
+name: CWS R1 H4 parser and paper-risk offline QA once
+
+on:
+  push:
+    branches: [codex/p0-covel-knowledge-audit]
+    paths:
+      - '.github/workflows/cws-r1-source-risk-qa-once.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: cws-r1-source-risk-qa-once
+  cancel-in-progress: false
+
+jobs:
+  test-source-and-risk:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - name: Immutable checkout of triggering commit
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 1
+
+      - name: Source and immutable-branch safety
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+          test "$GITHUB_REF_NAME" = "codex/p0-covel-knowledge-audit"
+          test -s research/CWS_AUTOTRADE_FORWARD_R1_PREREG_2026-09-29.md
+          test -s research/CWS_AUTOTRADE_R1_NATIVE_H4_SOURCE_FEASIBILITY_2026-09-29.md
+          python3 -m compileall -q src/data_loader/oanda_h4_adapter.py src/paper/blind_r1_risk.py tests/data_loader/test_oanda_h4_adapter.py tests/paper/test_blind_r1_risk.py
+          python3 - <<'PY'
+          import ast,hashlib
+          from pathlib import Path
+          for name in ("src/data_loader/oanda_h4_adapter.py","src/paper/blind_r1_risk.py"):
+              p=Path(name)
+              tree=ast.parse(p.read_text())
+              modules=set()
+              for item in ast.walk(tree):
+                  if isinstance(item,ast.Import):
+                      modules.update(node.name for node in item.names)
+                  if isinstance(item,ast.ImportFrom) and item.module:
+                      modules.add(item.module)
+              assert not modules & {"MetaTrader5","metaapi_cloud_sdk","requests",
+                                    "urllib.request","socket","subprocess","ccxt"},modules
+              print("OFFLINE_SOURCE_IMPORT_AUDIT PASS",name,hashlib.sha256(p.read_bytes()).hexdigest())
+          PY
+
+      - name: Round 1 - Smoke
+        run: |
+          set -euo pipefail
+          PYTHONPATH=. python3 -m unittest discover -s tests/data_loader -p 'test_oanda_h4_adapter.py' -v
+          PYTHONPATH=. python3 -m unittest discover -s tests/paper -p 'test_blind_r1_risk.py' -v
+          echo "SMOKE DONE only synthetic fixtures"
+
+      - name: Round 2 - Runtime
+        run: |
+          set -euo pipefail
+          PYTHONPATH=. python3 -m unittest discover -s tests/data_loader -p 'test_oanda_h4_adapter.py' -v
+          PYTHONPATH=. python3 -m unittest discover -s tests/paper -p 'test_blind_r1_risk.py' -v
+          echo "RUNTIME DONE simulated only, NO credentials, data or orders"
+
+      - name: Round 3 - Fault
+        run: |
+          set -euo pipefail
+          PYTHONPATH=. python3 -m unittest discover -s tests/data_loader -p 'test_oanda_h4_adapter.py' -v
+          PYTHONPATH=. python3 -m unittest discover -s tests/paper -p 'test_blind_r1_risk.py' -v
+          echo "FAULT DONE only synthetic failures"
+
+      - name: Log immutable QA SHA
+        run: |
+          set -euo pipefail
+          git status --porcelain
+          echo "TESTED_SHA=$(git rev-parse HEAD)"
+          echo "NO_PROVIDER_LIVE_ACCESS_OR_ACTUAL_PAPER_FORWARD_OBSERVED"

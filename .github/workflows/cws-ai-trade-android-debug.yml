@@ -1,0 +1,21 @@
+name: CWS AutoTrade APK-first DEMO release gate (no build)
+
+# Founder rule 2026-09-28: never create APK on push.
+# This manual workflow checks release evidence only. It CANNOT build an APK.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  release-readiness-only:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - name: Checkout only
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      - name: Fail closed when full release evidence is absent
+        run: python3 scripts/check_android_release_gate.py
+      - name: No package build or artifact publishing
+        run: echo "APK-first policy requires verified DEMO auto-trade, broker and Android E2E, stable signing and update/recovery checks before creating APK."

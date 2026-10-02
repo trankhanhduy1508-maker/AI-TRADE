@@ -268,3 +268,106 @@
    - Viết code Python lập trình Rule Engine (src/rule_engine.py)
    - Unit test từng rule
    - Chạy backtest TF_001 + TF_002 với Rule Engine + Point-in-Time AI Backtesting
+
+
+---
+
+## 2026-10-02 — Render minimal policy + Android MT5 recovery
+
+- Render governance đã chốt: Render làm ít việc nhất có thể; không dùng filesystem Render làm file/state storage bền vững. Xem `docs/CWS_RENDER_MINIMAL_USAGE_POLICY_2026-10-02.md`.
+- Render Free AutoTrade thin proxy đã LIVE và stateless; Supabase vẫn là source of truth.
+- MT5 session backend REAL DEMO E2E: PASS (connect -> account -> disconnect), order_send=false, orders_sent=0.
+- Android MT5 fix source HEAD evidence: `a35999c8c62e6bc2632f301aa755bec1f4182845`.
+- Android source QA: PASS.
+- Android device smoke: PASS.
+- Android DEMO APK build: PASS.
+- APK SHA-256: `ff20a195d4acb3ca809d1075798727105aea098441c87550d2f440e71a979601`.
+- Founder physical Android + real credential E2E trên APK mới: NOT_YET_PASS.
+- AutoTrade DEMO order execution: DISABLED / NOT_YET_PASS.
+- Live money: LOCKED.
+- VNext không xây lại engine; tiếp tục từ `ai-trade-mt5-session` + `ai-trade-tick`. Xem `research/CWS_AUTOTRADE_ANDROID_MT5_VNEXT_2026-10-02.md`.
+
+- Supabase MT5 session v6 hiện trả blocker AutoTrade cụ thể cho Android và xác nhận `render_required=false`.
+
+
+---
+
+## 2026-10-02 — MT5 Android exact-credential diagnosis + clipboard fix
+
+- DEMO credential đã được test trực tiếp trên PC qua pinned pymt5: 4/4 handshake variants LOGIN_CODE=0.
+- Cùng credential qua full CWS backend: connect/account/account/disconnect đều PASS; DEMO + TRADING_ALLOWED; order_send=false; orders_sent=0.
+- Root cause còn lại của lần Android fail: manual-entry mismatch dù độ dài login/password đúng; không bắt Founder gõ lại.
+- Android HEAD `f9934031564079836bdaa88f0b580fb3638c310f` thêm `DÁN TỪ MT5`, xử lý clipboard in-memory, không persist credential.
+- APK v0.5.0-demo.
+- GitHub build run `36992239724`: PASS.
+- Source-only QA run `36992239765`: PASS.
+- Device smoke run `36992239775`: PASS.
+- Protocol probe run `36992244610`: PASS.
+- APK SHA-256: `67c7fd155d0d3cf03a2276cddda4194e7fa6f0085c88c09c9c17add5a5539920`.
+- Physical Android clipboard + real DEMO connect on v0.5.0-demo: NOT_YET_PASS.
+- Live money remains LOCKED; order execution remains fail-closed.
+- Chi tiết: `research/CWS_AUTOTRADE_MT5_ANDROID_CLIPBOARD_FIX_2026-10-02.md`.
+
+
+---
+
+## 2026-10-02 — MT5 direct Android recovery
+
+- Root cause narrowed: same Founder-authorized DEMO credential returns login code 0 on PC direct protocol in 5 independent variants, while Supabase cloud path returned broker code 3 after 3 retries.
+- Stop asking Founder to repeatedly retype credential for cloud-handshake diagnosis.
+- Android direct login implemented: APK -> MetaQuotes WebTerminal protocol directly; password is memory-only and is not sent to Supabase in the new login path.
+- Direct Android HEAD: `949d9bae07cfbb0b3b03e4eb1a4ec0933c18b2fc`.
+- Source QA: PASS, run `36993594745`.
+- DEMO APK build: PASS, run `36993594339`.
+- Device smoke: PASS, run `36993594344`.
+- Protocol probe: PASS, run `36993597889`.
+- APK SHA-256: `ca9d63a41ed1ef3333ca27f1b637440b52e1415c8fa5d5220137dea708549e07`.
+- Physical Android direct broker login on v0.6.0-demo-direct: NOT_YET_PASS.
+- AutoTrade: OFF; live money: LOCKED; orders_sent remains 0.
+- Detail: `research/CWS_AUTOTRADE_MT5_DIRECT_ANDROID_RECOVERY_2026-10-02.md`.
+
+
+---
+
+## 2026-10-02 — MT5 login root cause + pymt5 fallback
+
+- Founder DEMO credential tested directly on PC with pinned pymt5: 4/4 login handshake variants PASS (LOGIN_CODE=0).
+- Android/Supabase raw verifier evidence: 3 attempts, broker_login_code=3, input lengths intact.
+- Root issue narrowed to raw Deno/npm-ws verifier path, not credential entry.
+- New Free Render service `cws-mt5-verify-free`: stateless, no storage, no DB, no polling, auto-deploy OFF.
+- Vault -> Render pymt5 -> MetaQuotes E2E: PASS / DEMO_VERIFIED.
+- `ai-trade-mt5-demo-validate` runtime v6: raw verifier first, Render pymt5 fallback only after direct login rejection.
+- Existing REAL_DEMO_SESSION_E2E regression: PASS.
+- Live money: LOCKED.
+- AutoTrade orders: still fail-closed / orders_sent=0.
+- Full evidence: `research/CWS_AUTOTRADE_MT5_LOGIN_PYMT5_FALLBACK_CHECKPOINT_2026-10-02.md`.
+
+---
+
+## 2026-10-02 — Deterministic engine + DEMO handoff
+
+- Founder chốt runtime trading không dùng LLM làm trading brain; AI chỉ nghiên cứu/backtest/audit/cải tiến code.
+- Tiếp tục reuse TF-013A deterministic engine; không xây brain mới.
+- Supabase cron forward-shadow/reconcile/evaluate/training-arena đang ACTIVE; run 2026-10-02 đều succeeded.
+- Training arena snapshot: 14/14 paper positions open, 9 floating-R dương, 5 âm, aggregate floating R xấp xỉ +0.475652R; đây là paper evidence, không phải broker fills.
+- True-forward lane vẫn COLLECTING: 0 closed forward trades, 0 flagged bars, 0 entry thiếu visible stop; không bypass promotion gate.
+- Supabase deployed `ai-trade-mt5-demo-bootstrap` v6 có direct MetaQuotes create/verify path và `open_demo_temp`; GitHub/local source có khả năng stale so với deployed runtime, phải sync safety-forward trước khi sửa/deploy.
+- Chưa claim new-account broker DEMO order PASS; live/funded money tiếp tục HARD LOCKED.
+- Handoff: `research/CWS_AUTOTRADE_DETERMINISTIC_ENGINE_DEMO_HANDOFF_2026-10-02.md`.
+- New-chat prompt: `prompts/CWS_AUTOTRADE_CHAT_MOI_DETERMINISTIC_ENGINE_2026-10-02.md`.
+
+
+---
+
+## 2026-10-02 — MT5 new DEMO phone-verification blocker
+
+- Supabase deployed `ai-trade-mt5-demo-bootstrap` v6 đã được mirror byte-for-byte về GitHub ở commit `c286e5fdcfedd64149f393cac8eebd4f3e2b2480`; không deploy source cũ đè runtime mới.
+- Runtime transport probe: `TRANSPORT_READY`, MetaQuotes WebTerminal build `6231`, WebSocket ready, AES key length 32; `brokerOrders=false`, `liveMoneyLocked=true`.
+- `open_demo_temp` đã chạy thật đến MetaQuotes nhưng dừng fail-closed: `TEMP_MAIL_DEMO_OPEN_BLOCKED` -> `VERIFICATION_PROBE_FAILED`, broker code `1`.
+- `ai_trade.mt5_demo_credentials` vẫn 0 row: chưa có DEMO mới được tạo/verify; không được gọi PASS.
+- Protocol byte layout cmd 27/40/30 của v6 khớp pinned `cloudQuant/pymt5@e7b5a8d28201879576e6cd22a39b9ea8677d4ee1`; upstream pymt5 HEAD hiện vẫn cùng implementation và chỉ ghi nhận re-verify build 5687.
+- MetaTrader 5 Help hiện yêu cầu First name, Second name, Email và **Phone ở định dạng quốc tế** khi mở account. Runtime v6 đang để phone field trống trong opening payload, nên đây là blocker có bằng chứng phù hợp với broker validation code 1.
+- Không bịa số điện thoại, không dùng SMS/identity bypass, không dùng temporary phone, không fake OTP/CAPTCHA.
+- Supabase connector đã chặn attempt deploy patch thử nghiệm; deployed runtime vẫn v6 nguyên trạng.
+- AutoTrade DEMO broker execution: NOT_YET_PASS. TF-013A engine không đổi. Promotion gate không bypass. Live/funded money HARD LOCKED.
+- Evidence chi tiết: `research/CWS_AUTOTRADE_MT5_DEMO_PHONE_VERIFICATION_BLOCKER_2026-10-02.md`.

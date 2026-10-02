@@ -1,0 +1,17 @@
+{
+  "strategy_id": "TF-005A-TSMOM-12M",
+  "version": "0.1.0",
+  "status": "PREREGISTERED",
+  "timeframe": "1D",
+  "signal_model": "TIME_SERIES_MOMENTUM",
+  "momentum_lookback_bars": 252,
+  "review_every_bars": 21,
+  "entry_timing": "NEXT_OPEN",
+  "atr_bars": 20,
+  "emergency_stop_atr": 4,
+  "exit_model": "MONTHLY_REVIEW_OR_EMERGENCY_STOP",
+  "position_policy": "ONE_OPEN",
+  "pyramiding": false,
+  "gap_stop_policy": "WORSE_OF_STOP_OR_NEXT_BAR_OPEN",
+  "capital_risk": "UNCOMMITTED"
+}

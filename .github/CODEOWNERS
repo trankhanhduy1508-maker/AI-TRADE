@@ -1,0 +1,13 @@
+# Founder-owned security boundaries
+# NOTE: CODEOWNERS controls review/merge, not read access.
+# Keep sensitive repositories PRIVATE.
+
+* @trankhanhduy1508-maker
+
+/security/ @trankhanhduy1508-maker
+/research/ @trankhanhduy1508-maker
+/risk/ @trankhanhduy1508-maker
+/strategies/ @trankhanhduy1508-maker
+/supabase/functions/ @trankhanhduy1508-maker
+/supabase/migrations/ @trankhanhduy1508-maker
+/auto_trade/ @trankhanhduy1508-maker

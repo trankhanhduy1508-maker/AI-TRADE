@@ -1,0 +1,25 @@
+{
+  "profile_id": "research_fx_assumption_v1",
+  "provenance": "UNVERIFIED",
+  "description": "Fixed price-unit research proxy; not broker-specific and not live-ready.",
+  "profiles": {
+    "EURUSD=X": {
+      "spread_price": 0.0002,
+      "commission_price": 0.00002,
+      "slippage_price": 0.00005,
+      "swap_price_per_bar": 0.00001
+    },
+    "GBPUSD=X": {
+      "spread_price": 0.0002,
+      "commission_price": 0.00002,
+      "slippage_price": 0.00005,
+      "swap_price_per_bar": 0.00001
+    },
+    "USDJPY=X": {
+      "spread_price": 0.02,
+      "commission_price": 0.002,
+      "slippage_price": 0.005,
+      "swap_price_per_bar": 0.001
+    }
+  }
+}

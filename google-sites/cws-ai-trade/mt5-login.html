@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="vi"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0b1422"><meta name="referrer" content="no-referrer">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; connect-src https://oziktadfeenydvgobudr.supabase.co; style-src 'unsafe-inline'; base-uri 'none'; form-action 'none'; img-src 'self'; frame-src 'none'; object-src 'none'">
+<title>CWS AI Trade · Kết nối MT5 DEMO</title>
+<style>
+:root{color-scheme:dark;font-family:system-ui,-apple-system,"Segoe UI",Arial,sans-serif;background:#08111e;color:#e8f2ff}
+*{box-sizing:border-box}html,body{margin:0;min-height:100vh}body{padding:calc(env(safe-area-inset-top) + 20px) 16px calc(env(safe-area-inset-bottom) + 20px);background:radial-gradient(circle at 50% 0%,#183753,#08111e 60%);font-size:15px}
+main{max-width:570px;margin:0 auto}.back{display:inline-block;color:#91cbfc;text-decoration:none;margin:6px 0 16px}
+section{border:1px solid #294460;border-radius:17px;background:#102137;padding:20px;margin-bottom:13px;box-shadow:0 10px 35px #02070e50}
+h1{font-size:23px;margin:0 0 6px}h2{font-size:17px;margin:0 0 13px}p{line-height:1.65;color:#aec5dd}small{color:#9eb2c9}
+.brand{font-weight:800;letter-spacing:.5px;color:#58dbbb;margin:0 0 16px}.pill{display:inline-block;border:1px solid #94743b;color:#ffd58c;background:#35291a;border-radius:7px;padding:5px 9px;font-size:12px;font-weight:700}
+input,button{font:inherit}input{display:block;width:100%;padding:13px;margin:6px 0 14px;color:#fff;background:#0b1828;border:1px solid #42617e;border-radius:9px;font-size:16px}label{font-size:13px;color:#b7cde5}
+button{width:100%;padding:13px 12px;border:1px solid #3d8bd1;border-radius:10px;background:#1767a7;color:#fff;font-weight:750;cursor:pointer;margin:5px 0}button:disabled{opacity:.45;cursor:not-allowed}.secondary{background:#243a52;border-color:#39536c}
+#message{white-space:pre-wrap;overflow-wrap:anywhere;color:#d6edff;background:#102b40;border-left:3px solid #5fb2ed;padding:11px 13px;border-radius:6px;min-height:40px}#accountInfo{line-height:1.9;color:#d7e4f4;white-space:pre-wrap}
+.note{font-size:13px;color:#b6c8dd}.safety{border-color:#775f38}.safety strong{color:#ffcd78}
+[hidden]{display:none!important}
+</style></head><body><main>
+<a class="back" href="./index.html">← Về CWS AI Trade</a>
+<section><div class="brand">◆ CWS AI TRADE</div><h1>Kết nối MT5 DEMO</h1>
+<p>Đăng nhập Google Founder rồi xác minh tài khoản MT5 đã được cấp quyền. Mật khẩu chỉ gửi qua HTTPS tới API riêng; không đưa vào biểu đồ, GitHub hay ứng dụng đóng gói.</p>
+<span class="pill">DEMO · Chưa gửi lệnh</span>
+<div id="message" role="status" aria-live="polite">Đang kiểm tra kênh kết nối an toàn…</div>
+<button id="googleLogin" type="button">Đăng nhập Google Founder</button>
+<button id="logout" class="secondary" type="button" hidden>Đóng phiên đăng nhập</button>
+</section>
+<section id="privatePanel" hidden>
+<h2>Tài khoản DEMO</h2><div id="accountInfo">Đang xác minh trạng thái…</div>
+<form id="demoForm" autocomplete="off">
+<label for="mt5Login">Số tài khoản MT5 đã liên kết</label><input id="mt5Login" name="login" inputmode="numeric" pattern="[0-9]*" required autocomplete="off" placeholder="Số tài khoản DEMO">
+<label for="mt5Server">Máy chủ</label><input id="mt5Server" name="server" value="MetaQuotes-Demo" readonly>
+<label for="mt5Password">Mật khẩu giao dịch DEMO</label><input id="mt5Password" name="password" type="password" minlength="4" maxlength="32" required autocomplete="new-password">
+<button id="verifyDemo" type="submit">Xác minh kết nối DEMO (không đặt lệnh)</button>
+</form>
+</section>
+<section class="safety"><h2>Kiểm soát giao dịch</h2>
+<p><strong>LIVE-MONEY: LOCKED</strong><br><strong>Auto Trade: CHƯA KÍCH HOẠT</strong></p>
+<p class="note">Tài khoản MT5 xác thực thành công không tự bật chiến lược. AI phải qua quyền dữ liệu, OOS/walk-forward, thử nghiệm demo, Risk Engine, kill-switch và The5ers gate trước khi Auto Trade được phép hoạt động.</p>
+</section><small>Trang đăng nhập độc lập: không tải script TradingView, JSZip hoặc các chương sách private.</small>
+</main><script src="./founder-mt5.js" defer></script></body></html>

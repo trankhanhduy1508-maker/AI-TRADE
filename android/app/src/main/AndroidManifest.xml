@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <uses-permission android:name="android.permission.INTERNET" />
+    <!-- Sideloader-only updater: Android always obtains explicit installation consent. -->
+    <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
+    <application android:allowBackup="false"
+                 android:usesCleartextTraffic="false"
+                 android:label="@string/app_name"
+                 android:icon="@drawable/ic_launcher"
+                 android:theme="@style/AppTheme"
+                 android:supportsRtl="true">
+        <activity android:name=".MainActivity" android:exported="true"
+                  android:windowSoftInputMode="adjustResize">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+        <activity android:name=".Mt5ConnectActivity"
+                  android:exported="true"
+                  android:windowSoftInputMode="adjustResize" />
+        <!-- External Android browser OAuth callback only; never use WebView for Google OAuth. -->
+        <activity android:name=".DemoLoginActivity"
+                  android:exported="true"
+                  android:launchMode="singleTask"
+                  android:windowSoftInputMode="adjustResize">
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="vn.cws.aitrade"
+                      android:host="auth"
+                      android:pathPrefix="/callback/" />
+            </intent-filter>
+        </activity>
+        <provider android:name=".NativeUpdateProvider"
+                  android:authorities="vn.cws.aitrade.release"
+                  android:exported="false"
+                  android:grantUriPermissions="true" />
+    </application>
+</manifest>

@@ -1,0 +1,20 @@
+[
+  {
+    "name": "trade-tick",
+    "cron": "*/5 * * * *",
+    "handler": "tradeCronHandler",
+    "timezone": "UTC",
+    "payload": {
+      "source": "appdeploy-cron"
+    }
+  },
+  {
+    "name": "paper-forward",
+    "cron": "15 */6 * * *",
+    "handler": "paperForwardCronHandler",
+    "timezone": "UTC",
+    "payload": {
+      "source": "paper-research"
+    }
+  }
+]

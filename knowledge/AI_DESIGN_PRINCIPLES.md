@@ -2,16 +2,24 @@
 
 Tài liệu này đề xuất kiến trúc AI Trading cho dự án, dựa trên bảng so sánh 12 trường phái và triết lý cốt lõi của AI-TRADE (Reaction, Trend Following, Price Action/Market Structure, quản lý rủi ro trên cùng).
 
+> **Provenance boundary (P0):** Đây là tài liệu thiết kế của AI-TRADE, không phải
+> bản tóm tắt nguyên văn của Michael Covel. Các nguyên tắc author material và
+> nguồn primary research được đăng ký tại
+> `knowledge/COVEL_TREND_FOLLOWING_PROVENANCE.md`; HH/HL, BOS/CHoCH, EMA, volume,
+> timeframe và mọi threshold trong tài liệu này là `IMPLEMENTATION_DERIVATION`
+> hoặc `UNVERIFIED` cho tới khi có backtest riêng.
+
 ---
 
 ## KIẾN TRÚC ĐƯỢC ĐỀ XUẤT
 
 ### Lõi chính: Trend Following + Market Structure
 
-**Lý do:**
+**Lý do (implementation derivation, không phải tham số Covel):**
 - Dễ tự động hóa (HH/HL, BOS/CHoCH là quy tắc khách quan)
 - Cao độ khách quan, thấp phụ thuộc cảm tính
-- Hoạt động trên mọi thị trường, mọi timeframe
+- Có thể nghiên cứu đa thị trường/timeframe, nhưng không được khẳng định hoạt
+  động trên mọi thị trường/timeframe nếu chưa có kiểm chứng riêng
 - Nền tảng của TF_001_BREAKOUT_PULLBACK.md và TF_002_TRENDLINE_REACTION.md đã có
 
 ### Lớp xác nhận bổ sung: Volume + Price Action + EMA bias

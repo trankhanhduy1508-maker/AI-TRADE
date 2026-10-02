@@ -1,0 +1,149 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#0b1422">
+  <meta name="referrer" content="no-referrer">
+  <link rel="manifest" href="/functions/v1/cws-ai-trade-site/app/?asset=manifest.webmanifest">
+  <link rel="icon" type="image/png" sizes="192x192" href="/functions/v1/cws-ai-trade-site/app/?asset=icon-192.png">
+  <link rel="apple-touch-icon" href="/functions/v1/cws-ai-trade-site/app/?asset=icon-192.png">
+  <title>CWS AI Trade · Founder</title>
+  <link rel="stylesheet" href="?asset=styles.css">
+</head>
+<body>
+<div class="app">
+  <header class="topbar">
+    <div class="brand"><span class="brand-icon">◆</span><div><strong>CWS <em>AI TRADE</em></strong><small>Duy Trần · Founder CWS</small></div></div>
+    <nav class="main-nav" aria-label="Điều hướng">
+      <button class="nav active" data-view="dashboard">▥ <span>Giao dịch</span></button>
+      <button class="nav" data-view="portfolio">▤ <span>Danh mục</span></button>
+      <button class="nav" data-view="book">▧ <span>Sách &amp; kiến thức</span></button>
+      <button class="nav" data-view="chat">▣ <span>AI Chat</span></button>
+    </nav>
+    <div class="top-right"><button id="pwaInstallBtn" class="install-button" type="button" hidden>⬇ Cài ứng dụng</button><span class="status" id="overallStatus">● Chế độ đọc</span><button class="menu-btn" id="menuBtn" type="button" aria-label="Bật tắt bảng điều khiển">☰</button></div>
+  </header>
+
+  <div class="workspace">
+    <aside class="sidebar" id="sidebar">
+      <div class="side-inner">
+        <div class="side-caption">BẢNG ĐIỀU KHIỂN</div>
+        <label for="symbolSelect">Cặp giao dịch</label>
+        <select id="symbolSelect" aria-label="Chọn cặp giao dịch">
+          <option>EURUSD</option><option>GBPUSD</option><option>USDJPY</option>
+          <option>AUDUSD</option><option>NZDUSD</option><option>USDCAD</option>
+          <option>USDCHF</option><option>XAUUSD</option><option>BTCUSD</option>
+          <option>ETHUSD</option><option>USOIL</option><option>US30</option>
+          <option>NAS100</option><option>US500</option><option>EURJPY</option><option>XAGUSD</option>
+        </select>
+        <div class="price-number" id="sidePrice">—</div>
+        <div class="muted micro" id="sideMarketStatus">Đang kiểm tra dữ liệu công khai…</div>
+        <hr>
+        <span class="side-label">Khung thời gian</span>
+        <div class="timeframes" id="timeframes">
+          <button data-tf="15m">M15</button><button data-tf="30m">M30</button>
+          <button data-tf="1h" class="active">H1</button><button data-tf="4h">H4</button>
+          <button data-tf="1d">D1</button>
+        </div>
+        <hr>
+        <span class="side-label">Tình trạng hệ thống</span>
+        <div class="safety-item"><span>● Giao diện</span><b>Hoạt động</b></div>
+        <div class="safety-item"><span>● Sách Masterbook</span><b id="bookBadge">Đang tải</b></div>
+        <div class="safety-item"><span>● CWS Trading Engine</span><b class="warning">CHƯA CÓ MODEL ĐƯỢC DUYỆT</b></div>
+        <div class="safety-item"><span>● Broker</span><b>Chưa kết nối</b></div>
+        <div class="safety-item"><span>● Live money</span><b class="warning">KHÓA</b></div>
+        <div class="safety-info">Bản này chỉ đọc dữ liệu công khai và phân tích kiến thức. Không gửi lệnh BUY/SELL, không điều khiển MT5.</div>
+        
+      </div>
+    </aside>
+
+    <main class="main-area">
+      <div class="page-heading">
+        <div><h1>CWS AI Trade</h1><p id="sourceDescription">Dữ liệu giá công khai · Vị thế chưa kết nối</p></div>
+        <span class="chip" id="dataChip">ĐỌC / PHÂN TÍCH</span>
+      </div>
+
+      <div id="pwaInstallHint" class="pwa-install-hint" hidden>Trên Android, mở trực tiếp Web App bằng Chrome, chọn menu ⋮ → Cài đặt ứng dụng hoặc Thêm vào màn hình chính.</div>
+
+      <section class="summary" aria-label="Tổng hợp P/L">
+        <article class="metric gain"><span>Tổng lãi</span><strong id="totalGain">—</strong><small>Vị thế đang mở</small></article>
+        <article class="metric loss"><span>Tổng lỗ</span><strong id="totalLoss">—</strong><small>Vị thế đang mở</small></article>
+        <article class="metric net"><span>Lãi/lỗ ròng</span><strong id="netPL">—</strong><small>Không cộng vị thế thiếu P/L</small></article>
+        <article class="metric count"><span>Số cặp có vị thế</span><strong id="pairCount">—</strong><small>Chỉ tính các vị thế được xác minh hoặc nhập</small></article>
+      </section>
+
+      <div id="view-dashboard" class="view active">
+        <div class="dashboard-grid">
+          <section class="panel chart-panel">
+            <div class="panel-heading"><h2>Biểu đồ <span id="chartSymbol">EURUSD</span></h2><div class="heading-right"><span class="pill" id="chartTf">H1</span><span class="pill source-pill">TradingView</span></div></div>
+            <div id="chartMessage" class="chart-message">Đang kết nối TradingView…</div>
+            <canvas id="priceChart" role="img" aria-label="Biểu đồ dự phòng" style="display:none"></canvas>
+            <div id="hostedChart" class="hosted-chart" aria-label="Biểu đồ TradingView, dữ liệu của bên thứ ba">Biểu đồ tương tác cần kết nối mạng.</div>
+            <div class="chart-footer"><span id="chartUpdated">Chưa có dữ liệu</span><span>Widget bên thứ ba · Không phải tín hiệu giao dịch</span></div>
+          </section>
+          <section class="panel portfolio-panel">
+            <div class="panel-heading"><h2>Danh mục giao dịch (16 cặp)</h2><span class="pill" id="portfolioSource">Chưa kết nối</span></div>
+            <div class="table-wrap"><table><thead><tr><th>Cặp</th><th>Hướng</th><th>Lot</th><th>P/L</th></tr></thead><tbody id="portfolioRows"></tbody></table></div>
+            <div class="portfolio-total"><span>TỔNG LÃI/LỖ RÒNG</span><strong id="portfolioNet">—</strong></div>
+          </section>
+        </div>
+        <div class="below-grid">
+          <section class="panel compact-panel" id="modelResearchPanel" aria-label="Trạng thái mô hình CWS Trading Engine">
+            <div class="panel-heading"><h2>CWS Trading Engine</h2><span class="pill" id="modelResearchStatus">MODEL_NOT_APPROVED</span></div>
+            <p>Đã có thử nghiệm máy học nghiên cứu nội bộ, nhưng <strong>CHƯA CÓ MODEL ĐƯỢC PHÊ DUYỆT</strong> để sử dụng trong sản phẩm.</p>
+            <p class="muted">Tín hiệu: ABSTAIN · Gate: LOCKED · Chỉ đọc. Không có model production, không gửi lệnh BUY/SELL và không thay đổi Risk/The5ers gate.</p>
+            <p class="muted micro">Model production: — · Dataset được duyệt: — · OOS/WF cho production: Chưa đạt</p>
+          </section>
+          <section class="panel compact-panel">
+            <div class="panel-heading"><h2>Nguồn dữ liệu vị thế</h2></div>
+            <p class="muted">Web App không truy cập dữ liệu broker khi chưa có phiên xác thực hợp lệ. Có thể nạp tệp JSON để xem tổng hợp ngay trong trình duyệt; dữ liệu không được tải lên máy chủ.</p>
+            <a class="founder-link" href="./mt5-login.html">🔐 Kết nối MT5 DEMO bằng Google Founder</a>
+            <label class="file-trigger" for="positionInput">▤ Nạp JSON vị thế <input type="file" id="positionInput" accept=".json,application/json"></label>
+            <button class="secondary" id="sampleToggle" type="button">Xem thử bằng dữ liệu MINH HỌA</button>
+            <details class="schema"><summary>Định dạng JSON được hỗ trợ</summary><code>[{"symbol":"EURUSD","side":"BUY","lot":0.1,"floatingPL":12.5}]</code></details>
+          </section>
+          <section class="panel compact-panel">
+            <div class="panel-heading"><h2>Kiến thức đã tích hợp</h2><span class="pill">Không cần API key</span></div>
+            <p>Masterbook của Duy Trần: setup, trigger, invalidation, sizing, giữ winner, OOS, walk-forward, spread, slippage và những lần CWS kiểm thử thất bại.</p>
+            <button class="primary" data-view="chat" type="button">Hỏi AI về kiến thức giao dịch ↗</button>
+          </section>
+        </div>
+      </div>
+
+      <section id="view-portfolio" class="view panel">
+        <div class="panel-heading"><h2>Danh mục tổng hợp theo cặp</h2><span class="pill" id="portfolioModeTag">Chưa kết nối</span></div>
+        <p class="muted">Mỗi cặp chỉ có một dòng. Nhiều vị thế cùng cặp được cộng tổng Lot và P/L. Hướng trái chiều sẽ hiện HỖN HỢP. Thiếu một Lot hoặc P/L thì tổng tương ứng là —.</p>
+        <div class="portfolio-detail" id="portfolioDetails"></div>
+      </section>
+
+      <section id="view-book" class="view panel">
+        <div class="panel-heading"><h2>CWS Trading Masterbook</h2><span class="pill">Duy Trần · Founder CWS</span></div>
+        <p>Tra cứu kiến thức gốc trong trình duyệt. Bản đúc kết công khai được nạp tự động; nạp thêm EPUB của bạn để tra cứu toàn bộ các chương. Không gửi EPUB lên máy chủ.</p>
+        <label class="file-trigger" for="bookInput">▧ Nạp sách EPUB vào AI <input type="file" id="bookInput" accept=".epub,application/epub+zip"></label>
+        <div class="book-storage"><label><input id="saveBookOnDevice" type="checkbox"> Lưu kiến thức sách trên thiết bị để tra cứu ngoại tuyến</label><button class="secondary book-clear" id="clearSavedBook" type="button" hidden>Xóa sách đã lưu</button></div>
+        <span class="muted micro" id="bookUploadStatus">Chưa nạp EPUB đầy đủ</span>
+        <div class="searchline"><input id="bookQuery" placeholder="Tìm breakout, quản lý rủi ro, slippage…" aria-label="Tìm kiến thức"><button id="bookSearch" class="primary" type="button">Tìm trong sách</button></div>
+        <div id="bookResults" class="results"></div>
+      </section>
+
+      <section id="view-chat" class="view panel chat-panel">
+        <div class="panel-heading"><h2>AI Chat · CWS Trading Masterbook</h2><span class="pill">TRA CỨU CỤC BỘ</span></div>
+        <div class="chat-note">Chế độ này tìm và trích đúng nội dung sách, không phải mô hình ChatGPT và không tự phán đoán lệnh. Nút “Hỏi ChatGPT” chuyển câu hỏi kèm nguồn sang tài khoản ChatGPT của bạn.</div>
+        <div class="conversation" id="conversation" role="log" aria-live="polite">
+          <div class="message bot">Bạn có thể hỏi về breakout, stop loss, sizing, backtest, bài học của Larry Hite, Mark Minervini hoặc những thử nghiệm CWS. Nguồn tài liệu sẽ hiện ngay dưới câu trả lời.</div>
+        </div>
+        <form id="chatForm" class="chat-form"><input id="chatInput" autocomplete="off" aria-label="Câu hỏi của bạn" placeholder="Hỏi về bài học, một chiến lược, quản lý lệnh…" required><button class="primary" type="submit">Tra cứu</button></form>
+        <div class="chat-actions"><button class="secondary" type="button" id="copyForChatGPT">Sao chép câu hỏi + nguồn</button><a href="https://chatgpt.com/plugins/plugins_6aba1b6ee1fc8191a5c446b1558538d3" id="cwsKnowledgePlugin" target="_blank" rel="noopener noreferrer">Kết nối CWS AI Trade Knowledge ↗</a><a href="https://chatgpt.com/" id="openChatGPT" target="_blank" rel="noopener noreferrer">Mở ChatGPT ↗</a></div>
+      </section>
+
+      <footer>© CWS AI TRADE · Web App/PWA độc lập · Google Sites chưa xuất bản · Chỉ nghiên cứu · Không giao dịch thật.</footer>
+    </main>
+  </div>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js" defer></script>
+<script src="?asset=portfolio.js" defer></script>
+<script src="?asset=tradingview.js" defer></script>
+<script src="?asset=app.js" defer></script>
+<script src="?asset=pwa.js" defer></script>
+</body>
+</html>

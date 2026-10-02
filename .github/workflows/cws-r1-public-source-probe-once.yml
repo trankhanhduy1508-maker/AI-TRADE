@@ -1,0 +1,64 @@
+name: CWS R1 public native H4 source one-shot connectivity
+
+on:
+  push:
+    branches: [codex/p0-covel-knowledge-audit]
+    paths:
+      - '.github/workflows/cws-r1-public-source-probe-once.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: cws-r1-public-readonly-probe
+  cancel-in-progress: false
+
+jobs:
+  readonly-source:
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    steps:
+      - name: Checkout triggering SHA only
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 1
+      - name: Round 1 - Smoke source and import audit
+        run: |
+          set -euo pipefail
+          test "$GITHUB_REF_NAME" = "codex/p0-covel-knowledge-audit"
+          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+          python3 -m compileall -q scripts/probe_blind_r1_public_sources.py
+          python3 - <<'PY'
+          import ast
+          from pathlib import Path
+          t=ast.parse(Path("scripts/probe_blind_r1_public_sources.py").read_text())
+          forbidden={"MetaTrader5","ccxt","metaapi_cloud_sdk","subprocess","socket"}
+          modules=set()
+          for n in ast.walk(t):
+              if isinstance(n,ast.Import):
+                  modules.update(x.name.split(".")[0] for x in n.names)
+              elif isinstance(n,ast.ImportFrom) and n.module:
+                  modules.add(n.module.split(".")[0])
+          assert not modules & forbidden,modules & forbidden
+          print("SMOKE_READONLY_IMPORT_AUDIT_PASS")
+          PY
+          python3 scripts/probe_blind_r1_public_sources.py --self-test
+      - name: Round 2 - Runtime actual public GET integrity only
+        run: |
+          set -euo pipefail
+          python3 scripts/probe_blind_r1_public_sources.py --probe
+          echo "RUNTIME_AT_LEAST_ONE_REAL_SOURCE_RESPONDED"
+      - name: Round 3 - Fault regression (never open R0 holdout)
+        if: always()
+        run: |
+          set -euo pipefail
+          python3 scripts/probe_blind_r1_public_sources.py --self-test
+          echo "FAULT_BAD_OHLC_REJECTED"
+          echo "RESEARCH_ONLY_NO_SOURCE_PRICE_OR_ORDER_RECORDED"
+      - name: Log tested source SHA
+        if: always()
+        run: |
+          git rev-parse HEAD
+          git status --porcelain
+          echo "NO_LIVE_DEMO_SEND; NO_INDEPENDENT_FORWARD_EDGE"

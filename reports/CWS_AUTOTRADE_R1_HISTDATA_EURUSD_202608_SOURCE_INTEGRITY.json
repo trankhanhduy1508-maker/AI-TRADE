@@ -1,0 +1,65 @@
+{
+  "account_or_broker_orders": 0,
+  "actual_derived_h4_count": 93,
+  "bid_only": true,
+  "csv_sha256": "3060c51484d3f6882fb4c2fd468673e827a07657cd3708ee31bae08f83226991",
+  "data_license_and_long_term_retention": "NOT_AUDITED",
+  "direct_download_links_seen": 0,
+  "download_attempts": 1,
+  "execution_fees": "UNAVAILABLE",
+  "form_methods": [
+    "POST",
+    "POST",
+    "POST",
+    "POST"
+  ],
+  "h4_rejected": 35,
+  "holdout_opened": false,
+  "html_sha256": "dbbc9ec5aa4bb6ea164986db79b85d52ad7d5d3f4bbb623e20e175a1e5de9f6f",
+  "independent_forward_trades": 0,
+  "m1_count": 30496,
+  "normal_public_form_used": true,
+  "provider_status_txt_sha256": "96f6ca517c2ff0d612496aed7352e126b47f6a72075a14b2dc7e09f038ab1a53",
+  "public_form_selection": {
+    "date": "2026",
+    "datemonth": "202608",
+    "fxpair": "EURUSD",
+    "platform": "ASCII",
+    "timeframe": "M1"
+  },
+  "public_zip_filename_advertised": true,
+  "purpose": "SOURCE_FEASIBILITY_ONLY_NO_BACKTEST",
+  "raw_prices_publicly_stored": false,
+  "raw_source_bytes_persisted": false,
+  "source_month": "202608",
+  "source_native_h4": false,
+  "source_page": "https://www.histdata.com/download-free-forex-historical-data/?/ascii/1-minute-bar-quotes/eurusd/2026/8",
+  "status": "REAL_FILE_DERIVED_H4_INTEGRITY_ONLY",
+  "symbol": "EURUSD",
+  "zip_entry_metadata": [
+    {
+      "filename": "DAT_ASCII_EURUSD_M1_202608.csv",
+      "is_directory": false,
+      "uncompressed_size": 1646784
+    },
+    {
+      "filename": "DAT_ASCII_EURUSD_M1_202608.txt",
+      "is_directory": false,
+      "uncompressed_size": 16793
+    }
+  ],
+  "zip_sha256": "65c7c5d0f170abf4a60b86908723ef5068ccec7aa3c76baefbe8542f87eed5b3",
+  "evidence": {
+    "run_url": "https://github.com/trankhanhduy1508-maker/AI-TRADE/actions/runs/36576897674",
+    "job_id": 109434728440,
+    "tested_sha": "b54b3ef660839fc3e7e8b8122ac331b713fc88d2",
+    "raw_provider_bytes_in_git": false,
+    "raw_csv_saved": false,
+    "full_month_historical_source_only": true,
+    "independent_forward_observations": 0,
+    "verified_broker_fees": false,
+    "market_data_licence_and_retention_unverified": true,
+    "prereg_source_commit": "3f860f001c6f1b6672a76bf28bb5c71425045e4e"
+  },
+  "conclusion": "REAL HISTDATA M1 SOURCE INTEGRITY PASS; DERIVED H4 PROXY ONLY; NO STRATEGY OR ACCOUNT-RETURN CLAIM"
+}

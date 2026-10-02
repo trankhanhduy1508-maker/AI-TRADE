@@ -13,6 +13,59 @@ tới `backtests/`).
 
 ---
 
+## H007 result update - 2026-08-22
+
+- Evidence: `backtests/TF004_FX_IS_OOS_2026-08-22.md`.
+- Test: fixed TF-004 channel-trailing comparison, chronological 70/30 IS/OOS,
+  three FX symbols, daily and hourly samples, with no retuning after the run.
+- Result: two of six OOS partitions were positive and four were negative after
+  the fixed research cost proxy. Hourly trade counts increased materially
+  relative to TF-003; all six ended with an open position at the boundary.
+- Conclusion: H007 remains **unvalidated**. The result does not establish
+  robust performance or live readiness.
+
+## H007 - A channel-trailing exit improves trend-following persistence versus a fixed target
+
+- **Nguồn gốc:** `strategies/TF_004_TIME_SERIES_CHANNEL.md`, derived from the
+  `TF-COV-003` exit philosophy boundary in
+  `knowledge/COVEL_TREND_FOLLOWING_PROVENANCE.md`.
+- **Trạng thái:** Chưa kiểm chứng.
+- **Kết luận:** (sẽ cập nhật sau backtest cố định; không retune sau kết quả)
+
+## H006 result update - 2026-08-22
+
+- Evidence: `backtests/TF003_FX_IS_OOS_2026-08-22.md`.
+- Test: fixed TF-003 time-series momentum baseline, chronological 70/30
+  IS/OOS, three FX symbols, daily and hourly samples, with no retuning after
+  the run.
+- Result: three of six OOS partitions were positive and three were negative
+  after the fixed research cost proxy. All six ended with an open position at
+  the data boundary.
+- Conclusion: H006 remains **unvalidated**. The mixed result is a comparison
+  signal, not evidence of live profitability or evidence against Trend
+  Following generally.
+
+## H006 - A simple time-series momentum translation can provide a robust trend signal
+
+- **Nguồn gốc:** `strategies/TF_003_TIME_SERIES_MOMENTUM.md`, supported as an
+  independent empirical prior by `knowledge/COVEL_TREND_FOLLOWING_PROVENANCE.md`
+  (`TF-PR-001`).
+- **Trạng thái:** Chưa kiểm chứng.
+- **Kết luận:** Xem `backtests/TF003_FX_IS_OOS_2026-08-22.md`; mixed preliminary
+  OOS result, no uniform validation pass.
+
+## H001 result update - 2026-08-22
+
+- Evidence: `backtests/TF001_FX_IS_OOS_2026-08-22.md`.
+- Test: fixed TF-001 implementation, chronological 70/30 IS/OOS, three FX
+  symbols, daily and hourly samples, with no parameter tuning after the run.
+- Result: daily samples produced zero qualifying trades. Hourly OOS net
+  price-unit PnL was negative for EURUSD, GBPUSD, and USDJPY after the declared
+  fixed research cost proxy.
+- Conclusion: H001 remains **unvalidated** for this implementation and data
+  source. This is not evidence against Trend Following generally; it is
+  evidence against claiming this exact translation passed OOS.
+
 ## H001 — Pullback sau breakout cho tỷ lệ lời/lỗ tốt hơn vào ngay tại breakout
 
 - **Nguồn gốc:** `strategies/TF_001_BREAKOUT_PULLBACK.md`.

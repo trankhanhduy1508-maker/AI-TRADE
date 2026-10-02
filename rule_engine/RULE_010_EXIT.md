@@ -57,7 +57,7 @@ giữ lệnh. Đây là quy tắc **quản lý lệnh**, không phải phát hi�
 - Xu hướng vẫn tiếp tục theo lệnh → hình thành new swing low (setup LONG) hay swing high (setup
   SHORT).
 - **Hành động:** Dời SL tới điểm thấp/cao mới của nhịp pullback hoặc breakout tiếp theo.
-- **Quy tắc dời:** SL luôn dời **cùng hướng với lợi nhuận**, không được dời lại gần entry hơn.
+- **Quy tắc dời:** SL chỉ được ratchet theo hướng **giảm rủi ro/bảo vệ lợi nhuận**. Long: SL mới >= SL cũ. Short: SL mới <= SL cũ. Không bao giờ nới SL ra xa theo hướng tăng rủi ro.
 - **Ưu tiên:** Trung — để lợi chạy, bảo vệ lợi nhuận tích lũy.
 
 ### 5.5 HOLD
@@ -68,6 +68,18 @@ giữ lệnh. Đây là quy tắc **quản lý lệnh**, không phải phát hi�
 - Giá chạm profit target được định sẵn (ví dụ ATR x 2).
 - Hoặc: Chốt từng phần (ví dụ: 50% ở target 1, 25% ở target 2).
 - **Hành động:** Chốt lời theo plan.
+
+---
+
+### 5.7 GỒNG LỜI / LET_WINNER_RUN
+
+"Gồng lệnh" trong AI-TRADE được chuẩn hóa thành **gồng lời, không gồng lỗ**:
+
+- Nếu vị thế đang đúng hướng và chưa có exit signal -> `HOLD`.
+- Trailing stop chỉ ratchet theo hướng giảm rủi ro.
+- Có thể `PYRAMID_WINNER` nếu strategy cho phép, nhưng add-on phải qua Risk Engine và giới hạn tổng exposure.
+- Không martingale, không tăng lot để gỡ thua, không DCA ngược xu hướng.
+- Không được bỏ hoặc nới protective SL chỉ vì kỳ vọng giá sẽ quay lại.
 
 ---
 

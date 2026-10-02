@@ -1,0 +1,85 @@
+plugins { id 'com.android.application' }
+def cwsReleaseSpki = providers.gradleProperty('cwsReleasePublicKeySpkiBase64').getOrElse('')
+if (cwsReleaseSpki && !(cwsReleaseSpki ==~ /[A-Za-z0-9+\/=]+/)) {
+    throw new GradleException('Malformed external release public key')
+}
+def cwsMt5BridgeBaseUrl = providers.gradleProperty('cwsMt5BridgeBaseUrl').getOrElse('https://oziktadfeenydvgobudr.supabase.co/functions/v1/ai-trade-mt5-session')
+if (cwsMt5BridgeBaseUrl && (!cwsMt5BridgeBaseUrl.startsWith('https://') || cwsMt5BridgeBaseUrl.endsWith('/'))) {
+    throw new GradleException('cwsMt5BridgeBaseUrl must be an HTTPS origin without trailing slash')
+}
+android {
+    namespace 'vn.cws.aitrade'
+    compileSdk 36
+    defaultConfig {
+        applicationId 'vn.cws.aitrade'
+        minSdk 26
+        targetSdk 36
+        versionCode 6
+        versionName '0.6.0-demo-direct'
+        buildConfigField 'String', 'CWS_RELEASE_PUBLIC_KEY_SPKI_B64', '"' + cwsReleaseSpki + '"'
+        buildConfigField 'String', 'CWS_MT5_BRIDGE_BASE_URL', '"' + cwsMt5BridgeBaseUrl + '"'
+    }
+    buildFeatures { buildConfig true }
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+}
+
+/*
+ * Generate the SAME audited first-party HTML/CSS/JS bundle for every Android
+ * variant before asset merging. No APK build is triggered by this task alone.
+ * Keep generated files under the module's existing src/main/assets path so
+ * WebView's getAssets().open("www/...") can never silently ship a blank UI.
+ */
+def cwsProjectRoot = rootProject.projectDir.parentFile
+def cwsSource = file("${cwsProjectRoot}/google-sites/cws-ai-trade")
+def cwsAssets = file("${projectDir}/src/main/assets/www")
+def prepareCwsAndroidAssets = tasks.register('prepareCwsAndroidAssets', Exec) {
+    workingDir cwsProjectRoot
+    executable providers.gradleProperty("cwsPython").getOrElse("python3")
+    args 'scripts/build_cws_trade_static.py',
+         '--base', '/assets/',
+         '--android',
+         '--output', 'android/app/src/main/assets/www'
+    inputs.files fileTree(cwsSource) {
+        include 'index.html', 'styles.css', 'portfolio.js',
+                'tradingview.js', 'app.js', 'pwa.js', 'sw.js',
+                'manifest.webmanifest', 'mt5-login.html', 'founder-mt5.js'
+    }
+    inputs.file file("${cwsProjectRoot}/scripts/build_cws_trade_static.py")
+    outputs.dir cwsAssets
+    doLast {
+        def required = [
+            'index.html', 'styles.css', 'portfolio.js', 'tradingview.js',
+            'app.js', 'pwa.js', 'sw.js', 'manifest.webmanifest',
+            'icon-192.png', 'icon-512.png'
+        ]
+        required.each { name ->
+            if (!file("${cwsAssets}/${name}").isFile()) {
+                throw new GradleException("CWS Android missing required offline asset: ${name}")
+            }
+        }
+        // The two Web-only MT5 files are not reachable inside the WebView,
+        // and must not be mistaken for the native Google PKCE flow.
+        def allowedFiles = required + ['mt5-login.html', 'founder-mt5.js', '.nojekyll']
+        def produced = fileTree(cwsAssets).files.collect { it.name }
+        if (produced.sort() != allowedFiles.sort()) {
+            throw new GradleException("CWS Android generated bundle has unexpected files")
+        }
+    }
+}
+// AGP asset tasks do not always depend on preBuild when invoked in isolation.
+tasks.configureEach { task ->
+    if (task.name == 'preBuild' || task.name.matches('merge.+Assets')) {
+        task.dependsOn prepareCwsAndroidAssets
+    }
+}
+
+// No production APK without external Founder signing and full evidence gate.
+apply from: rootProject.file('release-signing.gradle')
+
+
+dependencies {
+    implementation 'com.squareup.okhttp3:okhttp:4.12.0'
+}

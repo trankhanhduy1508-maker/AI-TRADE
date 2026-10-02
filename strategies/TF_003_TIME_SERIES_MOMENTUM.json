@@ -1,0 +1,26 @@
+{
+  "strategy_id": "TF-003-TIME-SERIES-MOMENTUM",
+  "version": "0.1.0",
+  "market": "UNCOMMITTED",
+  "timeframe": "UNCOMMITTED",
+  "risk_mode": "SIGNAL_ONLY",
+  "signal_model": "TIME_SERIES_MOMENTUM",
+  "lookback_bars": 20,
+  "entry_timing": "CLOSE",
+  "stop_lookback_bars": 5,
+  "stop_buffer_price": 0.0,
+  "reward_risk": 1.5,
+  "score_threshold": 80,
+  "spread_pips": 2.0,
+  "slippage_price": 0.0,
+  "position_policy": "ONE_OPEN",
+  "ambiguous_bar_policy": "STOP_FIRST",
+  "provenance": {
+    "trend_following_principles": "VERIFIED_FROM_AUTHOR",
+    "time_series_momentum_empirical_prior": "VERIFIED_FROM_PRIMARY_RESEARCH",
+    "signal_translation": "IMPLEMENTATION_DERIVATION",
+    "lookback_and_stop_parameters": "IMPLEMENTATION_DERIVATION",
+    "market_and_timeframe": "UNVERIFIED",
+    "cost_model": "UNVERIFIED"
+  }
+}

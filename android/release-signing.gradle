@@ -1,0 +1,57 @@
+/*
+ * Release signer is Founder-owned and injected by the authorized build host.
+ * This file contains no keystore, password, private key or permission bypass.
+ * Source-only and debug compilation do not require release material.
+ */
+def repositoryRoot = rootProject.projectDir.parentFile.canonicalFile
+def releaseVars = System.getenv()
+def pinnedSpki = providers.gradleProperty('cwsReleasePublicKeySpkiBase64').getOrElse('')
+def requiredReleaseVars = [
+    'CWS_ANDROID_RELEASE_STORE_FILE',
+    'CWS_ANDROID_RELEASE_STORE_PASSWORD',
+    'CWS_ANDROID_RELEASE_KEY_ALIAS',
+    'CWS_ANDROID_RELEASE_KEY_PASSWORD'
+]
+def haveSigner = requiredReleaseVars.every { releaseVars[it] != null && !releaseVars[it].isEmpty() }
+if (haveSigner) {
+    android.signingConfigs.create('cwsRelease') {
+        storeFile file(releaseVars['CWS_ANDROID_RELEASE_STORE_FILE'])
+        storePassword releaseVars['CWS_ANDROID_RELEASE_STORE_PASSWORD']
+        keyAlias releaseVars['CWS_ANDROID_RELEASE_KEY_ALIAS']
+        keyPassword releaseVars['CWS_ANDROID_RELEASE_KEY_PASSWORD']
+    }
+    android.buildTypes.release.signingConfig = android.signingConfigs.cwsRelease
+}
+
+def releaseGate = tasks.register('verifyCwsReleasePrerequisites') {
+    group = 'verification'
+    description = 'Fail closed before packaging any production/recovery APK.'
+    doLast {
+        if (releaseVars['CWS_ANDROID_RELEASE_OWNER_APPROVED'] != 'true'
+            || !haveSigner
+            || pinnedSpki.length() < 300) {
+            throw new GradleException('Founder release authorization and external signing are required')
+        }
+        def keystore = file(releaseVars['CWS_ANDROID_RELEASE_STORE_FILE']).canonicalFile
+        if (!keystore.isFile() || keystore.toPath().startsWith(repositoryRoot.toPath())) {
+            throw new GradleException('Release keystore must exist outside the Git checkout')
+        }
+        if (!new File(repositoryRoot, 'product/CWS_AI_TRADE_RELEASE_APPROVAL.json').isFile()) {
+            throw new GradleException('Verified release approval evidence is missing')
+        }
+        def command = ['python3', 'scripts/check_android_release_gate.py']
+        def process = new ProcessBuilder(command)
+            .directory(repositoryRoot)
+            .redirectErrorStream(true)
+            .start()
+        def diagnostic = process.inputStream.getText('UTF-8')
+        if (process.waitFor() != 0) {
+            throw new GradleException('Founder release evidence gate rejected the build: ' + diagnostic)
+        }
+    }
+}
+tasks.configureEach { task ->
+    if (task.name in ['assembleRelease', 'bundleRelease', 'packageRelease']) {
+        task.dependsOn releaseGate
+    }
+}

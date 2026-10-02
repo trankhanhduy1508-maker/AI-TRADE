@@ -1,0 +1,55 @@
+# Read genuine provider ZIP with its one expected CSV and one sidecar TXT, no raw upload.
+# Diagnose real public ZIP member names and sizes; no raw price output.
+# One free official form submission, no PayPal/paid FTP, no raw data upload.
+# One normal GET DOM-form-schema inspection: no POST or ZIP download.
+name: CWS R1 HistData public free ZIP normal-link probe once
+
+on:
+  push:
+    branches: [codex/p0-covel-knowledge-audit]
+    paths:
+      - '.github/workflows/cws-r1-histdata-public-zip-probe-once.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: cws-r1-histdata-one-shot-free-page
+  cancel-in-progress: false
+
+jobs:
+  normal-public-download-only:
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    steps:
+      - name: Exact branch commit checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 1
+      - name: Smoke approved source and syntax
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+          test "$GITHUB_REF_NAME" = "codex/p0-covel-knowledge-audit"
+          test -s research/CWS_AUTOTRADE_R1_M1_DERIVED_H4_SOURCE_REGISTRATION_2026-09-29.md
+          python3 -m compileall -q scripts/inspect_histdata_public_zip_once.py src/data_loader/histdata_m1_h4.py
+          PYTHONPATH=. python3 -m unittest discover -s tests/data_loader -p 'test_histdata_m1_h4.py' -q
+          echo "SMOKE_PASS SYNTHETIC_ONLY"
+      - name: Runtime ordinary free-page GET and exact public get.php form if needed
+        run: |
+          set -euo pipefail
+          PYTHONPATH=. python3 scripts/inspect_histdata_public_zip_once.py --probe
+          echo "RUNTIME_STATUS_IS_JSON; NORMAL_LINK_ONLY_NO_CLAIM_IF_UNAVAILABLE"
+      - name: Fault no fabricated data or strategy inspection
+        if: always()
+        run: |
+          set -euo pipefail
+          PYTHONPATH=. python3 -m unittest discover -s tests/data_loader -p 'test_histdata_m1_h4.py' -q
+          echo "FAULT_NO_FILL_PASS SYNTHETIC_ONLY; R0_HOLDOUT_NOT_READ"
+      - name: Record immutable tested commit
+        if: always()
+        run: |
+          git rev-parse HEAD
+          git status --porcelain
+          echo "NO_PAID_FTP_NO_CAPTCHA_BYPASS_NO_ACCOUNT_ORDER_SEND"
