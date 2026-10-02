@@ -34,7 +34,9 @@ type RequestBody = {
   first_name?: string;
   second_name?: string;
   email?: string;
+  phone?: string;
   email_code?: number | string;
+  phone_code?: number | string;
 };
 
 function json(body: unknown, status = 200) {
@@ -270,7 +272,9 @@ function buildBasePayload(
   firstName: string,
   secondName: string,
   email: string,
+  phone: string,
   emailCode: number,
+  phoneCode: number,
 ): Buffer {
   const fullName = [firstName, secondName].filter(Boolean).join(" ");
   return Buffer.concat([
@@ -282,7 +286,7 @@ function buildBasePayload(
     fixedString("", 64),
     fixedString("", 32),
     fixedString("", 256),
-    fixedString("", 64),
+    fixedString(phone.slice(0, 32), 64),
     fixedString(email.slice(0, 64), 128),
     f64(100000),
     u32(100),
@@ -292,7 +296,7 @@ function buildBasePayload(
     fixedString("mt5-demo-bootstrap", 64),
     fixedString("ai-trade-cloud", 64),
     u32(emailCode),
-    u32(0),
+    u32(phoneCode),
     fixedString(firstName.slice(0, 64), 128),
     fixedString(secondName.slice(0, 64), 128),
     u32(1),
@@ -639,7 +643,7 @@ async function callSelf(payload: Record<string, unknown>) {
   return { httpStatus: response.status, body: parsed };
 }
 
-async function openDemoWithTempMailbox() {
+async function openDemoWithTempMailbox(phone: string) {
   const existing = await getVerifiedDemoSummary();
   if (existing) {
     return {
@@ -660,6 +664,7 @@ async function openDemoWithTempMailbox() {
     first_name: "AI",
     second_name: "Trade",
     email: mailbox.address,
+    phone,
   });
 
   if (
@@ -704,6 +709,7 @@ async function openDemoWithTempMailbox() {
     first_name: "AI",
     second_name: "Trade",
     email: mailbox.address,
+    phone,
     email_code: verificationCode,
   });
 
@@ -726,8 +732,26 @@ Deno.serve(async (req) => {
   const body = await req.json().catch(() => ({})) as RequestBody;
 
   if (body.mode === "open_demo_temp") {
+    const phone = String(body.phone ?? "").trim();
+    if (!phone) {
+      return json({
+        ok: false,
+        status: "PHONE_INPUT_REQUIRED",
+        brokerOrders: false,
+        liveMoneyLocked: true,
+      }, 400);
+    }
+    if (!/^\+[1-9]\d{7,14}$/.test(phone)) {
+      return json({
+        ok: false,
+        status: "INVALID_PHONE_FORMAT",
+        phoneStored: false,
+        brokerOrders: false,
+        liveMoneyLocked: true,
+      }, 400);
+    }
     try {
-      return json(await openDemoWithTempMailbox());
+      return json(await openDemoWithTempMailbox(phone));
     } catch (e) {
       return json({
         ok: false,
@@ -769,9 +793,11 @@ Deno.serve(async (req) => {
   const firstName = aliasMode ? "AI" : String(body.first_name ?? "").trim();
   const secondName = aliasMode ? "Trade" : String(body.second_name ?? "").trim();
   const email = aliasMode ? "" : String(body.email ?? "").trim().toLowerCase();
+  const phone = aliasMode ? "" : String(body.phone ?? "").trim();
   const emailCode = Number(body.email_code ?? 0);
+  const phoneCode = Number(body.phone_code ?? 0);
 
-  if (!firstName || !secondName || (!aliasMode && (!email || !email.includes("@")))) {
+  if (!firstName || !secondName || (!aliasMode && (!email || !email.includes("@") || !phone))) {
     return json({
       ok: false,
       status: "IDENTITY_INPUT_REQUIRED",
@@ -779,8 +805,20 @@ Deno.serve(async (req) => {
       liveMoneyLocked: true,
     }, 400);
   }
+  if (!aliasMode && !/^\+[1-9]\d{7,14}$/.test(phone)) {
+    return json({
+      ok: false,
+      status: "INVALID_PHONE_FORMAT",
+      phoneStored: false,
+      brokerOrders: false,
+      liveMoneyLocked: true,
+    }, 400);
+  }
   if (!Number.isInteger(emailCode) || emailCode < 0) {
     return json({ ok: false, status: "INVALID_EMAIL_CODE" }, 400);
+  }
+  if (!Number.isInteger(phoneCode) || phoneCode < 0) {
+    return json({ ok: false, status: "INVALID_PHONE_CODE" }, 400);
   }
 
   const cid = await clientId(email);
@@ -799,7 +837,7 @@ Deno.serve(async (req) => {
       }, 502);
     }
 
-    const base = buildBasePayload(firstName, secondName, email, emailCode);
+    const base = buildBasePayload(firstName, secondName, email, phone, emailCode, phoneCode);
 
     if (!emailCode && !aliasMode) {
       const verificationPayload = Buffer.concat([
