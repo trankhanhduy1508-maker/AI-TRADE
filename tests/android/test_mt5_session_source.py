@@ -45,3 +45,9 @@ class AndroidMt5Source(unittest.TestCase):
         self.assertNotIn('savedPassword',STORE)
     def test_masking(self):
         self.assertIn("maskLogin",CONTRACT); self.assertIn("••••",CONTRACT)
+
+    def test_backend_contract_and_client_trace_headers(self):
+        self.assertIn("value.length() < 4", CONTRACT)
+        self.assertIn("value.length() > 32", CONTRACT)
+        self.assertIn('"X-CWS-Client","android-native-mt5"', ACT)
+        self.assertIn('"X-CWS-Client-Version",BuildConfig.VERSION_NAME', ACT)
