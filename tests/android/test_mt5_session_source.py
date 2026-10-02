@@ -31,12 +31,14 @@ class AndroidMt5Source(unittest.TestCase):
     def test_response_fails_closed_on_order_flags(self):
         self.assertIn('reply.optBoolean("order_send_enabled",true)',ACT)
         self.assertIn('reply.optInt("orders_sent",-1)!=0',ACT)
-    def test_opaque_session_only(self):
+    def test_opaque_legacy_session_restore_and_direct_login(self):
         self.assertIn("sessionId=token",ACT)
         self.assertNotIn("String savedPassword",ACT)
-        self.assertIn("encryptedSession.save(token)",ACT)
+        self.assertNotIn("encryptedSession.save(token)",ACT)
         self.assertIn("restoreSession()",ACT)
         self.assertIn('request("GET","/mt5/session/account"',ACT)
+        self.assertIn("NativeMt5DirectClient",ACT)
+        self.assertIn("Password không gửi qua Supabase",ACT)
 
     def test_mt5_session_store_uses_keystore_not_password(self):
         self.assertIn("AndroidKeyStore",STORE)
