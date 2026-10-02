@@ -260,3 +260,20 @@ Founder yêu cầu thực hiện theo đúng thứ tự:
 - Không random human-like delay, fake mouse/keyboard, fingerprint spoofing hoặc bypass anti-abuse.
 - Bootcamp challenge demo execution chưa được unlock.
 - Funded/live-money execution vẫn hard locked và là gate riêng.
+
+
+---
+
+## Decision 2026-10-02 — Render.com chỉ làm việc tối thiểu
+
+Founder chốt:
+- Render.com là tài nguyên phụ, phải giao ít việc nhất có thể.
+- Không dùng Render làm nơi lưu file/storage bền vững hoặc source of truth.
+- Không giữ session/state/order intent/kill switch/audit quan trọng chỉ trên Render.
+- Storage dùng lớp chuyên dụng; state/database ưu tiên Supabase/Postgres.
+- Render ưu tiên stateless, request ngắn, run-once; không keep-alive để chống sleep.
+- Không tạo service trùng; kiểm connector/service hiện có trước.
+- Auto-deploy mặc định OFF nếu không có quyết định riêng.
+- AutoTrade: Render không phải trading brain và không có quyền tự mở execution gate.
+
+Chi tiết: `docs/CWS_RENDER_MINIMAL_USAGE_POLICY_2026-10-02.md`.
