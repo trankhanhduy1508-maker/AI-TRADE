@@ -325,3 +325,19 @@
 - Physical Android direct broker login on v0.6.0-demo-direct: NOT_YET_PASS.
 - AutoTrade: OFF; live money: LOCKED; orders_sent remains 0.
 - Detail: `research/CWS_AUTOTRADE_MT5_DIRECT_ANDROID_RECOVERY_2026-10-02.md`.
+
+
+---
+
+## 2026-10-02 — MT5 login root cause + pymt5 fallback
+
+- Founder DEMO credential tested directly on PC with pinned pymt5: 4/4 login handshake variants PASS (LOGIN_CODE=0).
+- Android/Supabase raw verifier evidence: 3 attempts, broker_login_code=3, input lengths intact.
+- Root issue narrowed to raw Deno/npm-ws verifier path, not credential entry.
+- New Free Render service `cws-mt5-verify-free`: stateless, no storage, no DB, no polling, auto-deploy OFF.
+- Vault -> Render pymt5 -> MetaQuotes E2E: PASS / DEMO_VERIFIED.
+- `ai-trade-mt5-demo-validate` runtime v6: raw verifier first, Render pymt5 fallback only after direct login rejection.
+- Existing REAL_DEMO_SESSION_E2E regression: PASS.
+- Live money: LOCKED.
+- AutoTrade orders: still fail-closed / orders_sent=0.
+- Full evidence: `research/CWS_AUTOTRADE_MT5_LOGIN_PYMT5_FALLBACK_CHECKPOINT_2026-10-02.md`.
