@@ -19,6 +19,7 @@ CHECKS = (
     ("NativeSessionCodec", "NativeSessionCodecCheck", "encrypted-session"),
     ("NativeUpdatePolicy", "NativeUpdatePolicyCheck", "apk-update-policy"),
     ("NativePortfolioSummary", "NativePortfolioSummaryCheck", "broker-portfolio"),
+    ("NativeMt5ClipboardParser", "NativeMt5ClipboardParserCheck", "mt5-clipboard"),
 )
 
 

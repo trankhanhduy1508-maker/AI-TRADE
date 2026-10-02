@@ -5,10 +5,11 @@ ROOT=Path(__file__).parents[2]
 ACT=(ROOT/"android/app/src/main/java/vn/cws/aitrade/Mt5ConnectActivity.java").read_text()
 CONTRACT=(ROOT/"android/app/src/main/java/vn/cws/aitrade/NativeMt5SessionContract.java").read_text()
 STORE=(ROOT/"android/app/src/main/java/vn/cws/aitrade/NativeMt5EncryptedSession.java").read_text()
+PARSER=(ROOT/"android/app/src/main/java/vn/cws/aitrade/NativeMt5ClipboardParser.java").read_text()
 
 class AndroidMt5Source(unittest.TestCase):
     def test_required_fields_and_controls(self):
-        for term in ["Broker / MT5 Server","Login / Account Number","Password","Hiện mật khẩu","Tự động ghi nhớ đăng nhập (mã hóa)","KẾT NỐI MT5","Disconnect"]:
+        for term in ["Broker / MT5 Server","Login / Account Number","Password","DÁN TỪ MT5","Hiện mật khẩu","Tự động ghi nhớ đăng nhập (mã hóa)","KẾT NỐI MT5","Disconnect"]:
             self.assertIn(term,ACT)
 
     def test_broker_is_selected_not_typed(self):
@@ -54,3 +55,7 @@ class AndroidMt5Source(unittest.TestCase):
         self.assertIn("demo_autotrade_blockers", ACT)
         self.assertIn("AutoTrade DEMO: BLOCKED", ACT)
         self.assertIn("onResume()", ACT)
+        self.assertIn("ClipboardManager", ACT)
+        self.assertIn("NativeMt5ClipboardParser.parse", ACT)
+        self.assertIn("MetaQuotes-Demo", PARSER)
+        self.assertNotIn("SharedPreferences", PARSER)

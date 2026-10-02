@@ -1,6 +1,8 @@
 package vn.cws.aitrade;
 
 import android.app.Activity;
+import android.content.ClipData;
+import android.content.ClipboardManager;
 import android.os.Bundle;
 import android.text.InputType;
 import android.view.WindowManager;
@@ -69,6 +71,11 @@ public final class Mt5ConnectActivity extends Activity {
 
         login=input(form,"Login / Account Number",InputType.TYPE_CLASS_NUMBER);
         password=input(form,"Password",InputType.TYPE_CLASS_TEXT|InputType.TYPE_TEXT_VARIATION_PASSWORD);
+
+        Button pasteFromMt5=new Button(this);
+        pasteFromMt5.setText("DÁN TỪ MT5");
+        pasteFromMt5.setOnClickListener(v->pasteFromMt5());
+        form.addView(pasteFromMt5);
 
         showPassword=new CheckBox(this);
         showPassword.setText("Hiện mật khẩu");
@@ -181,6 +188,29 @@ public final class Mt5ConnectActivity extends Activity {
         if(autoTradeReadiness!=null) refreshBrokerCatalog();
     }
 
+    private void pasteFromMt5(){
+        ClipboardManager clipboard=(ClipboardManager)getSystemService(CLIPBOARD_SERVICE);
+        if(clipboard==null||!clipboard.hasPrimaryClip()){
+            status.setText("Clipboard trống. Trong MT5 hãy bấm biểu tượng Copy rồi quay lại đây.");
+            return;
+        }
+        ClipData clip=clipboard.getPrimaryClip();
+        if(clip==null||clip.getItemCount()<1){
+            status.setText("Clipboard không có dữ liệu MT5.");
+            return;
+        }
+        CharSequence raw=clip.getItemAt(0).coerceToText(this);
+        NativeMt5ClipboardParser.Result parsed=NativeMt5ClipboardParser.parse(
+            raw==null?"":raw.toString());
+        if(!parsed.valid()){
+            status.setText("Không đọc được Login + Password MT5 hợp lệ từ clipboard.");
+            return;
+        }
+        login.setText(parsed.login);
+        password.setText(parsed.password);
+        status.setText("Đã dán thông tin MT5. Chưa gửi lên server. Bấm KẾT NỐI MT5.");
+    }
+
     private EditText input(LinearLayout form,String hint,int type){
         EditText out=new EditText(this);
         out.setHint(hint);
@@ -204,7 +234,6 @@ public final class Mt5ConnectActivity extends Activity {
         final String secret=password.getText().toString();
         final boolean persist=true;
         final String previousSession=sessionId;
-        password.setText("");
         if(!NativeMt5SessionContract.validServer(host)
             || !NativeMt5SessionContract.validLogin(accountLogin)
             || !NativeMt5SessionContract.validPassword(secret)){
@@ -250,6 +279,7 @@ public final class Mt5ConnectActivity extends Activity {
                 sessionId=token;
                 runOnUiThread(()->{
                     if(op!=generation) return;
+                    password.setText("");
                     account.setText(display);
                     status.setText("CONNECTED_READ_ONLY".equals(state)
                         ?"Đã kết nối READ_ONLY. AutoTrade: OFF."
@@ -263,7 +293,8 @@ public final class Mt5ConnectActivity extends Activity {
                 runOnUiThread(()->{
                     if(op!=generation) return;
                     account.setText("Disconnected\nDEMO\nBalance: —\nEquity: —\nAutoTrade: OFF");
-                    status.setText("Kết nối thất bại: "+safeError(error));
+                    status.setText("Kết nối thất bại: "+safeError(error)
+                        +". Có thể dùng DÁN TỪ MT5 để tránh gõ sai.");
                     connect.setEnabled(bridgeConfigured());
                     disconnect.setEnabled(false);
                     autoTrade.setEnabled(false);
