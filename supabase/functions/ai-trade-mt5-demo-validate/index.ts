@@ -178,8 +178,7 @@ Deno.serve(async(req)=>{
   const requested=typeof body.login==="string"?body.login.trim():"";
   const fullReadback=body.readback==="investor_snapshot";
   const direct=body.readback==="founder_verify";
-  const fallbackSelftest=body.readback==="render_fallback_selftest";
-  if((body.readback!==undefined&&!fullReadback&&!direct&&!fallbackSelftest)
+  if((body.readback!==undefined&&!fullReadback&&!direct)
       ||(direct&&(!requested||typeof body.verifyPassword!=="string"
         ||body.verifyPassword.length<4||body.verifyPassword.length>32
         ||/[\u0000-\u001F\u007F]/.test(body.verifyPassword)))
@@ -233,31 +232,11 @@ Deno.serve(async(req)=>{
 
   const row=rows[0];
   const login=BigInt(row.login);
-  const password=String((direct
-    ? body.verifyPassword
-    : fullReadback
-    ? row.investor_password
-    : row.password)??"");
+  const password=String((direct?body.verifyPassword:(fullReadback?row.investor_password:row.password))??"");
   if(!password)return json({ok:false,status:fullReadback
     ?"MISSING_INVESTOR_ONLY_CREDENTIAL":direct
     ?"INVALID_DEMO_REQUEST":"MISSING_DECRYPTED_PASSWORD",
     verified:false,brokerOrders:false,liveMoneyLocked:true},503);
-
-  if(fallbackSelftest){
-    const fallback=await renderPymt5Fallback(login,password);
-    if(!fallback){
-      return json({
-        ok:false,status:"RENDER_FALLBACK_E2E_FAIL",verified:false,
-        brokerOrders:false,liveMoneyLocked:true
-      },503);
-    }
-    return json({
-      ok:true,status:"RENDER_FALLBACK_E2E_PASS",verified:true,
-      server:"MetaQuotes-Demo",mode:"DEMO",
-      source:"RENDER_PYMT5_FALLBACK",
-      brokerOrders:false,liveMoneyLocked:true
-    });
-  }
 
   const c=new Client();
   try{
