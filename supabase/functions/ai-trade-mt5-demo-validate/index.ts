@@ -40,7 +40,18 @@ function initPayload(cid:Uint8Array){
     fixedUtf16("",128),u32le(0),fixedUtf16("",256),u64le(0)
   );
 }
+async function buildClientId(){
+  const uniq=new Uint8Array(3);
+  crypto.getRandomValues(uniq);
+  const uniqText=String((uniq[0]<<16)|(uniq[1]<<8)|uniq[2]);
+  const source=new TextEncoder().encode(
+    ["deno","1","en-US","0x0",uniqText].join(";")
+  );
+  const digest=new Uint8Array(await crypto.subtle.digest("SHA-1",source));
+  return digest.slice(0,16);
+}
 function loginPayload(login:bigint,password:string,cid:Uint8Array){
+  const webUrl="web.metatrader.app";
   return concat(
     u32le(0),
     fixedUtf16(password.slice(0,32),64),
@@ -50,8 +61,8 @@ function loginPayload(login:bigint,password:string,cid:Uint8Array){
     fixedUtf16("",64),
     u64le(0),
     fixedUtf16("",128),
-    u32le(0),
-    fixedUtf16("",256),
+    u32le(webUrl.length),
+    fixedUtf16(webUrl,256),
     u64le(login),
     new Uint8Array(160),
     u64le(0)
@@ -196,10 +207,9 @@ Deno.serve(async(req)=>{
     if(![16,24,32].includes(sessionKey.length))return json({ok:false,status:"BAD_SESSION_KEY",verified:false,keyLength:sessionKey.length});
     c.key=sessionKey;
 
-    const cid=randomBytes(16);
-    const init=await c.command(29,initPayload(cid));
-    if(init.code!==0)return json({ok:false,status:"INIT_FAILED",code:init.code,verified:false});
-
+    const cid=await buildClientId();
+    // Pinned pymt5 live evidence uses bootstrap -> login directly.
+    // cmd=29 is not part of the successful MetaQuotes-Demo login path.
     const loginResult=await c.command(28,loginPayload(login,password,cid));
     if(loginResult.code!==0)return json({ok:true,status:"LOGIN_REJECTED",login:login.toString(),loginCode:loginResult.code,verified:false,brokerOrders:false,liveMoneyLocked:true});
 
