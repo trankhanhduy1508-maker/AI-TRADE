@@ -171,6 +171,18 @@ async function connect(req:Request){
       ? "SERVER_NOT_FOUND"
       : "BRIDGE_UNAVAILABLE";
     const lastLoginCode=loginCodes.length?loginCodes[loginCodes.length-1]:null;
+    if(mapped==="INVALID_LOGIN_OR_PASSWORD"){
+      const details={
+        verification_attempts:verificationAttempts,
+        broker_login_code:lastLoginCode,
+        login_digits:String(login).length,
+        password_length:suppliedPassword.length,
+        client:String(req.headers.get("x-cws-client")??"").slice(0,64),
+        client_version:String(req.headers.get("x-cws-client-version")??"").slice(0,64)
+      };
+      await sql`insert into ai_trade.events(event_type,result,details)
+        values('mt5_login_rejected','LOGIN_REJECTED',${JSON.stringify(details)}::jsonb)`;
+    }
     return json({
       status:safeError(mapped),
       verification_attempts:verificationAttempts,
