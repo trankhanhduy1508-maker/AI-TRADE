@@ -180,15 +180,15 @@ public final class Mt5ConnectActivity extends Activity {
         final String secret=password.getText().toString();
         final boolean persist=true;
         final String previousSession=sessionId;
-        sessionId="";
-        try{ encryptedSession.clear(); }catch(Exception ignored){ }
         password.setText("");
         if(!NativeMt5SessionContract.validServer(host)
             || !NativeMt5SessionContract.validLogin(accountLogin)
             || !NativeMt5SessionContract.validPassword(secret)){
-            status.setText("Thông tin kết nối không hợp lệ. AutoTrade: OFF.");
+            status.setText("Thông tin kết nối không hợp lệ. Login 5–15 số, password 4–32 ký tự. AutoTrade: OFF.");
             return;
         }
+        sessionId="";
+        try{ encryptedSession.clear(); }catch(Exception ignored){ }
         connect.setEnabled(false);
         disconnect.setEnabled(false);
         status.setText("Đang kết nối MT5 DEMO…");
@@ -348,6 +348,9 @@ public final class Mt5ConnectActivity extends Activity {
     }
 
     private static String safeError(Exception error){
+        if(error instanceof java.net.SocketTimeoutException) return "NETWORK_TIMEOUT";
+        if(error instanceof java.net.UnknownHostException) return "NETWORK_DNS_FAILED";
+        if(error instanceof java.net.ConnectException) return "BRIDGE_UNAVAILABLE";
         String message=error.getMessage();
         if(message!=null && message.matches("[A-Z0-9_]{3,64}")) return message;
         return "REQUEST_FAILED";
@@ -364,6 +367,8 @@ public final class Mt5ConnectActivity extends Activity {
         c.setRequestMethod(method);
         c.setRequestProperty("Accept","application/json");
         c.setRequestProperty("Cache-Control","no-store");
+        c.setRequestProperty("X-CWS-Client","android-native-mt5");
+        c.setRequestProperty("X-CWS-Client-Version",BuildConfig.VERSION_NAME);
         if(bearer!=null) c.setRequestProperty("Authorization","Bearer "+bearer);
         try{
             if(body!=null){
