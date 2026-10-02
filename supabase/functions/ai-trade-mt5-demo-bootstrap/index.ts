@@ -1,394 +1,949 @@
 import postgres from "npm:postgres@3.4.9";
-import WebSocket from "npm:ws@8.18.3";
+import WebSocket from "npm:ws@8.18.0";
+import { Buffer } from "node:buffer";
+import {
+  createCipheriv,
+  createDecipheriv,
+  randomBytes,
+} from "node:crypto";
 
-const sql=postgres(Deno.env.get("SUPABASE_DB_URL")!,{
-  prepare:false,max:1,connect_timeout:10,idle_timeout:20
+const sql = postgres(Deno.env.get("SUPABASE_DB_URL")!, {
+  prepare: false,
+  max: 1,
+  connect_timeout: 10,
+  idle_timeout: 20,
 });
 
-const WS_URI="wss://web.metatrader.app/terminal";
-const INITIAL_KEY_HEX="02de02a1a65cc794684fcbea1ecb0fd74ae657e43662c11eee885d2fd64f4964";
+const WS_URI = "wss://web.metatrader.app/terminal";
+const ORIGIN = "https://web.metatrader.app";
+const INITIAL_KEY_OBFUSCATED =
+  "13ef13b2b76dd8:5795gdcfb2fdc1ge85bf768f54773d22fff996e3ge75g5:75";
 
-const CMD_BOOTSTRAP=0;
-const CMD_VERIFY_CODE=27;
-const CMD_INIT=29;
-const CMD_OPEN_DEMO=30;
+const CMD_BOOTSTRAP = 0;
+const CMD_GET_ACCOUNT = 3;
+const CMD_VERIFY_CODE = 27;
+const CMD_LOGIN = 28;
+const CMD_INIT = 29;
+const CMD_OPEN_DEMO = 30;
+const CMD_SEND_VERIFY_CODES = 40;
 
-const enc=new TextEncoder();
+type Frame = { command: number; code: number; body: Buffer };
 
-function json(body:unknown,status=200){
-  return new Response(JSON.stringify(body),{
-    status,headers:{"content-type":"application/json; charset=utf-8"}
+type RequestBody = {
+  mode?: "transport_probe" | "open_demo" | "open_demo_alias" | "open_demo_temp";
+  first_name?: string;
+  second_name?: string;
+  email?: string;
+  email_code?: number | string;
+};
+
+function json(body: unknown, status = 200) {
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: { "content-type": "application/json; charset=utf-8" },
   });
 }
 
-async function authorized(req:Request){
-  const rows=await sql`select secret from ai_trade.cron_auth where id=1`;
-  const expected=String(rows[0]?.secret??"");
-  return Boolean(expected)&&(req.headers.get("x-ai-trade-cron")??"")===expected;
+async function authorized(req: Request) {
+  const rows = await sql`select secret from ai_trade.cron_auth where id=1`;
+  const expected = String(rows[0]?.secret ?? "");
+  return Boolean(expected) &&
+    (req.headers.get("x-ai-trade-cron") ?? "") === expected;
 }
 
-function concat(...parts:Uint8Array[]){
-  const len=parts.reduce((n,p)=>n+p.length,0);
-  const out=new Uint8Array(len);
-  let o=0;
-  for(const p of parts){out.set(p,o);o+=p.length;}
-  return out;
-}
-
-function u16le(v:number){const b=new Uint8Array(2);new DataView(b.buffer).setUint16(0,v,true);return b;}
-function i16le(v:number){const b=new Uint8Array(2);new DataView(b.buffer).setInt16(0,v,true);return b;}
-function u32le(v:number){const b=new Uint8Array(4);new DataView(b.buffer).setUint32(0,v>>>0,true);return b;}
-function u64le(v:number|bigint){
-  const b=new Uint8Array(8);
-  new DataView(b.buffer).setBigUint64(0,BigInt(v),true);
-  return b;
-}
-function f64le(v:number){const b=new Uint8Array(8);new DataView(b.buffer).setFloat64(0,v,true);return b;}
-
-function hexToBytes(hex:string){
-  const out=new Uint8Array(hex.length/2);
-  for(let i=0;i<out.length;i++)out[i]=parseInt(hex.slice(i*2,i*2+2),16);
-  return out;
-}
-
-function fixedUtf16(value:string,size:number){
-  const out=new Uint8Array(size);
-  const s=value.slice(0,Math.floor(size/2));
-  for(let i=0;i<s.length;i++){
-    const code=s.charCodeAt(i);
-    out[i*2]=code&255;
-    out[i*2+1]=(code>>>8)&255;
+function decodeInitialKey(): Buffer {
+  let decoded = "";
+  for (const ch of INITIAL_KEY_OBFUSCATED) {
+    const code = ch.charCodeAt(0);
+    if (code === 28) decoded += "&";
+    else if (code === 23) decoded += "!";
+    else decoded += String.fromCharCode(code - 1);
   }
-  return out;
+  return Buffer.from(decoded, "hex");
 }
 
-function readUtf16(data:Uint8Array){
-  let s="";
-  for(let i=0;i+1<data.length;i+=2){
-    const c=data[i]|(data[i+1]<<8);
-    if(c===0)break;
-    s+=String.fromCharCode(c);
-  }
-  return s;
+function encrypt(key: Buffer, data: Buffer): Buffer {
+  const cipher = createCipheriv(
+    key.length === 32 ? "aes-256-cbc" : key.length === 24 ? "aes-192-cbc" : "aes-128-cbc",
+    key,
+    Buffer.alloc(16),
+  );
+  return Buffer.concat([cipher.update(data), cipher.final()]);
 }
 
-function randomBytes(n:number){
-  const b=new Uint8Array(n);
-  crypto.getRandomValues(b);
+function decrypt(key: Buffer, data: Buffer): Buffer {
+  const decipher = createDecipheriv(
+    key.length === 32 ? "aes-256-cbc" : key.length === 24 ? "aes-192-cbc" : "aes-128-cbc",
+    key,
+    Buffer.alloc(16),
+  );
+  return Buffer.concat([decipher.update(data), decipher.final()]);
+}
+
+function u16(v: number): Buffer {
+  const b = Buffer.alloc(2);
+  b.writeUInt16LE(v, 0);
   return b;
 }
 
-async function importAes(key:Uint8Array){
-  return crypto.subtle.importKey("raw",key,{name:"AES-CBC"},false,["encrypt","decrypt"]);
+function i16(v: number): Buffer {
+  const b = Buffer.alloc(2);
+  b.writeInt16LE(v, 0);
+  return b;
 }
 
-async function aesEncrypt(key:Uint8Array,data:Uint8Array){
-  const k=await importAes(key);
-  return new Uint8Array(await crypto.subtle.encrypt(
-    {name:"AES-CBC",iv:new Uint8Array(16)},k,data
-  ));
+function u32(v: number): Buffer {
+  const b = Buffer.alloc(4);
+  b.writeUInt32LE(v >>> 0, 0);
+  return b;
 }
 
-async function aesDecrypt(key:Uint8Array,data:Uint8Array){
-  const k=await importAes(key);
-  return new Uint8Array(await crypto.subtle.decrypt(
-    {name:"AES-CBC",iv:new Uint8Array(16)},k,data
-  ));
+function u64(v: number | bigint): Buffer {
+  const b = Buffer.alloc(8);
+  b.writeBigUInt64LE(BigInt(v), 0);
+  return b;
 }
 
-function commandInner(cmd:number,payload:Uint8Array){
-  return concat(randomBytes(2),u16le(cmd),payload);
+function f64(v: number): Buffer {
+  const b = Buffer.alloc(8);
+  b.writeDoubleLE(v, 0);
+  return b;
 }
 
-function outerFrame(encrypted:Uint8Array){
-  return concat(u32le(encrypted.length),u32le(1),encrypted);
+function fixedString(value: string, size: number): Buffer {
+  const out = Buffer.alloc(size);
+  const raw = Buffer.from(value, "utf16le");
+  raw.subarray(0, size).copy(out);
+  return out;
 }
 
-function initPayload(cid:Uint8Array){
-  return concat(
-    u32le(0),
-    fixedUtf16("",64),
-    fixedUtf16("",128),
-    cid,
-    fixedUtf16("",64),
-    fixedUtf16("",64),
-    u64le(0),
-    fixedUtf16("",128),
-    u32le(0),
-    fixedUtf16("",256),
-    u64le(0)
-  );
+function fixedBytes(value: Buffer, size: number): Buffer {
+  const out = Buffer.alloc(size);
+  value.subarray(0, size).copy(out);
+  return out;
 }
 
-type Opening={
-  firstName:string;
-  secondName:string;
-  email:string;
-  emailCode:number;
-};
-
-function openingBase(r:Opening){
-  const full=[r.firstName,r.secondName].filter(Boolean).join(" ");
-  return concat(
-    fixedUtf16(full,256),
-    fixedUtf16("",128),
-    fixedUtf16("",64),
-    fixedUtf16("VN",64),
-    fixedUtf16("",64),
-    fixedUtf16("",64),
-    fixedUtf16("",32),
-    fixedUtf16("",256),
-    fixedUtf16("",64),
-    fixedUtf16(r.email,128),
-    f64le(100000),
-    u32le(100),
-    u32le(0),
-    u32le(1),
-    fixedUtf16("web.metatrader.app",128),
-    fixedUtf16("mt5-demo-bootstrap",64),
-    fixedUtf16("ai-trade-cloud",64),
-    u32le(r.emailCode),
-    u32le(0),
-    fixedUtf16(r.firstName,128),
-    fixedUtf16(r.secondName,128),
-    u32le(1)
-  );
+function decodeFixedString(value: Buffer): string {
+  let end = 0;
+  while (end + 1 < value.length) {
+    if (value[end] === 0 && value[end + 1] === 0) break;
+    end += 2;
+  }
+  return value.subarray(0, end).toString("utf16le");
 }
 
-class Mt5Socket{
-  ws:WebSocket;
-  key:Uint8Array;
+function commandPacket(command: number, payload = Buffer.alloc(0)): Buffer {
+  return Buffer.concat([randomBytes(2), u16(command), payload]);
+}
 
-  constructor(){
-    this.key=hexToBytes(INITIAL_KEY_HEX);
-    this.ws=new WebSocket(WS_URI,{
-      headers:{Origin:"https://web.metatrader.app"}
+function packOuter(encrypted: Buffer): Buffer {
+  const h = Buffer.alloc(8);
+  h.writeUInt32LE(encrypted.length, 0);
+  h.writeUInt32LE(1, 4);
+  return Buffer.concat([h, encrypted]);
+}
+
+function parseOuter(raw: Buffer): Buffer {
+  if (raw.length < 8) throw new Error("OUTER_FRAME_TOO_SHORT");
+  const n = raw.readUInt32LE(0);
+  if (n !== raw.length - 8) throw new Error("OUTER_FRAME_LENGTH_MISMATCH");
+  return raw.subarray(8);
+}
+
+function parseFrame(plain: Buffer): Frame {
+  if (plain.length < 5) throw new Error("INNER_FRAME_TOO_SHORT");
+  return {
+    command: plain.readUInt16LE(2),
+    code: plain.readUInt8(4),
+    body: plain.subarray(5),
+  };
+}
+
+class MT5Socket {
+  ws: WebSocket | null = null;
+  key = decodeInitialKey();
+  serverBuild = 0;
+  pending = new Map<number, {
+    resolve: (v: Frame) => void;
+    reject: (e: Error) => void;
+    timer: number;
+  }>();
+
+  async connect() {
+    await new Promise<void>((resolve, reject) => {
+      const ws = new WebSocket(WS_URI, {
+        headers: { Origin: ORIGIN },
+        perMessageDeflate: false,
+      });
+      this.ws = ws;
+      ws.binaryType = "arraybuffer";
+      ws.once("open", () => resolve());
+      ws.once("error", (e) => reject(e instanceof Error ? e : new Error(String(e))));
+      ws.on("message", (data) => {
+        try {
+          const raw = Buffer.isBuffer(data)
+            ? data
+            : Buffer.from(data as ArrayBuffer);
+          const encrypted = parseOuter(raw);
+          const plain = decrypt(this.key, encrypted);
+          const frame = parseFrame(plain);
+          const p = this.pending.get(frame.command);
+          if (p) {
+            clearTimeout(p.timer);
+            this.pending.delete(frame.command);
+            p.resolve(frame);
+          }
+        } catch (e) {
+          // Parsing failures are not surfaced with secret payloads.
+        }
+      });
+      ws.on("close", () => {
+        for (const [, p] of this.pending) {
+          clearTimeout(p.timer);
+          p.reject(new Error("WS_CLOSED"));
+        }
+        this.pending.clear();
+      });
+    });
+
+    const bootstrap = await this.send(CMD_BOOTSTRAP, Buffer.alloc(64), 15000);
+    if (bootstrap.code !== 0) throw new Error("BOOTSTRAP_CODE_" + bootstrap.code);
+    if (bootstrap.body.length < 98) {
+      throw new Error("BOOTSTRAP_BODY_TOO_SHORT_" + bootstrap.body.length);
+    }
+    this.serverBuild = bootstrap.body.readUInt16LE(0);
+    this.key = Buffer.from(bootstrap.body.subarray(66));
+    if (![16, 24, 32].includes(this.key.length)) {
+      throw new Error("BOOTSTRAP_KEY_LENGTH_" + this.key.length);
+    }
+  }
+
+  send(command: number, payload = Buffer.alloc(0), timeoutMs = 15000): Promise<Frame> {
+    if (!this.ws || this.ws.readyState !== WebSocket.OPEN) {
+      return Promise.reject(new Error("WS_NOT_OPEN"));
+    }
+    if (this.pending.has(command)) {
+      return Promise.reject(new Error("COMMAND_ALREADY_PENDING_" + command));
+    }
+    return new Promise<Frame>((resolve, reject) => {
+      const timer = setTimeout(() => {
+        this.pending.delete(command);
+        reject(new Error("COMMAND_TIMEOUT_" + command));
+      }, timeoutMs) as unknown as number;
+      this.pending.set(command, { resolve, reject, timer });
+      const inner = commandPacket(command, payload);
+      const encrypted = encrypt(this.key, inner);
+      this.ws!.send(packOuter(encrypted));
     });
   }
 
-  async open(){
-    await new Promise<void>((resolve,reject)=>{
-      const timer=setTimeout(()=>reject(new Error("WS_OPEN_TIMEOUT")),15000);
-      this.ws.once("open",()=>{clearTimeout(timer);resolve();});
-      this.ws.once("error",(e)=>{clearTimeout(timer);reject(e);});
-    });
+  close() {
+    try {
+      this.ws?.close();
+    } catch {}
   }
-
-  async command(cmd:number,payload=new Uint8Array()){
-    const encrypted=await aesEncrypt(this.key,commandInner(cmd,payload));
-    const frame=outerFrame(encrypted);
-
-    const response=new Promise<{cmd:number;code:number;body:Uint8Array}>((resolve,reject)=>{
-      const timer=setTimeout(()=>{
-        cleanup(); reject(new Error("CMD_"+cmd+"_TIMEOUT"));
-      },30000);
-
-      const onError=(e:unknown)=>{cleanup();reject(e);};
-      const onMessage=async(data:WebSocket.RawData)=>{
-        try{
-          const raw=data instanceof Uint8Array?new Uint8Array(data):new Uint8Array(data as ArrayBuffer);
-          if(raw.length<8)return;
-          const dv=new DataView(raw.buffer,raw.byteOffset,raw.byteLength);
-          const bodyLen=dv.getUint32(0,true);
-          if(bodyLen!==raw.length-8)return;
-          const decrypted=await aesDecrypt(this.key,raw.slice(8));
-          if(decrypted.length<5)return;
-          const rc=new DataView(decrypted.buffer,decrypted.byteOffset,decrypted.byteLength);
-          const responseCmd=rc.getUint16(2,true);
-          if(responseCmd!==cmd)return;
-          cleanup();
-          resolve({cmd:responseCmd,code:decrypted[4],body:decrypted.slice(5)});
-        }catch(e){cleanup();reject(e);}
-      };
-      const cleanup=()=>{
-        clearTimeout(timer);
-        this.ws.off("message",onMessage);
-        this.ws.off("error",onError);
-      };
-      this.ws.on("message",onMessage);
-      this.ws.on("error",onError);
-    });
-
-    this.ws.send(frame);
-    return response;
-  }
-
-  close(){try{this.ws.close();}catch{}}
 }
 
-async function storeDemo(
-  login:bigint,
-  password:string,
-  investorPassword:string,
-  serverBuild:number,
-  metadata:Record<string,unknown>
-){
+async function clientId(email: string): Promise<Buffer> {
+  const raw = new TextEncoder().encode("ai-trade-mt5-demo|" + email.toLowerCase());
+  const digest = await crypto.subtle.digest("SHA-256", raw);
+  return Buffer.from(digest).subarray(0, 16);
+}
+
+function buildInitPayload(cid: Buffer): Buffer {
+  return Buffer.concat([
+    u32(0),
+    fixedString("", 64),
+    fixedString("", 128),
+    fixedBytes(cid, 16),
+    fixedString("", 64),
+    fixedString("", 64),
+    u64(0),
+    fixedString("", 128),
+    u32(0),
+    fixedString("", 256),
+    u64(0),
+  ]);
+}
+
+function buildBasePayload(
+  firstName: string,
+  secondName: string,
+  email: string,
+  emailCode: number,
+): Buffer {
+  const fullName = [firstName, secondName].filter(Boolean).join(" ");
+  return Buffer.concat([
+    fixedString(fullName.slice(0, 128), 256),
+    fixedString("", 128),
+    fixedString("", 64),
+    fixedString("VN", 64),
+    fixedString("", 64),
+    fixedString("", 64),
+    fixedString("", 32),
+    fixedString("", 256),
+    fixedString("", 64),
+    fixedString(email.slice(0, 64), 128),
+    f64(100000),
+    u32(100),
+    u32(0),
+    u32(1),
+    fixedString("web.metatrader.app", 128),
+    fixedString("mt5-demo-bootstrap", 64),
+    fixedString("ai-trade-cloud", 64),
+    u32(emailCode),
+    u32(0),
+    fixedString(firstName.slice(0, 64), 128),
+    fixedString(secondName.slice(0, 64), 128),
+    u32(1),
+  ]);
+}
+
+function buildLoginPayload(login: bigint, password: string, cid: Buffer): Buffer {
+  return Buffer.concat([
+    u32(0),
+    fixedString(password.slice(0, 32), 64),
+    fixedString("", 128),
+    fixedBytes(cid, 16),
+    fixedString("", 64),
+    fixedString("", 64),
+    u64(0),
+    fixedString("", 128),
+    u32(0),
+    fixedString("", 256),
+    u64(login),
+    Buffer.alloc(160),
+    u64(0),
+  ]);
+}
+
+function parseOpenAccount(body: Buffer) {
+  if (body.length < 76) throw new Error("OPEN_ACCOUNT_RESPONSE_TOO_SHORT_" + body.length);
+  return {
+    code: body.readUInt32LE(0),
+    login: body.readBigInt64LE(4),
+    password: decodeFixedString(body.subarray(12, 44)),
+    investorPassword: decodeFixedString(body.subarray(44, 76)),
+  };
+}
+
+function parseAccountMain(body: Buffer) {
+  if (body.length < 739) throw new Error("ACCOUNT_RESPONSE_TOO_SHORT_" + body.length);
+  const accountType = body.readUInt8(0);
+  const rights = body.readInt32LE(1);
+  const balance = body.readDoubleLE(9);
+  const currency = decodeFixedString(body.subarray(25, 89));
+  const leverage = body.readUInt32LE(93);
+  const server = decodeFixedString(body.subarray(355, 483));
+  const company = decodeFixedString(body.subarray(483, 739));
+  return {
+    accountType,
+    balance,
+    currency,
+    leverage,
+    server,
+    company,
+    tradeAllowed: (rights & 4) === 0,
+    isReadOnly: (rights & 512) !== 0,
+    isDemo: accountType === 1,
+  };
+}
+
+async function verifyLogin(
+  login: bigint,
+  password: string,
+  cid: Buffer,
+) {
+  const c = new MT5Socket();
+  try {
+    await c.connect();
+    const logged = await c.send(CMD_LOGIN, buildLoginPayload(login, password, cid), 20000);
+    if (logged.code !== 0) throw new Error("LOGIN_CODE_" + logged.code);
+    const acct = await c.send(CMD_GET_ACCOUNT, Buffer.alloc(0), 20000);
+    if (acct.code !== 0) throw new Error("ACCOUNT_CODE_" + acct.code);
+    return parseAccountMain(acct.body);
+  } finally {
+    c.close();
+  }
+}
+
+async function persistVerified(
+  login: bigint,
+  password: string,
+  investorPassword: string,
+  email: string,
+  account: ReturnType<typeof parseAccountMain>,
+) {
   await sql`
-    insert into ai_trade.mt5_demo_accounts(
-      provider,server,login,password_cipher,investor_password_cipher,
-      server_build,account_mode,verified,metadata
+    insert into ai_trade.mt5_demo_credentials(
+      id,login,server,email,password_cipher,investor_password_cipher,
+      is_demo,verified,account_type,balance,currency,leverage,trade_allowed,
+      created_at,verified_at,updated_at
     )
-    values(
-      'METAQUOTES','MetaQuotes-Demo',${login},
-      pgp_sym_encrypt(${password},(select key_text from ai_trade.mt5_demo_secret where id=1)),
-      case when ${investorPassword}='' then null
-        else pgp_sym_encrypt(${investorPassword},(select key_text from ai_trade.mt5_demo_secret where id=1))
-      end,
-      ${serverBuild},'DEMO',false,${JSON.stringify(metadata)}::jsonb
-    )
-    on conflict(login) do update set
+    select
+      1,${login.toString()}::bigint,${account.server},${email},
+      pgp_sym_encrypt(${password}, secret::text),
+      pgp_sym_encrypt(${investorPassword}, secret::text),
+      true,true,${account.accountType},${account.balance},${account.currency},
+      ${account.leverage},${account.tradeAllowed},now(),now(),now()
+    from ai_trade.cron_auth where id=1
+    on conflict (id) do update set
+      login=excluded.login,
+      server=excluded.server,
+      email=excluded.email,
       password_cipher=excluded.password_cipher,
       investor_password_cipher=excluded.investor_password_cipher,
-      server_build=excluded.server_build,
-      metadata=excluded.metadata
+      is_demo=true,
+      verified=true,
+      account_type=excluded.account_type,
+      balance=excluded.balance,
+      currency=excluded.currency,
+      leverage=excluded.leverage,
+      trade_allowed=excluded.trade_allowed,
+      verified_at=now(),
+      updated_at=now()
   `;
 }
 
-Deno.serve(async(req)=>{
-  if(!(await authorized(req)))return json({ok:false,status:"UNAUTHORIZED"},401);
 
-  const body=await req.json().catch(()=>({})) as {
-    email?:string;
-    emailCode?:number;
-    allowCreate?:boolean;
+type TempMailbox = {
+  address: string;
+  password: string;
+  accountId: string;
+  token: string;
+};
+
+async function getVerifiedDemoSummary() {
+  const rows = await sql`
+    select login,server,verified,account_type,balance,currency,leverage,trade_allowed
+    from ai_trade.mt5_demo_credentials
+    where id=1 and verified=true and is_demo=true
+  `;
+  if (!rows[0]) return null;
+  return {
+    login: String(rows[0].login),
+    server: String(rows[0].server ?? ""),
+    accountType: Number(rows[0].account_type ?? -1),
+    balance: Number(rows[0].balance ?? 0),
+    currency: String(rows[0].currency ?? ""),
+    leverage: Number(rows[0].leverage ?? 0),
+    tradeAllowed: Boolean(rows[0].trade_allowed),
   };
+}
 
-  const opening:Opening={
-    firstName:"Duy",
-    secondName:"Tran",
-    email:String(body.email??"").trim(),
-    emailCode:Number(body.emailCode??0)||0
-  };
+async function mailTmJson(
+  url: string,
+  init: RequestInit = {},
+  okStatuses: number[] = [200],
+) {
+  const response = await fetch(url, init);
+  if (!okStatuses.includes(response.status)) {
+    const body = (await response.text()).slice(0, 240);
+    throw new Error("MAILTM_HTTP_" + response.status + "_" + body.replace(/\\s+/g, " "));
+  }
+  return await response.json();
+}
 
-  const socket=new Mt5Socket();
-  try{
-    await socket.open();
+async function mailTmToken(address: string, password: string): Promise<string> {
+  const payload = await mailTmJson(
+    "https://api.mail.tm/token",
+    {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ address, password }),
+    },
+    [200],
+  );
+  const token = String(payload?.token ?? "");
+  if (!token) throw new Error("MAILTM_TOKEN_MISSING");
+  return token;
+}
 
-    const bootstrap=await socket.command(CMD_BOOTSTRAP,new Uint8Array(64));
-    if(bootstrap.code!==0||bootstrap.body.length<82){
-      return json({ok:false,status:"BOOTSTRAP_FAILED",code:bootstrap.code,bodyLength:bootstrap.body.length});
+async function loadStoredMailbox(): Promise<TempMailbox | null> {
+  const rows = await sql`
+    select m.address,
+           pgp_sym_decrypt(m.password_cipher, c.secret::text) as password,
+           m.provider_account_id
+    from ai_trade.mt5_demo_mailbox m
+    cross join ai_trade.cron_auth c
+    where m.id=1 and m.active=true and c.id=1
+  `;
+  if (!rows[0]) return null;
+  const address = String(rows[0].address ?? "");
+  const password = String(rows[0].password ?? "");
+  const accountId = String(rows[0].provider_account_id ?? "");
+  if (!address || !password) return null;
+  try {
+    const token = await mailTmToken(address, password);
+    return { address, password, accountId, token };
+  } catch {
+    await sql`update ai_trade.mt5_demo_mailbox set active=false,updated_at=now() where id=1`;
+    return null;
+  }
+}
+
+async function persistMailbox(mailbox: Omit<TempMailbox, "token">) {
+  await sql`
+    insert into ai_trade.mt5_demo_mailbox(
+      id,provider,address,password_cipher,provider_account_id,active,created_at,updated_at
+    )
+    select 1,'mail.tm',${mailbox.address},
+           pgp_sym_encrypt(${mailbox.password}, c.secret::text),
+           ${mailbox.accountId},true,now(),now()
+    from ai_trade.cron_auth c where c.id=1
+    on conflict(id) do update set
+      provider='mail.tm',
+      address=excluded.address,
+      password_cipher=excluded.password_cipher,
+      provider_account_id=excluded.provider_account_id,
+      active=true,
+      updated_at=now()
+  `;
+}
+
+async function createTempMailbox(): Promise<TempMailbox> {
+  const existing = await loadStoredMailbox();
+  if (existing) return existing;
+
+  const domainsPayload = await mailTmJson("https://api.mail.tm/domains?page=1", {}, [200]);
+  const domains = Array.isArray(domainsPayload?.["hydra:member"])
+    ? domainsPayload["hydra:member"]
+        .filter((x: any) => Boolean(x?.isActive) && !Boolean(x?.isPrivate) && String(x?.domain ?? ""))
+        .map((x: any) => String(x.domain))
+    : [];
+  if (!domains.length) throw new Error("MAILTM_NO_ACTIVE_PUBLIC_DOMAIN");
+
+  let lastError = "MAILTM_CREATE_FAILED";
+  for (const domain of domains.slice(0, 5)) {
+    const local = "aitrade-" + randomBytes(8).toString("hex");
+    const address = local + "@" + domain;
+    const password = randomBytes(24).toString("base64url");
+    try {
+      const account = await mailTmJson(
+        "https://api.mail.tm/accounts",
+        {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ address, password }),
+        },
+        [201],
+      );
+      const accountId = String(account?.id ?? "");
+      if (!accountId) throw new Error("MAILTM_ACCOUNT_ID_MISSING");
+      const token = await mailTmToken(address, password);
+      await persistMailbox({ address, password, accountId });
+      return { address, password, accountId, token };
+    } catch (e) {
+      lastError = e instanceof Error ? e.message : String(e);
     }
+  }
+  throw new Error(lastError);
+}
 
-    const bdv=new DataView(
-      bootstrap.body.buffer,bootstrap.body.byteOffset,bootstrap.body.byteLength
+function trustedMetaQuotesSender(address: string): boolean {
+  const value = address.trim().toLowerCase();
+  const at = value.lastIndexOf("@");
+  const domain = at >= 0 ? value.slice(at + 1) : "";
+  return [
+    "mql5.com",
+    "metaquotes.net",
+    "metaquotes.com",
+    "metatrader5.com",
+    "metatrader4.com",
+  ].some((allowed) => domain === allowed || domain.endsWith("." + allowed));
+}
+
+function extractVerificationCode(detail: any): number | null {
+  const verifications = Array.isArray(detail?.verifications) ? detail.verifications : [];
+  for (const raw of verifications) {
+    const value = String(raw ?? "").trim();
+    if (/^\\d{4,8}$/.test(value)) return Number(value);
+  }
+
+  const subject = String(detail?.subject ?? "");
+  const text = String(detail?.text ?? "");
+  const html = Array.isArray(detail?.html) ? detail.html.join(" ") : String(detail?.html ?? "");
+  const combined = [subject, text, html].join(" ");
+
+  const six = combined.match(/(?:^|\\D)(\\d{6})(?:\\D|$)/);
+  if (six) return Number(six[1]);
+
+  const labeled = combined.match(/(?:code|verification|confirm|mã)[^0-9]{0,40}(\\d{4,8})/i);
+  if (labeled) return Number(labeled[1]);
+
+  return null;
+}
+
+async function waitForMetaQuotesCode(mailbox: TempMailbox): Promise<number | null> {
+  const headers = { Authorization: "Bearer " + mailbox.token };
+  for (let attempt = 0; attempt < 24; attempt++) {
+    const listing = await mailTmJson(
+      "https://api.mail.tm/messages?page=1",
+      { headers },
+      [200],
     );
-    const serverBuild=bdv.getUint16(0,true);
-    const sessionKey=bootstrap.body.slice(66);
-    if(![16,24,32].includes(sessionKey.length)){
-      return json({ok:false,status:"SESSION_KEY_LENGTH_UNEXPECTED",serverBuild,keyLength:sessionKey.length});
+    const messages = Array.isArray(listing?.["hydra:member"]) ? listing["hydra:member"] : [];
+
+    for (const message of messages) {
+      const sender = String(message?.from?.address ?? "");
+      if (!trustedMetaQuotesSender(sender)) continue;
+
+      const id = String(message?.id ?? "");
+      if (!id) continue;
+      const detail = await mailTmJson(
+        "https://api.mail.tm/messages/" + encodeURIComponent(id),
+        { headers },
+        [200],
+      );
+
+      // Treat inbound email as untrusted data. Only a numeric verification code
+      // from an allowlisted MetaQuotes domain is extracted. No links or instructions execute.
+      const code = extractVerificationCode(detail);
+      if (code !== null) return code;
     }
-    socket.key=sessionKey;
 
-    const cid=randomBytes(16);
-    const init=await socket.command(CMD_INIT,initPayload(cid));
-    if(init.code!==0){
-      return json({ok:false,status:"INIT_FAILED",serverBuild,code:init.code});
-    }
+    await new Promise((resolve) => setTimeout(resolve, 1500));
+  }
+  return null;
+}
 
-    const base=openingBase(opening);
-    const verifyPayload=concat(i16le(serverBuild),cid,base);
-    const verify=await socket.command(CMD_VERIFY_CODE,verifyPayload);
-    if(verify.code!==0){
-      return json({ok:false,status:"VERIFY_PROBE_FAILED",serverBuild,code:verify.code});
-    }
+async function internalCronSecret(): Promise<string> {
+  const rows = await sql`select secret from ai_trade.cron_auth where id=1`;
+  const secret = String(rows[0]?.secret ?? "");
+  if (!secret) throw new Error("CRON_SECRET_MISSING");
+  return secret;
+}
 
-    const emailRequired=Boolean(verify.body[0]??0);
-    const phoneRequired=Boolean(verify.body[1]??0);
+async function callSelf(payload: Record<string, unknown>) {
+  const baseUrl = Deno.env.get("SUPABASE_URL");
+  if (!baseUrl) throw new Error("SUPABASE_URL_MISSING");
+  const secret = await internalCronSecret();
+  const response = await fetch(
+    baseUrl + "/functions/v1/ai-trade-mt5-demo-bootstrap",
+    {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+        "x-ai-trade-cron": secret,
+      },
+      body: JSON.stringify(payload),
+    },
+  );
+  const text = await response.text();
+  let parsed: any = {};
+  try {
+    parsed = JSON.parse(text);
+  } catch {
+    parsed = { status: "NON_JSON_RESPONSE", raw: text.slice(0, 120) };
+  }
+  return { httpStatus: response.status, body: parsed };
+}
 
-    if(phoneRequired){
+async function openDemoWithTempMailbox() {
+  const existing = await getVerifiedDemoSummary();
+  if (existing) {
+    return {
+      ok: true,
+      status: "DEMO_ALREADY_VERIFIED",
+      ...existing,
+      credentialsStoredEncrypted: true,
+      passwordExposed: false,
+      brokerOrders: false,
+      liveMoneyLocked: true,
+    };
+  }
+
+  const mailbox = await createTempMailbox();
+
+  const first = await callSelf({
+    mode: "open_demo",
+    first_name: "AI",
+    second_name: "Trade",
+    email: mailbox.address,
+  });
+
+  if (
+    first.httpStatus >= 200 &&
+    first.httpStatus < 300 &&
+    first.body?.status === "DEMO_CREATED_VERIFIED"
+  ) {
+    return {
+      ...first.body,
+      mailboxProvider: "mail.tm",
+      mailboxStoredEncrypted: true,
+    };
+  }
+
+  if (first.body?.status !== "EMAIL_VERIFICATION_REQUIRED") {
+    return {
+      ok: false,
+      status: "TEMP_MAIL_DEMO_OPEN_BLOCKED",
+      upstreamStatus: String(first.body?.status ?? "UNKNOWN"),
+      upstreamCode: first.body?.code ?? null,
+      mailboxProvider: "mail.tm",
+      mailboxStoredEncrypted: true,
+      brokerOrders: false,
+      liveMoneyLocked: true,
+    };
+  }
+
+  const verificationCode = await waitForMetaQuotesCode(mailbox);
+  if (verificationCode === null) {
+    return {
+      ok: false,
+      status: "METAQUOTES_VERIFICATION_EMAIL_NOT_FOUND",
+      mailboxProvider: "mail.tm",
+      mailboxStoredEncrypted: true,
+      brokerOrders: false,
+      liveMoneyLocked: true,
+    };
+  }
+
+  const second = await callSelf({
+    mode: "open_demo",
+    first_name: "AI",
+    second_name: "Trade",
+    email: mailbox.address,
+    email_code: verificationCode,
+  });
+
+  return {
+    ...second.body,
+    httpStatus: second.httpStatus,
+    mailboxProvider: "mail.tm",
+    mailboxStoredEncrypted: true,
+    verificationCodeExposed: false,
+    brokerOrders: false,
+    liveMoneyLocked: true,
+  };
+}
+
+Deno.serve(async (req) => {
+  if (!(await authorized(req))) {
+    return json({ ok: false, status: "UNAUTHORIZED" }, 401);
+  }
+
+  const body = await req.json().catch(() => ({})) as RequestBody;
+
+  if (body.mode === "open_demo_temp") {
+    try {
+      return json(await openDemoWithTempMailbox());
+    } catch (e) {
       return json({
-        ok:true,status:"BLOCKED_PHONE_VERIFICATION",
-        serverBuild,emailRequired,phoneRequired,
-        accountCreated:false,brokerOrders:false,liveMoneyLocked:true
-      });
+        ok: false,
+        status: "TEMP_MAIL_BOOTSTRAP_ERROR",
+        error: e instanceof Error ? e.message : String(e),
+        brokerOrders: false,
+        liveMoneyLocked: true,
+      }, 500);
     }
+  }
 
-    if(emailRequired&&!opening.email){
+  if (body.mode === "transport_probe") {
+    const probe = new MT5Socket();
+    try {
+      await probe.connect();
       return json({
-        ok:true,status:"EMAIL_REQUIRED",
-        serverBuild,emailRequired:true,phoneRequired:false,
-        accountCreated:false,brokerOrders:false,liveMoneyLocked:true
+        ok: true,
+        status: "TRANSPORT_READY",
+        serverBuild: probe.serverBuild,
+        ws: true,
+        aesKeyLength: probe.key.length,
+        brokerOrders: false,
+        liveMoneyLocked: true,
       });
-    }
-
-    if(emailRequired&&!opening.emailCode){
+    } catch (e) {
       return json({
-        ok:true,status:"EMAIL_CODE_REQUIRED",
-        serverBuild,emailRequired:true,phoneRequired:false,
-        accountCreated:false,brokerOrders:false,liveMoneyLocked:true
-      });
+        ok: false,
+        status: "TRANSPORT_ERROR",
+        error: e instanceof Error ? e.message : String(e),
+        brokerOrders: false,
+        liveMoneyLocked: true,
+      }, 500);
+    } finally {
+      probe.close();
     }
+  }
 
-    if(body.allowCreate!==true){
+  const aliasMode = body.mode === "open_demo_alias";
+  const firstName = aliasMode ? "AI" : String(body.first_name ?? "").trim();
+  const secondName = aliasMode ? "Trade" : String(body.second_name ?? "").trim();
+  const email = aliasMode ? "" : String(body.email ?? "").trim().toLowerCase();
+  const emailCode = Number(body.email_code ?? 0);
+
+  if (!firstName || !secondName || (!aliasMode && (!email || !email.includes("@")))) {
+    return json({
+      ok: false,
+      status: "IDENTITY_INPUT_REQUIRED",
+      brokerOrders: false,
+      liveMoneyLocked: true,
+    }, 400);
+  }
+  if (!Number.isInteger(emailCode) || emailCode < 0) {
+    return json({ ok: false, status: "INVALID_EMAIL_CODE" }, 400);
+  }
+
+  const cid = await clientId(email);
+  const mt = new MT5Socket();
+
+  try {
+    await mt.connect();
+    const init = await mt.send(CMD_INIT, buildInitPayload(cid), 20000);
+    if (init.code !== 0) {
       return json({
-        ok:true,status:"READY_TO_CREATE_DEMO",
-        serverBuild,emailRequired,phoneRequired,
-        accountCreated:false,brokerOrders:false,liveMoneyLocked:true
-      });
+        ok: false,
+        status: "INIT_FAILED",
+        code: init.code,
+        brokerOrders: false,
+        liveMoneyLocked: true,
+      }, 502);
     }
 
-    if(emailRequired&&opening.emailCode){
-      const submitted=await socket.command(40,base);
-      const emailOk=Boolean(submitted.body[0]??0);
-      const phoneOk=Boolean(submitted.body[1]??0);
-      if(submitted.code!==0||!emailOk||phoneOk){
+    const base = buildBasePayload(firstName, secondName, email, emailCode);
+
+    if (!emailCode && !aliasMode) {
+      const verificationPayload = Buffer.concat([
+        i16(mt.serverBuild || 0),
+        fixedBytes(cid, 16),
+        base,
+      ]);
+      const vr = await mt.send(CMD_VERIFY_CODE, verificationPayload, 20000);
+      if (vr.code !== 0) {
         return json({
-          ok:false,status:"EMAIL_VERIFICATION_REJECTED",
-          serverBuild,code:submitted.code,emailOk,phoneOk,
-          accountCreated:false,brokerOrders:false,liveMoneyLocked:true
+          ok: false,
+          status: "VERIFICATION_PROBE_FAILED",
+          code: vr.code,
+          brokerOrders: false,
+          liveMoneyLocked: true,
+        }, 502);
+      }
+
+      const emailRequired = Boolean(vr.body[0] ?? 0);
+      const phoneRequired = Boolean(vr.body[1] ?? 0);
+
+      if (phoneRequired) {
+        return json({
+          ok: true,
+          status: "PHONE_VERIFICATION_REQUIRED",
+          emailVerificationRequired: emailRequired,
+          phoneVerificationRequired: true,
+          brokerOrders: false,
+          liveMoneyLocked: true,
+        });
+      }
+
+      if (emailRequired) {
+        return json({
+          ok: true,
+          status: "EMAIL_VERIFICATION_REQUIRED",
+          emailVerificationRequired: true,
+          phoneVerificationRequired: false,
+          brokerOrders: false,
+          liveMoneyLocked: true,
+        });
+      }
+    } else if (emailCode) {
+      const submitted = await mt.send(CMD_SEND_VERIFY_CODES, base, 20000);
+      if (submitted.code !== 0) {
+        return json({
+          ok: false,
+          status: "EMAIL_VERIFICATION_SUBMIT_FAILED",
+          code: submitted.code,
+          brokerOrders: false,
+          liveMoneyLocked: true,
+        }, 502);
+      }
+      const emailOk = Boolean(submitted.body[0] ?? 0);
+      const phoneFlag = Boolean(submitted.body[1] ?? 0);
+      if (!emailOk || phoneFlag) {
+        return json({
+          ok: true,
+          status: "EMAIL_VERIFICATION_REJECTED",
+          emailOk,
+          phoneFlag,
+          brokerOrders: false,
+          liveMoneyLocked: true,
         });
       }
     }
 
-    const created=await socket.command(CMD_OPEN_DEMO,base);
-    if(created.code!==0||created.body.length<72){
+    const opened = await mt.send(CMD_OPEN_DEMO, base, 25000);
+    if (opened.code !== 0) {
       return json({
-        ok:false,status:"DEMO_CREATE_FAILED",
-        serverBuild,code:created.code,bodyLength:created.body.length,
-        accountCreated:false,brokerOrders:false,liveMoneyLocked:true
-      });
+        ok: false,
+        status: "OPEN_DEMO_TRANSPORT_FAILED",
+        code: opened.code,
+        brokerOrders: false,
+        liveMoneyLocked: true,
+      }, 502);
     }
 
-    const cdv=new DataView(created.body.buffer,created.body.byteOffset,created.body.byteLength);
-    const resultCode=cdv.getUint32(0,true);
-    const login=cdv.getBigInt64(4,true);
-    const password=readUtf16(created.body.slice(12,44));
-    const investorPassword=readUtf16(created.body.slice(44,76));
-
-    if(resultCode!==0||login<=0n||!password){
+    const accountResult = parseOpenAccount(opened.body);
+    if (
+      accountResult.code !== 0 ||
+      accountResult.login <= 0n ||
+      !accountResult.password
+    ) {
       return json({
-        ok:false,status:"DEMO_CREATE_RESULT_FAILED",
-        serverBuild,resultCode,loginPresent:login>0n,passwordPresent:Boolean(password),
-        accountCreated:false,brokerOrders:false,liveMoneyLocked:true
-      });
+        ok: false,
+        status: "OPEN_DEMO_REJECTED",
+        code: accountResult.code,
+        brokerOrders: false,
+        liveMoneyLocked: true,
+      }, 502);
     }
 
-    await storeDemo(login,password,investorPassword,serverBuild,{
-      source:"METAQUOTES_WEBTERMINAL_CMD30",
-      emailVerificationUsed:emailRequired,
-      createdVia:"SUPABASE_EDGE",
-      liveMoney:false
-    });
+    const account = await verifyLogin(
+      accountResult.login,
+      accountResult.password,
+      cid,
+    );
+
+    if (!account.isDemo) {
+      return json({
+        ok: false,
+        status: "FAIL_CLOSED_NON_DEMO_ACCOUNT",
+        accountType: account.accountType,
+        brokerOrders: false,
+        liveMoneyLocked: true,
+      }, 409);
+    }
+
+    await persistVerified(
+      accountResult.login,
+      accountResult.password,
+      accountResult.investorPassword,
+      email,
+      account,
+    );
 
     return json({
-      ok:true,status:"DEMO_CREATED",
-      server:"MetaQuotes-Demo",
-      serverBuild,
-      login:login.toString(),
-      credentialStoredEncrypted:true,
-      passwordExposed:false,
-      accountMode:"DEMO",
-      accountCreated:true,
-      brokerOrders:false,
-      liveMoneyLocked:true
+      ok: true,
+      status: "DEMO_CREATED_VERIFIED",
+      login: accountResult.login.toString(),
+      server: account.server,
+      company: account.company,
+      balance: account.balance,
+      currency: account.currency,
+      leverage: account.leverage,
+      tradeAllowed: account.tradeAllowed,
+      readOnly: account.isReadOnly,
+      accountType: account.accountType,
+      isDemo: account.isDemo,
+      credentialsStoredEncrypted: true,
+      passwordExposed: false,
+      brokerOrders: false,
+      liveMoneyLocked: true,
     });
-  }catch(error){
+  } catch (e) {
     return json({
-      ok:false,status:"ERROR",
-      error:error instanceof Error?error.message:String(error),
-      accountCreated:false,brokerOrders:false,liveMoneyLocked:true
-    },500);
-  }finally{
-    socket.close();
+      ok: false,
+      status: "ERROR",
+      error: e instanceof Error ? e.message : String(e),
+      brokerOrders: false,
+      liveMoneyLocked: true,
+    }, 500);
+  } finally {
+    mt.close();
   }
 });
