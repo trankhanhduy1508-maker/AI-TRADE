@@ -68,6 +68,48 @@ function loginPayload(login:bigint,password:string,cid:Uint8Array){
     u64le(0)
   );
 }
+
+async function renderPymt5Fallback(login:bigint,password:string){
+  const secrets=await sql`
+    select decrypted_secret as secret
+    from vault.decrypted_secrets
+    where name='cws_mt5_render_verify_token'
+    limit 1
+  `;
+  const token=String(secrets[0]?.secret??"");
+  if(!token)return null;
+  try{
+    const response=await fetch("https://cws-mt5-verify-free.onrender.com/mt5-verify",{
+      method:"POST",
+      headers:{
+        "content-type":"application/json",
+        "authorization":"Bearer "+token
+      },
+      body:JSON.stringify({
+        server:"MetaQuotes-Demo",
+        login:Number(login),
+        password
+      }),
+      cache:"no-store",
+      signal:AbortSignal.timeout(120000)
+    });
+    const data=await response.json().catch(()=>null);
+    if(!response.ok||!data||data.verified!==true
+        ||data.status!=="DEMO_VERIFIED"
+        ||data.server!=="MetaQuotes-Demo"
+        ||String(data.login)!==String(login)
+        ||data.brokerOrders!==false
+        ||data.liveMoneyLocked!==true
+        ||typeof data.balance!=="number"
+        ||!Number.isFinite(data.balance)
+        ||typeof data.currency!=="string"){
+      return null;
+    }
+    return data;
+  }catch{
+    return null;
+  }
+}
 class Client{
   ws:WebSocket;
   key=hexToBytes(INITIAL_KEY_HEX);
@@ -211,7 +253,39 @@ Deno.serve(async(req)=>{
     // Pinned pymt5 live evidence uses bootstrap -> login directly.
     // cmd=29 is not part of the successful MetaQuotes-Demo login path.
     const loginResult=await c.command(28,loginPayload(login,password,cid));
-    if(loginResult.code!==0)return json({ok:true,status:"LOGIN_REJECTED",login:login.toString(),loginCode:loginResult.code,verified:false,brokerOrders:false,liveMoneyLocked:true});
+    if(loginResult.code!==0){
+      if(direct){
+        const fallback=await renderPymt5Fallback(login,password);
+        if(fallback){
+          await sql`
+            update ai_trade.mt5_demo_accounts
+            set last_verified_at=now(),is_active=true
+            where account_login=${login}
+          `;
+          return json({
+            ok:true,
+            status:"DEMO_VERIFIED",
+            verified:true,
+            login:login.toString(),
+            accountType:Number(fallback.accountType??1),
+            server:"MetaQuotes-Demo",
+            mode:"DEMO",
+            readbackSource:"RENDER_PYMT5_FALLBACK",
+            balance:Number(fallback.balance),
+            equity:Number(fallback.equity??fallback.balance),
+            currency:String(fallback.currency??"USD"),
+            tradeAllowed:fallback.tradeAllowed===true,
+            readOnly:fallback.readOnly===true,
+            passwordExposed:false,
+            brokerOrders:false,
+            liveMoneyLocked:true,
+            supabaseLoginCode:loginResult.code
+          });
+        }
+      }
+      return json({ok:true,status:"LOGIN_REJECTED",login:login.toString(),
+        loginCode:loginResult.code,verified:false,brokerOrders:false,liveMoneyLocked:true});
+    }
 
     const acctResult=await c.command(3,new Uint8Array());
     if(acctResult.code!==0)return json({ok:false,status:"ACCOUNT_READ_FAILED",code:acctResult.code,verified:false});
