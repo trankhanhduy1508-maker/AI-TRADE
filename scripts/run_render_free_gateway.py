@@ -1,26 +1,25 @@
-"""Tiny on-demand HTTP gateway for Render Free.
+"""Ultra-thin on-demand gateway for Render Free.
 
-Render stays stateless and only runs one cloud AutoTrade cycle when explicitly
-triggered. Broker order submission remains fail-closed in the underlying runner.
+Render does no trading work itself. It authenticates one request, calls the
+server-authoritative Supabase AI-TRADE tick once, returns a small safe result,
+then becomes idle again.
 """
 
 from __future__ import annotations
 
-import asyncio
 import hmac
 import json
 import os
 import threading
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
-
-from run_metaapi_cloud_autotrade import main as run_cloud_once
+from urllib import error, request
 
 
 _RUN_LOCK = threading.Lock()
 
 
 class Handler(BaseHTTPRequestHandler):
-    server_version = "CWSAutoTradeRenderFree/1.0"
+    server_version = "CWSAutoTradeRenderFree/2.0"
 
     def _json(self, status: int, payload: dict[str, object]) -> None:
         body = json.dumps(payload, separators=(",", ":")).encode("utf-8")
@@ -32,15 +31,16 @@ class Handler(BaseHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(body)
 
+    @staticmethod
+    def _token() -> str:
+        return os.getenv("AI_TRADE_TRIGGER_TOKEN", "").strip()
+
     def _authorized(self) -> bool:
-        expected = os.getenv("AI_TRADE_TRIGGER_TOKEN", "").strip()
-        if not expected:
-            return False
+        expected = self._token()
         supplied = self.headers.get("authorization", "")
-        prefix = "Bearer "
-        if not supplied.startswith(prefix):
+        if not expected or not supplied.startswith("Bearer "):
             return False
-        return hmac.compare_digest(supplied[len(prefix):], expected)
+        return hmac.compare_digest(supplied[7:], expected)
 
     def do_GET(self) -> None:
         if self.path.rstrip("/") == "/health":
@@ -48,12 +48,14 @@ class Handler(BaseHTTPRequestHandler):
                 200,
                 {
                     "status": "READY",
-                    "mode": "RENDER_FREE_ON_DEMAND",
+                    "mode": "RENDER_FREE_THIN_PROXY",
+                    "stateless": True,
                     "demo_only": True,
                     "live_money_locked": True,
-                    "order_send_enabled": False,
-                    "trigger_configured": bool(
-                        os.getenv("AI_TRADE_TRIGGER_TOKEN", "").strip()
+                    "render_trading_logic": False,
+                    "trigger_configured": bool(self._token()),
+                    "upstream_configured": bool(
+                        os.getenv("AI_TRADE_SUPABASE_TICK_URL", "").strip()
                     ),
                 },
             )
@@ -64,36 +66,53 @@ class Handler(BaseHTTPRequestHandler):
         if self.path.rstrip("/") != "/run-once":
             self._json(404, {"status": "NOT_FOUND"})
             return
+
+        token = self._token()
+        upstream = os.getenv("AI_TRADE_SUPABASE_TICK_URL", "").strip()
+        if not token or not upstream:
+            self._json(503, {"status": "CONFIG_BLOCKED"})
+            return
         if not self._authorized():
-            configured = bool(os.getenv("AI_TRADE_TRIGGER_TOKEN", "").strip())
-            self._json(
-                401 if configured else 503,
-                {"status": "UNAUTHORIZED" if configured else "TRIGGER_NOT_CONFIGURED"},
-            )
+            self._json(401, {"status": "UNAUTHORIZED"})
             return
         if not _RUN_LOCK.acquire(blocking=False):
             self._json(409, {"status": "BUSY"})
             return
+
         try:
-            os.environ["AI_TRADE_ONCE"] = "YES"
-            rc = asyncio.run(run_cloud_once())
-            if rc == 0:
-                self._json(
-                    200,
-                    {
-                        "status": "DONE",
-                        "demo_only": True,
-                        "live_money_locked": True,
-                        "order_send_enabled": False,
-                    },
-                )
-            elif rc == 78:
-                self._json(503, {"status": "CONFIG_BLOCKED"})
-            else:
-                self._json(500, {"status": "RUNNER_FAILED", "code": rc})
+            req = request.Request(
+                upstream,
+                data=b"{}",
+                method="POST",
+                headers={
+                    "content-type": "application/json",
+                    "x-ai-trade-cron": token,
+                    "user-agent": "cws-autotrade-render-free/2",
+                },
+            )
+            try:
+                with request.urlopen(req, timeout=120) as response:
+                    status_code = int(response.status)
+                    raw = response.read(64 * 1024)
+            except error.HTTPError as exc:
+                status_code = int(exc.code)
+                raw = exc.read(64 * 1024)
+
+            try:
+                data = json.loads(raw.decode("utf-8"))
+            except Exception:
+                data = {}
+
+            safe = {
+                "status": str(data.get("status", "UPSTREAM_ERROR")),
+                "ok": bool(data.get("ok", False)),
+                "live_money_locked": bool(data.get("liveMoneyLocked", True)),
+                "render_trading_logic": False,
+            }
+            self._json(200 if 200 <= status_code < 300 else 502, safe)
         except Exception as exc:
-            print(f"RUN_ONCE_ERROR {type(exc).__name__}", flush=True)
-            self._json(500, {"status": "RUNNER_ERROR"})
+            print(f"UPSTREAM_ERROR {type(exc).__name__}", flush=True)
+            self._json(502, {"status": "UPSTREAM_UNAVAILABLE"})
         finally:
             _RUN_LOCK.release()
 
@@ -105,8 +124,8 @@ def main() -> None:
     port = int(os.getenv("PORT", "10000"))
     server = ThreadingHTTPServer(("0.0.0.0", port), Handler)
     print(
-        f"READY port={port} mode=RENDER_FREE_ON_DEMAND "
-        "demo_only=true live_money_locked=true",
+        f"READY port={port} mode=RENDER_FREE_THIN_PROXY "
+        "stateless=true demo_only=true live_money_locked=true",
         flush=True,
     )
     server.serve_forever()
