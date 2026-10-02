@@ -14,7 +14,8 @@ import json
 import os
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
-from pymt5 import MT5WebClient
+from pymt5 import DemoAccountRequest, MT5WebClient
+from pymt5.constants import CMD_VERIFY_CODE
 
 MAX_BODY = 2048
 
@@ -54,6 +55,46 @@ async def verify_mt5(login: int, password: str) -> dict[str, object]:
         "brokerOrders": False,
         "liveMoneyLocked": True,
         "source": "RENDER_PYMT5_FALLBACK",
+    }
+
+
+
+async def probe_opening(email: str, group: str = "") -> dict[str, object]:
+    """Probe MetaQuotes DEMO onboarding verification without creating an account."""
+    cid = os.urandom(16)
+    request = DemoAccountRequest(
+        first_name="AI",
+        second_name="Trade",
+        email=email,
+        group=group,
+        country="VN",
+        deposit=100000.0,
+        leverage=100,
+        agreements=1,
+        domain="web.metatrader.app",
+        utm_campaign="mt5-demo-bootstrap",
+        utm_source="ai-trade-cloud",
+    )
+
+    async with MT5WebClient(timeout=30) as client:
+        await client.init_session(cid=cid)
+        payload = client._build_opening_verification_payload(
+            request=request,
+            build=0,
+            cid=cid,
+        )
+        result = await client.transport.send_command(CMD_VERIFY_CODE, payload)
+
+    return {
+        "ok": result.code == 0,
+        "status": "VERIFICATION_READY" if result.code == 0 else "VERIFICATION_REJECTED",
+        "code": int(result.code),
+        "emailRequired": bool(result.body[0]) if result.code == 0 and len(result.body) > 0 else None,
+        "phoneRequired": bool(result.body[1]) if result.code == 0 and len(result.body) > 1 else None,
+        "accountCreated": False,
+        "brokerOrders": False,
+        "liveMoneyLocked": True,
+        "source": "RENDER_SINGAPORE_PYMT5_PROBE",
     }
 
 
@@ -111,7 +152,8 @@ class Handler(BaseHTTPRequestHandler):
         self.respond(404, {"status": "NOT_FOUND"})
 
     def do_POST(self) -> None:
-        if self.path.rstrip("/") != "/mt5-verify":
+        path = self.path.rstrip("/")
+        if path not in ("/mt5-verify", "/mt5-opening-probe"):
             self.respond(404, {"status": "NOT_FOUND"})
             return
         if not self.authorized():
@@ -128,6 +170,22 @@ class Handler(BaseHTTPRequestHandler):
 
         try:
             body = json.loads(self.rfile.read(length))
+
+            if path == "/mt5-opening-probe":
+                email = body.get("email")
+                group = body.get("group", "")
+                if (
+                    not isinstance(email, str)
+                    or not 3 <= len(email) <= 128
+                    or "@" not in email
+                    or any(ord(ch) < 32 or ord(ch) == 127 for ch in email)
+                    or group not in ("", "demoforex", "forex", "demo")
+                ):
+                    raise ValueError
+                result = asyncio.run(probe_opening(email, group))
+                self.respond(200, result)
+                return
+
             server = body.get("server")
             login = int(body.get("login"))
             password = body.get("password")
@@ -145,12 +203,12 @@ class Handler(BaseHTTPRequestHandler):
             self.respond(200 if result.get("verified") else 401, result)
         except Exception as exc:
             # Never echo exception text because broker libraries may include secrets.
-            print(f"VERIFY_FAIL {type(exc).__name__}", flush=True)
+            print(f"REQUEST_FAIL {type(exc).__name__}", flush=True)
             self.respond(
                 401,
                 {
                     "ok": False,
-                    "status": "LOGIN_REJECTED",
+                    "status": "REQUEST_REJECTED",
                     "verified": False,
                     "brokerOrders": False,
                     "liveMoneyLocked": True,
