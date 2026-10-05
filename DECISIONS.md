@@ -277,3 +277,8 @@ Founder chốt:
 - AutoTrade: Render không phải trading brain và không có quyền tự mở execution gate.
 
 Chi tiết: `docs/CWS_RENDER_MINIMAL_USAGE_POLICY_2026-10-02.md`.
+
+
+## Decision 2026-10-05 — Founder giao chọn policy thử nghiệm DEMO thường
+
+Founder yêu cầu agent tự chọn và cố định % rủi ro để giao dịch tài khoản MetaQuotes-Demo đã cung cấp. Đã chốt phạm vi DEMO thường: tối đa 0,25% equity/lệnh, 1% gross risk danh mục, lỗ ngày 1%, drawdown 5%, 5 lệnh đóng thua liên tiếp; ban đầu 1 vị thế/tổng 0,01 lot, EURUSD. Cấu hình thử nghiệm kỹ thuật, không gọi là sách chứng minh tối ưu. Policy/risk engine tách khỏi LLM; không đổi ngưỡng theo lệnh. Không mở The5ers/funded/live. Không ép BUY/SELL để làm xuất hiện giao dịch; engine TF-013A và proof broker/risk/lifecycle vẫn bắt buộc. Xem risk/ORDINARY_MT5_DEMO_POLICY.json và checkpoint 2026-10-05.

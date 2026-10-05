@@ -401,3 +401,13 @@
 - Autonomous DEMO chưa hoàn thiện: provider/ordinary-DEMO execution lane chưa verified, hard risk chưa chốt, 7 forward state cũ mất dữ liệu vẫn blocked, raw BTC/US30/new venue data chưa lấy được.
 - No broker orders, no live/funded unlock, no phí cloud mới, no LLM runtime.
 - Evidence: research/CWS_AUTOTRADE_CONTINUOUS_REPLAY_EXECUTION_CHECKPOINT_2026-10-05.md.
+
+
+## 2026-10-05 — Founder giao quyền cấu hình rủi ro DEMO thường
+
+- Đã chọn và lưu policy cố định DEMO thường: 0,25%/lệnh; 1% gross portfolio; 1% lỗ ngày; 5% drawdown; dừng sau 5 lệnh thua; tối đa một vị thế/tổng 0,01 lot, khởi đầu EURUSD. Không hỏi lại Founder cùng các số; không mở tiền thật/quỹ.
+- IndependentRiskEngine được bổ sung kiểm soát portfolio, drawdown, loss streak; MetaApi quote helper không còn mặc nhiên đặt risk/reconcile/state-known=true.
+- 809 Python PASS / 1 SKIP cần JDK; 45 Node PASS. Session v12 ACTIVE, authenticated preflight đọc đúng policy và bỏ blocker RISK_NOT_APPROVED.
+- Broker login CONNECTED, balance 9.886,73 USD; session equity là cache, chưa có fresh positions/equity proof. Cloud không có terminal/Wine, MetaApi chưa cấu hình; official web terminal từ chối cloud browser là Browser unsupported.
+- orders_sent=0. Goal mở MT5 thấy bot giao dịch CHƯA ĐẠT; cần host/gateway thực thi cloud và nối đầy đủ TF-013A/risk/kill/reconciliation/lifecycle. Không giả broker fill, không bật tick The5ers/TF004.
+- Evidence: research/CWS_ORDINARY_DEMO_RISK_EXECUTION_CHECKPOINT_2026-10-05.md.

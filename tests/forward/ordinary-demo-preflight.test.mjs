@@ -5,7 +5,7 @@ try { ({ordinaryDemoPreflight:evaluate}=await import('../../supabase/functions/a
 const context=()=>({
  session:{account_login:123456,server:'MetaQuotes-Demo',trade_permission:'TRADING_ALLOWED'},
  config:{enabled:true,demo_send_enabled:true,strategy_id:'TF-013A-FORWARD-DIVERSIFIED-TREND'},
- policy:{profile:'ORDINARY_MT5_DEMO',account_login:'123456',server:'MetaQuotes-Demo',approved:true,approval_evidence:'fixture-only',max_trade_risk_fraction:.01,max_portfolio_risk_fraction:.02,max_drawdown_fraction:.03,max_consecutive_losses:3,max_total_volume:.01},
+ policy:{profile:'ORDINARY_MT5_DEMO',account_login:'123456',server:'MetaQuotes-Demo',approved:true,approval_evidence:'fixture-only',max_trade_risk_fraction:.01,max_portfolio_risk_fraction:.02,max_daily_loss_fraction:.01,max_drawdown_fraction:.03,max_consecutive_losses:3,max_total_volume:.01,max_open_positions:1},
  providerConfigured:true,
  broker:{verified:true,login:'123456',server:'MetaQuotes-Demo',mode:'DEMO',tradeAllowed:true,readOnly:false,fresh:true},
  controls:{known:true,kill_active:false,paused:false,reconciled:true},
@@ -40,6 +40,11 @@ test('risk flags need explicit finite approved limits and account binding',()=>{
 test('funded profile is not reclassified as ordinary DEMO',()=>{
  assert.equal(typeof evaluate,'function');const c=context();c.policy.profile='THE5ERS';
  assert.ok(evaluate(c).blockers.includes('RISK_NOT_APPROVED'));
+});
+test('daily loss and position limits cannot be missing or invalid',()=>{
+ for(const changes of [{max_daily_loss_fraction:null},{max_daily_loss_fraction:NaN},{max_open_positions:null},{max_open_positions:1.5}]){
+  const c=context();Object.assign(c.policy,changes);assert.ok(evaluate(c).blockers.includes('RISK_NOT_APPROVED'));
+ }
 });
 test('restart/kill/missing strategy and execution readiness remain blocked',()=>{
  assert.equal(typeof evaluate,'function');for(const key of ['strategyValidated','executionLaneImplemented','providerConfigured']){

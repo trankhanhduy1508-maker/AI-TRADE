@@ -2,6 +2,8 @@ import asyncio
 from datetime import datetime, timezone
 
 from src.execution.metaapi_runtime import closed_bars, daily_pnl
+from src.execution.metaapi_runtime import runtime_inputs_for_symbol
+from types import SimpleNamespace
 
 
 class Account:
@@ -67,3 +69,31 @@ def test_metaapi_daily_pnl_only_counts_bot_magic():
         now=datetime(2026, 9, 27, 2, 0, tzinfo=timezone.utc),
     )
     assert pnl == -5
+
+
+class QuoteAdapter:
+    async def quote(self, symbol):
+        return 1.1, 1.1001, '2026-10-05T10:00:00+00:00'
+
+    async def symbol_contract(self, symbol):
+        return SimpleNamespace(point=.00001)
+
+
+def test_quote_does_not_prove_risk_approval_or_reconciliation():
+    _, _, snapshot, _ = asyncio.run(runtime_inputs_for_symbol(
+        QuoteAdapter(),symbol='EURUSD',own_open_positions=0,current_symbol_volume=0,
+        daily_loss_value=0,max_tick_age_seconds=60,
+        now=datetime(2026,10,5,10,0,tzinfo=timezone.utc)))
+    assert snapshot.data_fresh
+    assert not snapshot.risk_allowed
+    assert not snapshot.reconciled
+    assert not snapshot.state_known
+
+
+def test_server_may_supply_independently_verified_control_state():
+    _, _, snapshot, _ = asyncio.run(runtime_inputs_for_symbol(
+        QuoteAdapter(),symbol='EURUSD',own_open_positions=0,current_symbol_volume=0,
+        daily_loss_value=0,max_tick_age_seconds=60,risk_allowed=True,
+        reconciled=True,state_known=True,
+        now=datetime(2026,10,5,10,0,tzinfo=timezone.utc)))
+    assert snapshot.risk_allowed and snapshot.reconciled and snapshot.state_known

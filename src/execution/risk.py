@@ -16,6 +16,9 @@ class RiskLimits:
     max_risk_per_trade_fraction: float | None = None
     max_daily_loss_fraction: float | None = None
     required_account_currency: str | None = None
+    max_portfolio_risk_fraction: float | None = None
+    max_drawdown_fraction: float | None = None
+    max_consecutive_losses: int | None = None
 
     def __post_init__(self) -> None:
         if not math.isfinite(self.max_volume) or self.max_volume <= 0:
@@ -31,13 +34,20 @@ class RiskLimits:
             or self.max_total_volume_per_symbol <= 0
         ):
             raise ValueError("max_total_volume_per_symbol must be finite and positive")
-        for name in ("max_risk_per_trade_fraction", "max_daily_loss_fraction"):
+        for name in ("max_risk_per_trade_fraction", "max_daily_loss_fraction",
+                     "max_portfolio_risk_fraction", "max_drawdown_fraction"):
             value = getattr(self, name)
             if value is not None and (
                 isinstance(value, bool) or not isinstance(value, (float, int))
                 or not math.isfinite(value) or not 0 < value <= 1
             ):
                 raise ValueError(f"{name} must be a finite fraction in (0, 1]")
+        if self.max_consecutive_losses is not None and (
+            isinstance(self.max_consecutive_losses, bool)
+            or not isinstance(self.max_consecutive_losses, int)
+            or self.max_consecutive_losses < 1
+        ):
+            raise ValueError("max_consecutive_losses must be a positive integer")
         if self.required_account_currency is not None and (
             not isinstance(self.required_account_currency, str)
             or not self.required_account_currency.strip()
@@ -56,6 +66,9 @@ class RiskContext:
     tick_size: float | None = None
     tick_value_per_lot: float | None = None
     account_currency: str | None = None
+    portfolio_open_risk: float | None = None
+    peak_equity: float | None = None
+    consecutive_losses: int | None = None
 
     def __post_init__(self) -> None:
         if self.open_positions < 0:
@@ -116,6 +129,8 @@ class IndependentRiskEngine:
         use_fractional = (
             self._limits.max_risk_per_trade_fraction is not None
             or self._limits.max_daily_loss_fraction is not None
+            or self._limits.max_portfolio_risk_fraction is not None
+            or self._limits.max_drawdown_fraction is not None
         )
         equity = context.account_equity
         equity_valid = (
@@ -134,7 +149,9 @@ class IndependentRiskEngine:
             context.daily_loss <= -equity * self._limits.max_daily_loss_fraction
         ):
             reasons.append("MAX_DAILY_LOSS_FRACTION")
-        if self._limits.max_risk_per_trade_fraction is not None:
+        estimated_stop_loss = None
+        if (self._limits.max_risk_per_trade_fraction is not None
+                or self._limits.max_portfolio_risk_fraction is not None):
             tick_size = context.tick_size
             tick_value = context.tick_value_per_lot
             metadata_valid = all(
@@ -153,11 +170,39 @@ class IndependentRiskEngine:
                     abs(order.price - order.stop_loss)
                     / tick_size * tick_value * order.volume
                 )
-                if not math.isfinite(estimated_stop_loss) or (
+                if not math.isfinite(estimated_stop_loss):
+                    reasons.append("INVALID_CONTEXT")
+                elif self._limits.max_risk_per_trade_fraction is not None and (
                     estimated_stop_loss
                     > equity * self._limits.max_risk_per_trade_fraction
                 ):
                     reasons.append("MAX_TRADE_STOP_RISK")
+
+        def valid_number(value, *, positive=False):
+            return (isinstance(value, (int, float)) and not isinstance(value, bool)
+                    and math.isfinite(value) and (value > 0 if positive else value >= 0))
+
+        if self._limits.max_portfolio_risk_fraction is not None:
+            gross_risk = context.portfolio_open_risk
+            if not valid_number(gross_risk):
+                reasons.append("PORTFOLIO_RISK_REQUIRED")
+            elif equity_valid and estimated_stop_loss is not None and (
+                gross_risk + estimated_stop_loss
+                > equity * self._limits.max_portfolio_risk_fraction
+            ):
+                reasons.append("MAX_PORTFOLIO_STOP_RISK")
+        if self._limits.max_drawdown_fraction is not None:
+            peak = context.peak_equity
+            if not valid_number(peak, positive=True):
+                reasons.append("PEAK_EQUITY_REQUIRED")
+            elif equity_valid and (peak - equity) >= peak * self._limits.max_drawdown_fraction:
+                reasons.append("MAX_DRAWDOWN")
+        if self._limits.max_consecutive_losses is not None:
+            streak = context.consecutive_losses
+            if isinstance(streak, bool) or not isinstance(streak, int) or streak < 0:
+                reasons.append("LOSS_STREAK_REQUIRED")
+            elif streak >= self._limits.max_consecutive_losses:
+                reasons.append("MAX_CONSECUTIVE_LOSSES")
 
         # Fixed TP is optional because TRAILING_ONLY and PARTIAL_THEN_TRAIL are
         # first-class. Capital protection still requires a broker-side SL.

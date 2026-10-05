@@ -94,6 +94,9 @@ async def runtime_inputs_for_symbol(
     daily_loss_value: float,
     max_tick_age_seconds: float,
     manual_pause: bool = False,
+    risk_allowed: bool = False,
+    reconciled: bool = False,
+    state_known: bool = False,
     now: datetime | None = None,
 ) -> tuple[float, float, SafetySnapshot, RiskContext]:
     current = now or datetime.now(timezone.utc)
@@ -109,9 +112,9 @@ async def runtime_inputs_for_symbol(
     snapshot = SafetySnapshot(
         connected=True,
         data_fresh=fresh,
-        state_known=True,
-        reconciled=True,
-        risk_allowed=True,
+        state_known=state_known is True,
+        reconciled=reconciled is True,
+        risk_allowed=risk_allowed is True,
         manual_pause=manual_pause,
     )
     context = RiskContext(

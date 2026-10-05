@@ -57,3 +57,21 @@ Các ngưỡng số cụ thể (% rủi ro/lệnh, % rủi ro danh mục, số l
 làm trước khi có bất kỳ hoạt động backtest nào mô phỏng quản lý vốn thật (backtest
 tín hiệu thuần túy, không tính PnL theo vốn, vẫn có thể thực hiện trước khi chốt
 số — xem `backtests/BACKTEST_STANDARD.md`).
+
+
+## Chính sách DEMO thường — 2026-10-05
+
+Founder đã trực tiếp giao quyền chọn và thiết lập giới hạn thử nghiệm DEMO lúc 17:10 (Asia/Saigon). Phần này thay trạng thái chưa chốt số **chỉ cho MetaQuotes-Demo thường**; tài khoản tiền thật/quỹ vẫn chưa được mở quyền.
+
+- Rủi ro theo stop mỗi lệnh: tối đa **0,25% equity broker đã xác minh**.
+- Tổng rủi ro theo stop đang mở cộng lệnh mới: tối đa **1% equity**; cộng gross risk, không bù trừ các hướng đối nghịch.
+- Lỗ ngày: dừng thêm rủi ro tại **1% equity**, tính chi phí và lỗ nổi; khi bổ sung runtime phải dùng mốc đầu ngày đã lưu và dữ liệu đối soát, không dùng balance cache.
+- Drawdown: dừng tại **5% từ đỉnh equity đã lưu bền vững**; không đặt lại đỉnh khi restart.
+- Chuỗi thua: dừng tại **5 lệnh đóng thua liên tiếp**; không tự mở lại.
+- Giai đoạn đầu: tối đa **1 vị thế, tổng 0,01 lot**, EURUSD; không pyramiding/martingale/nới stop. Nếu lot tối thiểu vượt ngân sách thì bỏ lệnh.
+- Stop broker bắt buộc; trailing được phép theo rule có sẵn, không yêu cầu TP/RR cố định.
+- Không ép giao dịch khi engine TF-013A chưa có tín hiệu hợp lệ.
+
+Nguồn các con số: **IMPLEMENTATION_DERIVATION**, cấu hình thử nghiệm bảo thủ được chọn theo quyền Founder giao; không phải mức tối ưu đã chứng minh bằng sách/backtest. CME mô tả quy tắc 2% là ngưỡng lựa chọn tùy ý, không phải bảo đảm: https://www.cmegroup.com/education/courses/trade-and-risk-management/the-2-percent-rule . Lot không thay thế cách tính risk theo stop.
+
+Cấu hình máy đọc: `risk/ORDINARY_MT5_DEMO_POLICY.json`. Bản được áp dụng cho tài khoản nằm trong bảng riêng server-side `ai_trade.ordinary_demo_policies`; không có mật khẩu trong repo. Policy được lưu không đồng nghĩa engine đã gửi lệnh hoặc runtime đã áp dụng đủ các kiểm soát. Execution chỉ được bật sau khi adapter thực thi đầy đủ các giới hạn và đối soát broker.

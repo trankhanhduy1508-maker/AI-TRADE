@@ -344,15 +344,30 @@ async function preflight(req:Request){
   const {row}=await sessionFrom(req);
   const rows=await sql`select enabled,demo_send_enabled,strategy_id
     from ai_trade.runtime_config where id=1 limit 1`;
+  const policies=await sql`select policy,approved,approval_evidence
+    from ai_trade.ordinary_demo_policies
+    where account_login=${row.account_login} and server=${row.server} limit 1`;
+  const saved=policies[0];
+  const policy=saved?{...saved.policy,account_login:String(row.account_login),
+    server:String(row.server),approved:saved.approved,
+    approval_evidence:saved.approval_evidence}:{};
   // Cached account data is intentionally not supplied as fresh broker proof.
   // No request body or client flag can supply risk approval or bypass controls.
   const result=ordinaryDemoPreflight({
-    session:row,config:rows[0]??{},
+    session:row,config:rows[0]??{},policy,
     providerConfigured:Boolean(Deno.env.get("METAAPI_TOKEN")?.trim()
       && Deno.env.get("METAAPI_ACCOUNT_ID")?.trim()),
     strategyValidated:false,executionLaneImplemented:false
   });
-  return json({status:"PREFLIGHT_BLOCKED",auto_trade:"OFF",...result});
+  return json({status:"PREFLIGHT_BLOCKED",auto_trade:"OFF",...result,
+    risk_policy: saved ? {
+      version:policy.version,max_trade_risk_fraction:policy.max_trade_risk_fraction,
+      max_portfolio_risk_fraction:policy.max_portfolio_risk_fraction,
+      max_daily_loss_fraction:policy.max_daily_loss_fraction,
+      max_drawdown_fraction:policy.max_drawdown_fraction,
+      max_consecutive_losses:policy.max_consecutive_losses,
+      max_total_volume:policy.max_total_volume,max_open_positions:policy.max_open_positions
+    }:null});
 }
 
 async function handle(req:Request){

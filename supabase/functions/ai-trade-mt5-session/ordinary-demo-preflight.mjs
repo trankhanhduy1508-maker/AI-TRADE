@@ -16,6 +16,8 @@ export function ordinaryDemoPreflight(context = {}) {
     && fraction(policy.max_trade_risk_fraction) && fraction(policy.max_portfolio_risk_fraction)
     && policy.max_portfolio_risk_fraction >= policy.max_trade_risk_fraction
     && fraction(policy.max_drawdown_fraction)
+    && fraction(policy.max_daily_loss_fraction)
+    && Number.isInteger(policy.max_open_positions) && policy.max_open_positions > 0
     && Number.isInteger(policy.max_consecutive_losses) && policy.max_consecutive_losses > 0
     && typeof policy.max_total_volume === 'number' && Number.isFinite(policy.max_total_volume) && policy.max_total_volume > 0;
   if (!approved) blockers.push('RISK_NOT_APPROVED');

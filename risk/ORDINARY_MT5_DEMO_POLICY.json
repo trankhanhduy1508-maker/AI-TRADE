@@ -1,0 +1,25 @@
+{
+  "profile": "ORDINARY_MT5_DEMO",
+  "version": "2026-10-05-v1",
+  "server": "MetaQuotes-Demo",
+  "mode": "DEMO",
+  "currency": "USD",
+  "strategy_id": "TF-013A-FORWARD-DIVERSIFIED-TREND",
+  "max_trade_risk_fraction": 0.0025,
+  "max_portfolio_risk_fraction": 0.01,
+  "max_daily_loss_fraction": 0.01,
+  "max_drawdown_fraction": 0.05,
+  "max_consecutive_losses": 5,
+  "max_total_volume": 0.01,
+  "max_open_positions": 1,
+  "max_spread_points": 20,
+  "symbols": [
+    "EURUSD"
+  ],
+  "pyramiding": false,
+  "live_money_locked": true,
+  "automatic_resume": false,
+  "requires_visible_stop": true,
+  "approval_evidence": "Founder explicitly delegates choosing fixed DEMO trial risk limits and authorizes DEMO trading, 2026-10-05 17:10 Asia/Saigon.",
+  "provenance": "IMPLEMENTATION_DERIVATION: conservative trial limits, not book-proven optimal values or profitability guarantee."
+}
