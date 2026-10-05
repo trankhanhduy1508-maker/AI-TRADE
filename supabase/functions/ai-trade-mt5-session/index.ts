@@ -1,6 +1,7 @@
 
 import postgres from "npm:postgres@3.4.9";
 import {corsHeaders} from "./web-origin.mjs";
+import {ordinaryDemoPreflight} from "./ordinary-demo-preflight.mjs";
 
 const sql = postgres(Deno.env.get("SUPABASE_DB_URL")!, {
   prepare:false, max:1, connect_timeout:10, idle_timeout:20
@@ -313,6 +314,9 @@ async function brokers(){
   if(cfg.demo_send_enabled!==true) blockers.push("DEMO_SEND_DISABLED");
   if(cfg.risk_profile_approved!==true) blockers.push("RISK_NOT_APPROVED");
   if(!providerReady) blockers.push("PROVIDER_NOT_READY");
+  // This session service has no order submission route. Configuration alone
+  // cannot prove broker state, risk limits, or an implemented execution lane.
+  blockers.push("EXECUTION_LANE_UNAVAILABLE");
   const demoAutoTradeReady=blockers.length===0;
   return json({
     status:"OK",
@@ -331,9 +335,24 @@ async function brokers(){
     control_plane:"SERVER_AUTHORITATIVE",
     render_required:false,
     live_money_locked:true,
-    order_send_enabled:demoAutoTradeReady,
+    order_send_enabled:false,
     orders_sent:0
   });
+}
+
+async function preflight(req:Request){
+  const {row}=await sessionFrom(req);
+  const rows=await sql`select enabled,demo_send_enabled,strategy_id
+    from ai_trade.runtime_config where id=1 limit 1`;
+  // Cached account data is intentionally not supplied as fresh broker proof.
+  // No request body or client flag can supply risk approval or bypass controls.
+  const result=ordinaryDemoPreflight({
+    session:row,config:rows[0]??{},
+    providerConfigured:Boolean(Deno.env.get("METAAPI_TOKEN")?.trim()
+      && Deno.env.get("METAAPI_ACCOUNT_ID")?.trim()),
+    strategyValidated:false,executionLaneImplemented:false
+  });
+  return json({status:"PREFLIGHT_BLOCKED",auto_trade:"OFF",...result});
 }
 
 async function handle(req:Request){
@@ -342,6 +361,7 @@ async function handle(req:Request){
     if(req.method==="GET" && path.endsWith("/mt5/brokers")) return await brokers();
     if(req.method==="POST" && path.endsWith("/mt5/session/connect")) return await connect(req);
     if(req.method==="GET" && path.endsWith("/mt5/session/account")) return await account(req);
+    if(req.method==="GET" && path.endsWith("/mt5/session/preflight")) return await preflight(req);
     if(req.method==="POST" && path.endsWith("/mt5/session/disconnect")) return await disconnect(req);
     return json({status:"NOT_FOUND",auto_trade:"OFF",
       order_send_enabled:false,orders_sent:0},404);
