@@ -381,3 +381,12 @@
 - 28 test đúng phạm vi PASS; portable build PASS; không gọi full-suite PASS.
 - DEMO auto trade vẫn OFF: provider chưa ready, risk chưa duyệt, max total volume NULL; live money LOCKED.
 - Chi tiết: research/CWS_AUTOTRADE_WEB_MT5_CHECKPOINT_2026-10-05.md.
+
+
+## 2026-10-05 — Knowledge → deterministic research, no LLM runtime
+
+- Nạp 12 nguyên tắc Masterbook V3 có source/hash vào machine-readable rules package.
+- Bộ research gọi lại R2 chronological walk-forward; không thay TF-013A production.
+- 20 Python test PASS + CLI E2E synthetic PASS: 12 claims loaded, 2 folds, llm_calls=0, orders_sent=0, promotion=NOT_APPROVED, costs MODELED_ONLY.
+- Không claim edge/real-market net profitability; chưa thêm cloud cron hoặc broker send.
+- Handoff: research/CWS_AUTOTRADE_AUTONOMOUS_RULES_2026-10-05.md.
