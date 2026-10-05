@@ -24,9 +24,9 @@ function renderPortfolio(){
   text("portfolioNet",money(v.net));text("pairCount",positions.length?String(v.pairCount):"—");
   $("netPL").className=sign(v.net);$("portfolioNet").className=sign(v.net);
   const label=mode==="demo"?"MINH HỌA":mode==="manual"?"NHẬP THỦ CÔNG":"CHƯA KẾT NỐI";
-  text("portfolioSource",label);text("portfolioModeTag",label);text("dataChip",label);
+  text("portfolioSource",label);text("portfolioModeTag",label);text("dataChip","LỆNH MÔ PHỎNG");
   $("dataChip").classList.toggle("demo",mode==="demo");
-  text("sourceDescription",mode==="demo"?"Giá công khai · P/L minh họa, không phải lệnh thật":mode==="manual"?"Giá công khai · Vị thế nhập thủ công, chưa xác minh broker":"Giá công khai · Chưa kết nối vị thế Founder");
+  text("sourceDescription",mode==="demo"?"Giá công khai · P/L minh họa, không phải lệnh thật":mode==="manual"?"Giá công khai · Vị thế nhập thủ công, chưa xác minh broker":"Lệnh mô phỏng tự động · Danh mục nhập thủ công chưa có dữ liệu");
   const order=S.MARKET_ORDER.concat(v.groups.filter(g=>!S.MARKET_ORDER.includes(g.symbol)).map(g=>g.symbol));
   $("portfolioRows").innerHTML=order.map(m=>{
     const g=map.get(m),side=g?g.side:"—",pl=g?g.floatingPL:null;

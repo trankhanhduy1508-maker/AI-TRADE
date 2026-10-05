@@ -20,7 +20,7 @@ ROOT = Path(__file__).resolve().parents[1]
 SOURCE = ROOT / "google-sites" / "cws-ai-trade"
 ALLOWLIST = ("index.html", "styles.css", "portfolio.js", "tradingview.js",
              "app.js", "pwa.js", "sw.js", "manifest.webmanifest",
-             "mt5-login.html", "founder-mt5.js", "session-client.js")
+             "mt5-login.html", "founder-mt5.js", "session-client.js", "paper-orders.js")
 APP_OLD_ROOT = "/functions/v1/cws-ai-trade-site/app/"
 
 
@@ -187,3 +187,4 @@ if __name__ == "__main__":
     args = parser.parse_args()
     result = build(Path(args.output),args.base,android=args.android)
     print(json.dumps({"base":args.base,"files":result},sort_keys=True))
+

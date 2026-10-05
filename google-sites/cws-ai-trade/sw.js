@@ -11,6 +11,7 @@ const CORE=[
   ROOT+"?asset=tradingview.js",
   ROOT+"?asset=app.js",
   ROOT+"?asset=pwa.js",
+  ROOT+"?asset=paper-orders.js",
   ROOT+"?asset=manifest.webmanifest",
   ROOT+"?asset=icon-192.png",
   ROOT+"?asset=icon-512.png"
@@ -75,7 +76,7 @@ self.addEventListener("fetch",event=>{
     return;
   }
   const asset=u.searchParams.get("asset");
-  const safeAsset=["styles.css","portfolio.js","tradingview.js","app.js","pwa.js","manifest.webmanifest","icon-192.png","icon-512.png"].includes(asset);
+  const safeAsset=["styles.css","portfolio.js","tradingview.js","app.js","pwa.js","paper-orders.js","manifest.webmanifest","icon-192.png","icon-512.png"].includes(asset);
   const safePath=false;
   if(!safeAsset&&!safePath)return;
   event.respondWith((async()=>{
@@ -87,3 +88,4 @@ self.addEventListener("fetch",event=>{
     return response;
   })());
 });
+
