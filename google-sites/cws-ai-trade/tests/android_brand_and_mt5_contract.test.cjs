@@ -37,10 +37,22 @@ test("MT5 verification needs login, password and the exact authorized server",()
 test("broker credentials are gated behind Founder auth and cannot place orders",()=>{
  const api=read("supabase/functions/ai-trade-founder-mt5/index.ts");
  assert.match(api,/GOOGLE_FOUNDER_REQUIRED/);
- assert.match(api,/samePassword\(password/);
+ assert.match(api,/parseFounderDemoLogin\(payload\)/);
+ assert.match(api,/verifyPassword:password/);
+ assert.match(api,/data\.verified!==true/);
+ assert.doesNotMatch(api,/samePassword\(password/);
  assert.match(api,/BROKER_DEMO_NOT_VERIFIED/);
  assert.match(api,/liveMoneyLocked:true/);
  assert.doesNotMatch(api,/order_send|create_market_order|insert into ai_trade\.order_intents/i);
  const workflow=read(".github/workflows/cws-ai-trade-android-debug.yml");
  assert.doesNotMatch(workflow,/assembleDebug|upload-artifact|gradle/);
+});
+
+test("Founder credential parser rejects invalid secrets without changing supplied password",async()=>{
+ const {parseFounderDemoLogin}=await import('../../../supabase/functions/ai-trade-founder-mt5/demo-login-contract.mjs');
+ const valid={login:'123456',server:'MetaQuotes-Demo',password:'demo-pass'};
+ assert.deepEqual(parseFounderDemoLogin(valid),valid);
+ for(const body of [null,{...valid,server:'Real'},{...valid,password:''},{...valid,password:'bad\npass'},{...valid,login:123456}]){
+  assert.throws(()=>parseFounderDemoLogin(body),/INVALID_DEMO_CREDENTIAL_FORMAT/);
+ }
 });

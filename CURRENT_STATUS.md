@@ -390,3 +390,14 @@
 - 20 Python test PASS + CLI E2E synthetic PASS: 12 claims loaded, 2 folds, llm_calls=0, orders_sent=0, promotion=NOT_APPROVED, costs MODELED_ONLY.
 - Không claim edge/real-market net profitability; chưa thêm cloud cron hoặc broker send.
 - Handoff: research/CWS_AUTOTRADE_AUTONOMOUS_RULES_2026-10-05.md.
+
+
+## 2026-10-05 — Continuous replay + execution data integrity
+
+- Python MT5 boundary reject invalid OHLC/time/PnL/freshness; risk permission defaults OFF.
+- Replay giữ vị thế/pending qua fold, reuse frozen R2 selections, R0/FLAT và modeled cost sensitivity. Không phải full R3; TF-013A runtime không đổi.
+- Native Python rerun 26 pinned series: 15 D1 + 11 H4; EURCHF vẫn reject. HISTORICAL_REUSED/UNPROVEN, không promote.
+- Full Python: 799 passed, 1 skipped (JDK). Node web/forward: 36/36. Static build exit 0. Chưa browser/mobile/broker lifecycle E2E.
+- Autonomous DEMO chưa hoàn thiện: provider/ordinary-DEMO execution lane chưa verified, hard risk chưa chốt, 7 forward state cũ mất dữ liệu vẫn blocked, raw BTC/US30/new venue data chưa lấy được.
+- No broker orders, no live/funded unlock, no phí cloud mới, no LLM runtime.
+- Evidence: research/CWS_AUTOTRADE_CONTINUOUS_REPLAY_EXECUTION_CHECKPOINT_2026-10-05.md.

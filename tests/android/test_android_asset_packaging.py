@@ -22,7 +22,8 @@ def test_native_asset_build_whitelist_and_brand(tmp_path: Path):
     output = tmp_path / "www"
     manifest = build(output, "/assets/", android=True)
     assert BUNDLE.issubset(manifest)
-    assert set(manifest) == BUNDLE | {"mt5-login.html", "founder-mt5.js"}
+    assert set(manifest) == BUNDLE | {"mt5-login.html", "founder-mt5.js", "session-client.js"}
+    assert 'src="./session-client.js"' in (output / "mt5-login.html").read_text()
     assert {f.name for f in output.iterdir()} == set(manifest) | {".nojekyll"}
     assert not any(name.lower().endswith(PRIVATE_FORBIDDEN) for name in manifest)
     index = (output / "index.html").read_text(encoding="utf-8")
@@ -45,3 +46,4 @@ def test_webview_asset_allowlist_matches_built_distribution(tmp_path: Path):
     # HTML auth bridge deliberately does not live in native WebView.
     assert "founder-mt5.js" not in allowed
     assert "mt5-login.html" not in allowed
+    assert "session-client.js" not in allowed

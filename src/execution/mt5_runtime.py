@@ -33,18 +33,23 @@ def closed_bars(mt5: Any, symbol: str, timeframe: int, count: int) -> tuple[Bar,
     records = mt5.copy_rates_from_pos(symbol, timeframe, 1, count)
     if records is None or len(records) == 0:
         raise RuntimeError(f"copy_rates_from_pos failed: {mt5.last_error()}")
-    bars = [
-        Bar(
-            timestamp=datetime.fromtimestamp(int(_value(row, "time")), timezone.utc).isoformat(),
-            open=float(_value(row, "open")),
-            high=float(_value(row, "high")),
-            low=float(_value(row, "low")),
-            close=float(_value(row, "close")),
-            volume=float(_value(row, "tick_volume")),
-            closed=True,
-        )
-        for row in records
-    ]
+    bars = []
+    for row in records:
+        try:
+            epoch = float(_value(row, "time"))
+            prices = tuple(float(_value(row, name)) for name in ("open", "high", "low", "close"))
+            volume = float(_value(row, "tick_volume"))
+            if (not math.isfinite(epoch) or epoch <= 0 or not epoch.is_integer()
+                    or not all(math.isfinite(v) and v > 0 for v in prices)
+                    or not math.isfinite(volume) or volume < 0
+                    or prices[1] < max(prices[0], prices[2], prices[3])
+                    or prices[2] > min(prices[0], prices[1], prices[3])):
+                raise ValueError("invalid broker bar")
+            timestamp = datetime.fromtimestamp(int(epoch), timezone.utc).isoformat()
+        except (AttributeError, KeyError, TypeError, ValueError, OverflowError, OSError) as exc:
+            raise RuntimeError("BROKER_BAR_INVALID") from exc
+        bars.append(Bar(timestamp=timestamp, open=prices[0], high=prices[1],
+                        low=prices[2], close=prices[3], volume=volume, closed=True))
     # Do not silently reorder/deduplicate broker records: doing so can hide
     # stale or inconsistent prices and misrepresent a closed-bar checkpoint.
     if any(current.timestamp <= previous.timestamp for previous, current in zip(bars, bars[1:])):
@@ -88,10 +93,16 @@ def daily_pnl(mt5: Any, *, magic: int | None, now: datetime | None = None) -> fl
     for deal in deals:
         if magic is not None and int(getattr(deal, "magic", 0) or 0) != magic:
             continue
-        total += float(getattr(deal, "profit", 0.0) or 0.0)
-        total += float(getattr(deal, "commission", 0.0) or 0.0)
-        total += float(getattr(deal, "swap", 0.0) or 0.0)
-        total += float(getattr(deal, "fee", 0.0) or 0.0)
+        try:
+            values = tuple(float(getattr(deal, name, 0.0))
+                           for name in ("profit", "commission", "swap", "fee"))
+        except (TypeError, ValueError, OverflowError) as exc:
+            raise RuntimeError("BROKER_DAILY_PNL_INVALID") from exc
+        if not all(math.isfinite(value) for value in values):
+            raise RuntimeError("BROKER_DAILY_PNL_INVALID")
+        total += sum(values)
+    if not math.isfinite(total):
+        raise RuntimeError("BROKER_DAILY_PNL_INVALID")
     return total
 
 
@@ -116,11 +127,15 @@ def runtime_snapshot(
     now: datetime,
     reconciled: bool,
     max_tick_age_seconds: float,
-    risk_allowed: bool = True,
+    risk_allowed: bool = False,
     manual_pause: bool = False,
 ) -> SafetySnapshot:
     if now.tzinfo is None:
         raise ValueError("now must be timezone-aware")
+    if (isinstance(max_tick_age_seconds, bool)
+            or not isinstance(max_tick_age_seconds, (int, float))
+            or not math.isfinite(max_tick_age_seconds) or max_tick_age_seconds <= 0):
+        raise ValueError("INVALID_TICK_AGE_LIMIT")
     age = (now - market.tick_time).total_seconds()
     fresh = 0 <= age <= max_tick_age_seconds
     return SafetySnapshot(

@@ -3,6 +3,8 @@ import json
 from pathlib import Path
 import struct
 import zlib
+import re
+import shutil
 
 import pytest
 
@@ -30,7 +32,7 @@ def test_static_page_renderable_and_pwa_scoped(base,tmp_path):
         output/"tradingview.js").read_text()
     worker=(output/"sw.js").read_text()
     assert f'const ROOT="{base}";' in worker
-    assert "cws-ai-trade-static-v6" in worker
+    assert re.search(r'const CACHE="cws-ai-trade-static-[0-9a-f]{12}";',worker)
     assert 'ROOT+"styles.css"' in worker
     assert 'ROOT+"tradingview.js"' in worker
     assert "u.pathname.slice(ROOT.length)" in worker
@@ -94,3 +96,17 @@ def test_android_local_shell_excludes_browser_service_worker(tmp_path):
 def test_android_requires_fixed_internal_asset_base(tmp_path):
     with pytest.raises(ValueError,match="Android asset base"):
         build(tmp_path/"invalid","/",android=True)
+
+def test_asset_change_upgrades_service_worker_cache(tmp_path,monkeypatch):
+    import scripts.build_cws_trade_static as builder
+    source=tmp_path/'source'
+    shutil.copytree(builder.SOURCE,source)
+    monkeypatch.setattr(builder,'SOURCE',source)
+    build(tmp_path/'first')
+    first=(tmp_path/'first'/'sw.js').read_text()
+    app=source/'app.js'
+    app.write_text(app.read_text()+'\n/* new asset revision */\n')
+    build(tmp_path/'second')
+    second=(tmp_path/'second'/'sw.js').read_text()
+    pattern=r'const CACHE="([^"]+)";'
+    assert re.search(pattern,first).group(1)!=re.search(pattern,second).group(1)
