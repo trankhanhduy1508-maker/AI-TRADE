@@ -49,7 +49,7 @@
         <span class="side-label">Tình trạng hệ thống</span>
         <div class="safety-item"><span>● Giao diện</span><b>Hoạt động</b></div>
         <div class="safety-item"><span>● Sách Masterbook</span><b id="bookBadge">Đang tải</b></div>
-        <div class="safety-item"><span>● CWS Trading Engine</span><b class="warning">CHƯA CÓ MODEL ĐƯỢC DUYỆT</b></div>
+        <div class="safety-item"><span>● CWS Trading Engine</span><b class="warning">TF-013A · PAPER</b></div>
         <div class="safety-item"><span>● Broker</span><b>Chưa kết nối</b></div>
         <div class="safety-item"><span>● Live money</span><b class="warning">KHÓA</b></div>
         <div class="safety-info">Bản này chỉ đọc dữ liệu công khai và phân tích kiến thức. Không gửi lệnh BUY/SELL, không điều khiển MT5.</div>
@@ -89,15 +89,17 @@
         </div>
         <div class="below-grid">
           <section class="panel compact-panel" id="modelResearchPanel" aria-label="Trạng thái mô hình CWS Trading Engine">
-            <div class="panel-heading"><h2>CWS Trading Engine</h2><span class="pill" id="modelResearchStatus">MODEL_NOT_APPROVED</span></div>
-            <p>Đã có thử nghiệm máy học nghiên cứu nội bộ, nhưng <strong>CHƯA CÓ MODEL ĐƯỢC PHÊ DUYỆT</strong> để sử dụng trong sản phẩm.</p>
-            <p class="muted">Tín hiệu: ABSTAIN · Gate: LOCKED · Chỉ đọc. Không có model production, không gửi lệnh BUY/SELL và không thay đổi Risk/The5ers gate.</p>
-            <p class="muted micro">Model production: — · Dataset được duyệt: — · OOS/WF cho production: Chưa đạt</p>
+            <div class="panel-heading"><h2>Bot tự động · TF-013A</h2><span class="pill" id="modelResearchStatus">PAPER ONLY</span></div>
+            <p>Bộ quy tắc đọc dữ liệu đã đóng → tìm tín hiệu → mô phỏng vào/thoát lệnh → ghi nhật ký → đánh giá chiến lược. Chạy phía máy chủ khi bạn đóng trang; không gọi AI cho từng lệnh.</p>
+            <p class="muted">Tự nghiên cứu bằng replay, kiểm thử ngoài mẫu và theo dõi forward. Chiến lược mới phải vượt kiểm chứng trước khi được dùng; không tự nới giới hạn rủi ro.</p>
+            <p class="muted">MT5 DEMO chưa mở đặt lệnh. Dữ liệu paper cần kiểm tra tính toàn vẹn; không tính thành kết quả khớp lệnh broker.</p>
+            <a class="founder-link" href="https://oziktadfeenydvgobudr.supabase.co/functions/v1/ai-trade-dashboard?admin=1" rel="noreferrer">Mở bảng theo dõi bot bằng Google Founder ↗</a>
+            <p class="muted micro">Bảng theo dõi yêu cầu đăng nhập. Trang này không lưu mật khẩu MT5; không có nút bật tiền thật.</p>
           </section>
           <section class="panel compact-panel">
             <div class="panel-heading"><h2>Nguồn dữ liệu vị thế</h2></div>
             <p class="muted">Web App không truy cập dữ liệu broker khi chưa có phiên xác thực hợp lệ. Có thể nạp tệp JSON để xem tổng hợp ngay trong trình duyệt; dữ liệu không được tải lên máy chủ.</p>
-            <a class="founder-link" href="./mt5-login.html">🔐 Kết nối MT5 DEMO bằng Google Founder</a>
+            <a class="founder-link" href="./mt5-login.html">🔐 Kết nối MT5 DEMO bằng Login / Password / Server</a>
             <label class="file-trigger" for="positionInput">▤ Nạp JSON vị thế <input type="file" id="positionInput" accept=".json,application/json"></label>
             <button class="secondary" id="sampleToggle" type="button">Xem thử bằng dữ liệu MINH HỌA</button>
             <details class="schema"><summary>Định dạng JSON được hỗ trợ</summary><code>[{"symbol":"EURUSD","side":"BUY","lot":0.1,"floatingPL":12.5}]</code></details>

@@ -1,4 +1,5 @@
 import postgres from "npm:postgres@3.4.9";
+import {decodePosition} from "./state-contract.mjs";
 
 type Direction="UP"|"DOWN";
 type AssetClass="FX"|"COMMODITY"|"CRYPTO"|"INDEX";
@@ -34,7 +35,7 @@ async function authorized(req:Request){
 }
 async function event(type:string,result:string,details:Record<string,unknown>={}){
  await sql`insert into ai_trade.events(event_type,result,details)
- values(${type},${result},${JSON.stringify({...details,strategyId:STRATEGY_ID})}::jsonb)`;
+ values(${type},${result},${sql.json({...details,strategyId:STRATEGY_ID})}::jsonb)`;
 }
 function n(x:unknown){const v=Number(x);return Number.isFinite(v)?v:null;}
 function round(v:number,d=8){const p=10**d;return Math.round(v*p)/p;}
@@ -141,11 +142,9 @@ async function processInstrument(i:Instrument){
  const state=rows[0],last=Number(state.last_epoch);
  if(last<bars[0].timestamp)return {symbol:i.key,status:"GAP_BLOCKED",lastProcessed:last,firstAvailable:bars[0].timestamp};
 
- let position:Position|null=state.position?{
-  direction:String(state.position.direction) as Direction,
-  entryTs:Number(state.position.entryTs),entryPrice:Number(state.position.entryPrice),
-  stop:Number(state.position.stop),initialStop:Number(state.position.initialStop),riskPrice:Number(state.position.riskPrice)
- }:null;
+ // A JSON string is a legacy storage format, never a Position object.
+ // Invalid state throws before advancing the checkpoint or creating an entry.
+ let position:Position|null=decodePosition(state.position);
  let pending:Direction|null=state.pending_direction?String(state.pending_direction) as Direction:null;
  let reviewMonth=String(state.last_review_month);
  const indexes=bars.map((b,index)=>({b,index})).filter(x=>x.b.timestamp>last).map(x=>x.index);
@@ -194,7 +193,7 @@ async function processInstrument(i:Instrument){
   last_processed=to_timestamp(${checkpoint}),
   last_review_month=${reviewMonth},
   pending_direction=${pending},
-  position=${position?JSON.stringify(position):null}::jsonb,
+  position=${position?sql.json(position):null}::jsonb,
   updated_at=now()
  where strategy_id=${STRATEGY_ID} and symbol=${i.key}`;
 
@@ -230,15 +229,16 @@ Deno.serve(async(req)=>{
    }
    await new Promise(r=>setTimeout(r,75));
   }
+  const integrityBlocked=results.some(r=>r.status==="ERROR"&&r.error==="POSITION_STATE_INVALID");
   const result={
-   ok:true,status:"FORWARD_SHADOW",mode:"PAPER_ONLY",
+   ok:!integrityBlocked,status:integrityBlocked?"STATE_INTEGRITY_BLOCKED":"FORWARD_SHADOW",mode:"PAPER_ONLY",
    strategyId:STRATEGY_ID,forwardStartUtc:"2026-09-27",
    universeSize:UNIVERSE.length,brokerOrders:false,liveMoneyLocked:true,
    historicalTradeBackfill:false,results,metrics:await metrics()
   };
   await sql`insert into ai_trade.forward_shadow_runs(strategy_id,request_id,status,result)
-   values(${STRATEGY_ID},${runId},'FORWARD_SHADOW',${JSON.stringify(result)}::jsonb)`;
-  return json(result);
+   values(${STRATEGY_ID},${runId},${result.status},${sql.json(result)}::jsonb)`;
+  return json(result,integrityBlocked?409:200);
  }catch(error){
   return json({ok:false,status:"ERROR",brokerOrders:false,liveMoneyLocked:true,message:error instanceof Error?error.message:String(error)},500);
  }

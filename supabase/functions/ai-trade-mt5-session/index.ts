@@ -1,5 +1,6 @@
 
 import postgres from "npm:postgres@3.4.9";
+import {corsHeaders} from "./web-origin.mjs";
 
 const sql = postgres(Deno.env.get("SUPABASE_DB_URL")!, {
   prepare:false, max:1, connect_timeout:10, idle_timeout:20
@@ -335,7 +336,7 @@ async function brokers(){
   });
 }
 
-Deno.serve(async(req)=>{
+async function handle(req:Request){
   try{
     const path = new URL(req.url).pathname;
     if(req.method==="GET" && path.endsWith("/mt5/brokers")) return await brokers();
@@ -351,4 +352,16 @@ Deno.serve(async(req)=>{
       : status==="INVALID_REQUEST" ? 400 : 503;
     return json({status,auto_trade:"OFF",order_send_enabled:false,orders_sent:0},code);
   }
+}
+
+Deno.serve(async(req)=>{
+ const origin=req.headers.get('origin')??'';
+ const cors=corsHeaders(origin);
+ if(origin&&!cors)return json({status:'WEB_ORIGIN_NOT_ALLOWED',order_send_enabled:false},403);
+ if(req.method==='OPTIONS')return new Response(null,{status:cors?204:403,headers:cors??{}});
+ const response=await handle(req);
+ if(!cors)return response; // Preserve the existing native Android contract.
+ const headers=new Headers(response.headers);
+ for(const [k,v] of Object.entries(cors))headers.set(k,String(v));
+ return new Response(response.body,{status:response.status,headers});
 });

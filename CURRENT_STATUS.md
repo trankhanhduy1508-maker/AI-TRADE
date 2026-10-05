@@ -371,3 +371,13 @@
 - Supabase connector đã chặn attempt deploy patch thử nghiệm; deployed runtime vẫn v6 nguyên trạng.
 - AutoTrade DEMO broker execution: NOT_YET_PASS. TF-013A engine không đổi. Promotion gate không bypass. Live/funded money HARD LOCKED.
 - Evidence chi tiết: `research/CWS_AUTOTRADE_MT5_DEMO_PHONE_VERIFICATION_BLOCKER_2026-10-02.md`.
+
+
+## 2026-10-05 — Web + MT5 thử nghiệm
+
+- Web/PWA riêng tư đã publish; form Login/Password/Server nối MT5 session v9.
+- Readback broker DEMO đã liên kết: PASS read-only; chưa có web password-login E2E, chưa có broker order.
+- Forward v2 chặn state vị thế hỏng, sửa JSON double encoding; 7 state hỏng chưa phục hồi.
+- 28 test đúng phạm vi PASS; portable build PASS; không gọi full-suite PASS.
+- DEMO auto trade vẫn OFF: provider chưa ready, risk chưa duyệt, max total volume NULL; live money LOCKED.
+- Chi tiết: research/CWS_AUTOTRADE_WEB_MT5_CHECKPOINT_2026-10-05.md.

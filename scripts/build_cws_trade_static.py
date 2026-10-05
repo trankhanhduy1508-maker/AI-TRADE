@@ -20,7 +20,7 @@ ROOT = Path(__file__).resolve().parents[1]
 SOURCE = ROOT / "google-sites" / "cws-ai-trade"
 ALLOWLIST = ("index.html", "styles.css", "portfolio.js", "tradingview.js",
              "app.js", "pwa.js", "sw.js", "manifest.webmanifest",
-             "mt5-login.html", "founder-mt5.js")
+             "mt5-login.html", "founder-mt5.js", "session-client.js")
 APP_OLD_ROOT = "/functions/v1/cws-ai-trade-site/app/"
 
 
