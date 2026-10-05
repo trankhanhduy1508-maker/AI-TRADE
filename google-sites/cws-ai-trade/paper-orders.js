@@ -36,7 +36,7 @@
       const result=number(closed?row.gross_r:row.unrealized_r);
       cell(tr,rformat(result),result>=0?"positive":"negative");
       cell(tr,time(closed?row.exit_ts:row.last_mark_ts));
-      if(closed) cell(tr,row.exit_reason==="REVERSAL"?"Đảo chiều":row.exit_reason==="STOP"?"Chạm stop":"Đóng theo quy tắc");
+      if(closed) cell(tr,row.exit_reason==="USER_CLOSE"?"Theo yêu cầu":row.exit_reason==="REVERSAL"?"Đảo chiều":row.exit_reason==="STOP"?"Chạm stop":"Đóng theo quy tắc");
       body.append(tr);
     });
   }
