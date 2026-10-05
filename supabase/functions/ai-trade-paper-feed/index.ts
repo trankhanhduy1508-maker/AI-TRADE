@@ -1,4 +1,5 @@
 import {value,summarize,PROFILE} from "./paper-pnl.mjs";
+import {fetchQuote,mark} from "./quote-mark.mjs";
 import postgres from "npm:postgres@3.4.9";
 const sql = postgres(Deno.env.get("SUPABASE_DB_URL")!, {prepare:false,max:1,connect_timeout:10,idle_timeout:20});
 const strategy = "TF-013A-ARENA-ALL-MARKETS";
@@ -17,9 +18,10 @@ Deno.serve(async req => {
     const trades = await sql`select id, symbol, asset_class, direction, entry_ts, exit_ts, entry_price, exit_price, gross_r, r_10bps, exit_reason from ai_trade.training_arena_trades where strategy_id=${strategy} order by exit_ts desc`;
     const watch = await sql`select symbol,status,last_signal,last_bar_ts,updated_at from ai_trade.training_arena_watch where strategy_id=${strategy} order by symbol`;
     const runs = await sql`select status, created_at from ai_trade.training_arena_runs where strategy_id=${strategy} order by created_at desc limit 1`;
-    const valuedPositions=positions.map(p=>value(p));
+    const markedPositions=await Promise.all(positions.map(async p=>{try{return mark(p,await fetchQuote(p.symbol));}catch{return {...p,quote_status:"UNAVAILABLE_OR_STALE",quote_source:"Stored daily mark"};}}));
+    const valuedPositions=markedPositions.map(p=>value(p));
     const valuedTrades=trades.map(t=>value(t,true));
     const summary=summarize(valuedPositions,valuedTrades);
-    return json({mode:"SIMULATION",strategy,updateFrequency:"daily",asOf:runs[0]?.created_at??null,runStatus:runs[0]?.status??null,positions:valuedPositions,trades:valuedTrades.slice(0,100),summary,sizing:PROFILE,watch,historyLimit:100});
+    return json({mode:"SIMULATION",strategy,updateFrequency:"on_view_60s",quoteCheckedAt:new Date().toISOString(),quoteRefreshSeconds:60,asOf:runs[0]?.created_at??null,runStatus:runs[0]?.status??null,positions:valuedPositions,trades:valuedTrades.slice(0,100),summary,sizing:PROFILE,watch,historyLimit:100});
   } catch { return json({error:"FEED_UNAVAILABLE"},503); }
 });

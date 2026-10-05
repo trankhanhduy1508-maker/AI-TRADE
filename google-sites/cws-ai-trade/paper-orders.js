@@ -13,7 +13,7 @@
       return Boolean(date(closed?row.exit_ts:row.last_mark_ts));
     };
     function rows(input,closed){return input.filter(r=>{const ok=valid(r,closed);if(!ok)rejected++;return ok;}).map(r=>({...r,side:r.direction==="UP"?"BUY":"SELL"}));}
-    return {positions:rows(feed.positions,false),trades:rows(feed.trades,true),asOf:date(feed.asOf),watch:Array.isArray(feed.watch)?feed.watch:[],summary:feed.summary??null,sizing:feed.sizing??null,rejected};
+    return {positions:rows(feed.positions,false),trades:rows(feed.trades,true),asOf:date(feed.asOf),watch:Array.isArray(feed.watch)?feed.watch:[],summary:feed.summary??null,sizing:feed.sizing??null,quoteCheckedAt:date(feed.quoteCheckedAt),rejected};
   }
   function checkedSummary(data,rejected=0){
     if(!data||data.valid!==true||rejected)return null;
@@ -45,6 +45,7 @@
       const money=element("div",undefined,"order-money");const dollar=number(row.pnl_usd);
       money.append(element("strong",usdformat(dollar),dollar===null?'':dollar<0?'negative':'positive'),element("small",rformat(closed?row.gross_r:row.unrealized_r)));
       line.append(name,money);card.append(line);
+      card.append(element("p",row.quote_status==="RECENT"?"Giá cập nhật: "+time(row.last_mark_ts)+(row.quote_proxy?" · Futures đại diện":""):"Giá cũ: "+time(row.last_mark_ts)+" · Chưa có giá mới", "core-caption"));
       const detail=element("details",undefined,"order-details");detail.append(element("summary","Chi tiết"));
       const fields=[["Khối lượng mô phỏng",format(row.quantity)],["Giá vào",format(row.entry_price)],[closed?"Giá thoát":"Giá hiện tại",format(closed?row.exit_price:row.last_mark_price)]];
       if(!closed)fields.push(["Giá dừng lỗ",format(row.stop_price)]);
@@ -81,8 +82,8 @@
       if($("paperOpenR"))$("paperOpenR").textContent=rformat(usable?summary.open_r:null);
       if($("paperClosedR"))$("paperClosedR").textContent=rformat(usable?summary.closed_r:null);
       const age=last.asOf?Date.now()-Date.parse(last.asOf):Infinity;
-      $("paperStatus").textContent=age>36*3600000?"DỮ LIỆU CŨ":"MÔ PHỎNG · D1";
-      $("paperUpdated").textContent=time(last.asOf)+(last.rejected?" · Có "+last.rejected+" dòng lỗi, đã ẩn.":"");
+      $("paperStatus").textContent=last.positions.some(p=>p.quote_status!=="RECENT")?"CÓ GIÁ CHƯA CẬP NHẬT":"GIÁ MỚI · MÔ PHỎNG";
+      $("paperUpdated").textContent="Kiểm tra giá: "+time(last.quoteCheckedAt)+" · Tự làm mới mỗi 60 giây"+(last.rejected?" · Có "+last.rejected+" dòng lỗi, đã ẩn.":"");
       $("paperError").hidden=true;
     }catch{
       $("paperStatus").textContent="CHƯA TẢI ĐƯỢC";
