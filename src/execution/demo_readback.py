@@ -1,0 +1,170 @@
+"""Verified, read-only MT5 DEMO account and position snapshot.
+
+Supply an already-initialized MT5-compatible terminal. This module never logs
+in, reads credentials, executes orders, or treats historical DB state as live.
+The caller must authorize the owner and reject stale snapshots separately.
+"""
+
+from dataclasses import dataclass
+from datetime import datetime, timezone
+import math
+import re
+from typing import Any
+
+
+@dataclass(frozen=True)
+class DemoPositionSnapshot:
+    ticket: str
+    symbol: str
+    side: str
+    lot: float
+    floating_pnl: float
+    stop_loss: float | None
+    take_profit: float | None
+
+
+@dataclass(frozen=True)
+class DemoAccountSnapshot:
+    login: str
+    server: str
+    currency: str
+    balance: float
+    equity: float
+    positions: tuple[DemoPositionSnapshot, ...]
+    trade_allowed: bool
+    as_of: datetime
+    source: str = "MT5_TERMINAL"
+
+    @property
+    def gross_profit(self) -> float:
+        return sum(max(0.0, p.floating_pnl) for p in self.positions)
+
+    @property
+    def gross_loss(self) -> float:
+        return sum(min(0.0, p.floating_pnl) for p in self.positions)
+
+    @property
+    def net_pnl(self) -> float:
+        return sum(p.floating_pnl for p in self.positions)
+
+    @property
+    def symbols_with_positions(self) -> int:
+        return len({p.symbol for p in self.positions})
+
+
+def _finite(value: Any, field: str) -> float:
+    try:
+        number = float(value)
+    except (TypeError, ValueError, OverflowError) as exc:
+        raise RuntimeError(f"INVALID_{field}") from exc
+    if not math.isfinite(number):
+        raise RuntimeError(f"INVALID_{field}")
+    return number
+
+
+def _protective_price(value: Any, field: str) -> float | None:
+    number = _finite(value, field)
+    if number == 0:
+        return None
+    if number < 0:
+        raise RuntimeError(f"INVALID_{field}")
+    return number
+
+
+def read_demo_snapshot(
+    terminal: Any, *, expected_login: str, expected_server: str
+) -> DemoAccountSnapshot:
+    """Read fresh broker data only for the exactly bound DEMO identity.
+
+    Investor/read-only credentials may read snapshots, but `trade_allowed` is
+    false and must never be interpreted as authorization to place an order.
+    """
+    if not expected_login or not expected_server:
+        raise ValueError("EXPECTED_DEMO_IDENTITY_REQUIRED")
+    terminal_info = getattr(terminal, "terminal_info", None)
+    if not callable(terminal_info):
+        raise RuntimeError("TERMINAL_INFO_UNAVAILABLE")
+    connection = terminal_info()
+    if connection is None or getattr(connection, "connected", None) is not True:
+        raise RuntimeError("BROKER_DISCONNECTED")
+    account_info = getattr(terminal, "account_info", None)
+    if not callable(account_info):
+        raise RuntimeError("ACCOUNT_INFO_UNAVAILABLE")
+    account = account_info()
+    if account is None:
+        raise RuntimeError("ACCOUNT_READ_FAILED")
+    if getattr(account, "trade_mode", None) != 0:
+        raise RuntimeError("LIVE_OR_NON_DEMO_ACCOUNT_BLOCKED")
+    login = str(getattr(account, "login", ""))
+    server = str(getattr(account, "server", ""))
+    if login != str(expected_login) or server != expected_server:
+        raise RuntimeError("ACCOUNT_IDENTITY_MISMATCH")
+    currency = getattr(account, "currency", None)
+    if not isinstance(currency, str) or not currency.strip():
+        raise RuntimeError("INVALID_CURRENCY")
+    balance = _finite(getattr(account, "balance", None), "BALANCE")
+    equity = _finite(getattr(account, "equity", None), "EQUITY")
+    position_getter = getattr(terminal, "positions_get", None)
+    if not callable(position_getter):
+        raise RuntimeError("POSITIONS_UNAVAILABLE")
+    rows = position_getter()
+    if rows is None:
+        raise RuntimeError("POSITIONS_READ_FAILED")
+    result: list[DemoPositionSnapshot] = []
+    seen_tickets: set[str] = set()
+    buy = getattr(terminal, "POSITION_TYPE_BUY", 0)
+    sell = getattr(terminal, "POSITION_TYPE_SELL", 1)
+    for index, position in enumerate(rows):
+        if index >= 1000:
+            raise RuntimeError("TOO_MANY_BROKER_POSITIONS")
+        ticket = getattr(position, "ticket", None)
+        symbol = getattr(position, "symbol", None)
+        pos_type = getattr(position, "type", None)
+        ticket_text = str(ticket)
+        if not re.fullmatch(r"[1-9][0-9]{0,19}", ticket_text):
+            raise RuntimeError("INVALID_POSITION_TICKET")
+        if ticket_text in seen_tickets:
+            raise RuntimeError("DUPLICATE_BROKER_POSITION")
+        seen_tickets.add(ticket_text)
+        if not isinstance(symbol, str) or not re.fullmatch(
+            r"[A-Za-z0-9._-]{2,32}", symbol
+        ):
+            raise RuntimeError("INVALID_POSITION_SYMBOL")
+        if pos_type != buy and pos_type != sell:
+            raise RuntimeError("INVALID_POSITION_SIDE")
+        lot = _finite(getattr(position, "volume", None), "POSITION_LOT")
+        if lot <= 0 or lot > 1000:
+            raise RuntimeError("INVALID_POSITION_LOT")
+        pnl = _finite(getattr(position, "profit", None), "POSITION_PNL")
+        if abs(pnl) > 1e9:
+            raise RuntimeError("INVALID_POSITION_PNL")
+        result.append(DemoPositionSnapshot(
+            ticket=ticket_text, symbol=symbol,
+            side="BUY" if pos_type == buy else "SELL", lot=lot,
+            floating_pnl=pnl,
+            stop_loss=_protective_price(getattr(position, "sl", None), "STOP_LOSS"),
+            take_profit=_protective_price(getattr(position, "tp", None), "TAKE_PROFIT"),
+        ))
+    # Reject an account switch or disconnect that happened while reading positions.
+    # A single pre-read check is insufficient for a shared MT5 terminal.
+    final_connection = terminal_info()
+    if final_connection is None or getattr(final_connection, "connected", None) is not True:
+        raise RuntimeError("BROKER_DISCONNECTED_DURING_READ")
+    final_account = account_info()
+    if final_account is None:
+        raise RuntimeError("ACCOUNT_DISCONNECTED_DURING_READ")
+    if getattr(final_account, "trade_mode", None) != 0:
+        raise RuntimeError("LIVE_OR_NON_DEMO_ACCOUNT_BLOCKED")
+    if (str(getattr(final_account, "login", "")) != login
+            or str(getattr(final_account, "server", "")) != server
+            or getattr(final_account, "currency", None) != currency):
+        raise RuntimeError("ACCOUNT_CHANGED_DURING_READ")
+    # This timestamp identifies the fresh terminal read, not a guaranteed
+    # broker heartbeat or proof that the Android client remains connected.
+    return DemoAccountSnapshot(
+        login=login, server=server, currency=currency,
+        balance=balance, equity=equity, positions=tuple(result),
+        trade_allowed=(getattr(final_account, "trade_allowed", None) is True
+                       and getattr(final_account, "trade_expert", None) is True),
+        as_of=datetime.now(timezone.utc),
+    )

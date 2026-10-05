@@ -1,0 +1,23 @@
+# CWS AI TRADE — Web-first triple-check và giới hạn đã kiểm chứng (2026-09-28)
+
+**Đúng nguồn:** `trankhanhduy1508-maker/AI-TRADE`, nhánh duy nhất `codex/p0-covel-knowledge-audit`. HEAD trước evidence `101e0c5e0e7b40b76f71bb168fa3b6e59592ed1c`. Mốc trước yêu cầu quy tắc mới: `4fcc46393dfefc6f23c22599d6f2c27624260a04`. So sánh GitHub giữa hai mốc chỉ có thay đổi policy, workflows, Web App/PWA, MT5 Founder API và tài liệu; không chạm main, Risk Engine, broker order, kill-switch hoặc The5ers.
+
+## Check 1 — nguồn/commit và quyền
+- `docs/CWS_AI_TRADE_RELEASE_AND_AUTOUPDATE_POLICY_2026-09-28.md` đã được Founder chốt: **Web App trước, kiểm chứng tài khoản MT5 + DEMO Auto Trade sau, release APK có cập nhật tại chỗ cuối cùng**. Không phát hành thêm Debug APK. `.github/workflows/cws-ai-trade-android-debug.yml` đọc lại: không có push trigger, Gradle/assembleDebug hoặc upload-artifact; chỉ có workflow_dispatch để kiểm release evidence và không build APK.
+- Web App canonical ở `google-sites/cws-ai-trade/`; builder `scripts/build_cws_trade_static.py` chỉ xuất first-party asset whitelist. Legacy Supabase Edge v11 trả HTML `text/plain`, không được gọi link website đã chạy. `.github/workflows/cws-ai-trade-web-pages.yml` được chuẩn bị dạng **manual-only**, không tự deploy trên git push.
+- Kiểm tra GitHub repo: `has_pages=false`, chưa có GitHub Pages site thực tế. Cần bật GitHub Pages Source = GitHub Actions bằng repo-admin được xác thực trước khi thực hiện workflow deploy. Không dùng URL Pages chưa tồn tại làm bằng chứng.
+- Dữ liệu private/EPUB ở vùng riêng, không nhúng vào Web App static, không dùng Coinbase cấm ML, không chuyển model REJECTED sang production.
+
+## Check 2 — test mã và HTTP runtime
+- [Web-only CI 36437407799](https://github.com/trankhanhduy1508-maker/AI-TRADE/actions/runs/36437407799) tại commit `90a757a3f98789fc4656937f0a2d09012ea7d822`: job `108978783936` **SUCCESS**, Node **24/24 PASS, 0 FAIL**, Python `py_compile` PASS và **PWA content-addressed update smoke PASS**. Build tạo HTML, `mt5-login.html`, `founder-mt5.js`, manifest/SW/icon; không có APK/Gradle hay hành động deploy. Kiểm tra HTML `?asset=` cũ đã được chuyển thành direct static assets ở output.
+- Supabase Edge `ai-trade-founder-mt5` **v1 ACTIVE**, source `index.ts` lấy từ GitHub blob `9b025b6fb7f1ab40f6c24f160fbf62b88df04bf7`. Mã yêu cầu Google Supabase Auth + quyền Founder đang hoạt động trước mọi thao tác account. Trang nhập credential Web App chỉ cho phép origin GitHub Pages CWS và có Content Security Policy không nạp third-party chart/CDN ở form nhập mật khẩu.
+- HTTP độc lập qua Supabase `extensions.http_get` và `extensions.http_post` đến endpoint đã deploy: **GET /status không bearer = 401** và **POST /verify-demo không bearer = 401**, cùng trạng thái `GOOGLE_FOUNDER_REQUIRED`, JSON `application/json`. Thử GET với `Origin: https://evil.example` bị **403 ORIGIN_NOT_ALLOWED**. Không đọc/lộ Vault secret, không gửi request đặt lệnh. Đây là negative-path runtime thật, không phải xác minh Google session/MT5 credential positive-path.
+- Trang đăng nhập chưa chạy trên origin thực vì Pages chưa bật; Supabase Auth chưa có bằng chứng allowlist callback `https://trankhanhduy1508-maker.github.io/AI-TRADE/mt5-login.html`; do đó **Google Founder OAuth E2E và broker real DEMO verify E2E đều BLOCKED**, không fake PASS.
+
+## Check 3 — đọc lại deployed/cloud và khóa an toàn
+- GitHub branch HEAD chính xác ở đầu kiểm tra: `101e0c5e0e7b40b76f71bb168fa3b6e59592ed1c`; Web CI kết luận SUCCESS; `mcp__Supabase__list_edge_functions`: `ai-trade-founder-mt5` v1 ACTIVE, `ai-trade-dashboard` v36 ACTIVE, `cws-ai-trade-site` v11 ACTIVE (v11 **không** là browser-ready HTML).
+- Supabase SQL readback sau Web changes: `runtime_config.enabled=false`, `demo_send_enabled=false`, `risk_profile_approved=false`, `order_intents=0`, `approved_models=0`, `rejected_models=2`, The5ers `BLOCKED_APPROVAL`. Live-money LOCKED. Một tài khoản DEMO trước đây được lưu Vault/verified không chứng minh phiên MT5 online thời điểm hiện tại.
+- Android workflow đã không còn tự build hay phát hành. Kiểm thử in-place APK update/release-signing identity vẫn chưa có; tuyệt đối không cấp APK theo checkpoint này.
+
+## Kết luận phạm vi
+**PASS:** source Web App và negative-path auth API, Node 24/24, PWA hash update smoke, chính sách release và vô hiệu hóa APK auto-build. **BLOCKED:** GitHub Pages admin activation/deploy/MIME GET, Auth callback allowlist và Founder login E2E, MT5 DEMO positive-path từ Web App, dataset có giấy phép/production ML + OOS/WF/cost/paper-forward, Risk & The5ers approval và DEMO Auto Trade thực tế, Android stable release signing/update E2E. Không được gọi toàn sản phẩm hoặc khả năng auto-trade đã hoàn thành.

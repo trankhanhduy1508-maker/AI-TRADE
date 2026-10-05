@@ -1,0 +1,370 @@
+{
+  "schema": "CWS_R2_56_CELL_SESSION_COVERAGE_V1",
+  "created_for_checkpoint": "2026-09-29",
+  "prereg_commit": "6934a383b145369bb2447da29b3232e7ef04ab4d",
+  "frozen_catalog_blob_sha": "4adc49d445b8cafdb2196d70acd6766d4d0b3fb8",
+  "sp500_result_blob_sha": "3c59574a233a099fdf5876295be2e13d34c26d19",
+  "research_status": "UNPROVEN",
+  "source_rights_not_implicitly_licensed": true,
+  "summary": {
+    "catalog_cells": 56,
+    "empirically_replayed_this_session": 1,
+    "previously_exploratory_r0": 30,
+    "prior_r0_native_h4_unavailable": 26,
+    "empirical_not_run_this_session": 55,
+    "dow_close_only_data_rejected_for_ohlc": 1,
+    "independent_forward_trades": 0,
+    "broker_verified_net_returns": 0,
+    "live_or_demo_orders_sent": 0
+  },
+  "cells": {
+    "AAPL_D1": {
+      "source_kind": "NATIVE_D1",
+      "empirical_current_session": "NOT_RUN_RAW_OHLC_UNAVAILABLE",
+      "forward_independent_trades": 0,
+      "edge_status": "UNPROVEN"
+    },
+    "AAPL_H4": {
+      "source_kind": "NATIVE_H4",
+      "empirical_current_session": "NOT_RUN_RAW_OHLC_UNAVAILABLE",
+      "forward_independent_trades": 0,
+      "edge_status": "UNPROVEN"
+    },
+    "AMZN_D1": {
+      "source_kind": "NATIVE_D1",
+      "empirical_current_session": "NOT_RUN_RAW_OHLC_UNAVAILABLE",
+      "forward_independent_trades": 0,
+      "edge_status": "UNPROVEN"
+    },
+    "AMZN_H4": {
+      "source_kind": "NATIVE_H4",
+      "empirical_current_session": "NOT_RUN_RAW_OHLC_UNAVAILABLE",
+      "forward_independent_trades": 0,
+      "edge_status": "UNPROVEN"
+    },
+    "AUDJPY_D1": {
+      "source_kind": "NATIVE_D1",
+      "empirical_current_session": "NOT_RUN_RAW_OHLC_UNAVAILABLE",
+      "forward_independent_trades": 0,
+      "edge_status": "UNPROVEN"
+    },
+    "AUDJPY_H4": {
+      "source_kind": "NATIVE_H4",
+      "empirical_current_session": "NOT_RUN_RAW_OHLC_UNAVAILABLE",
+      "forward_independent_trades": 0,
+      "edge_status": "UNPROVEN"
+    },
+    "AUDUSD_D1": {
+      "source_kind": "NATIVE_D1",
+      "empirical_current_session": "NOT_RUN_RAW_OHLC_UNAVAILABLE",
+      "forward_independent_trades": 0,
+      "edge_status": "UNPROVEN"
+    },
+    "AUDUSD_H4": {
+      "source_kind": "NATIVE_H4",
+      "empirical_current_session": "NOT_RUN_RAW_OHLC_UNAVAILABLE",
+      "forward_independent_trades": 0,
+      "edge_status": "UNPROVEN"
+    },
+    "BTCUSD_D1": {
+      "source_kind": "NATIVE_D1",
+      "empirical_current_session": "NOT_RUN_RAW_OHLC_UNAVAILABLE",
+      "forward_independent_trades": 0,
+      "edge_status": "UNPROVEN"
+    },
+    "BTCUSD_H4": {
+      "source_kind": "NATIVE_H4",
+      "empirical_current_session": "NOT_RUN_RAW_OHLC_UNAVAILABLE",
+      "forward_independent_trades": 0,
+      "edge_status": "UNPROVEN"
+    },
+    "Brent_D1": {
+      "source_kind": "NATIVE_D1",
+      "empirical_current_session": "NOT_RUN_RAW_OHLC_UNAVAILABLE",
+      "forward_independent_trades": 0,
+      "edge_status": "UNPROVEN"
+    },
+    "Brent_H4": {
+      "source_kind": "NATIVE_H4",
+      "empirical_current_session": "NOT_RUN_RAW_OHLC_UNAVAILABLE",
+      "forward_independent_trades": 0,
+      "edge_status": "UNPROVEN"
+    },
+    "Dow Jones_D1": {
+      "source_kind": "MEASURINGWORTH_CLOSE_ONLY_DAILY_1885_2019_NOT_NATIVE_OHLC",
+      "source_repo": "fja05680/dow-sp500-100-years",
+      "source_commit": "52a1ddd481fc947e511f709896d4f2b3fb49fb0e",
+      "source_git_blob_sha": "0141e90a628ddb77804648e8eca7f03d6f9334dd",
+      "source_rows": 36863,
+      "equal_ohlc_rows": 36863,
+      "empirical_current_session": "REJECTED_FOR_R2_OHLC_ATR",
+      "forward_independent_trades": 0,
+      "edge_status": "UNPROVEN"
+    },
+    "Dow Jones_H4": {
+      "source_kind": "NATIVE_H4",
+      "empirical_current_session": "NOT_RUN_RAW_OHLC_UNAVAILABLE",
+      "forward_independent_trades": 0,
+      "edge_status": "UNPROVEN"
+    },
+    "ETHUSD_D1": {
+      "source_kind": "NATIVE_D1",
+      "empirical_current_session": "NOT_RUN_RAW_OHLC_UNAVAILABLE",
+      "forward_independent_trades": 0,
+      "edge_status": "UNPROVEN"
+    },
+    "ETHUSD_H4": {
+      "source_kind": "NATIVE_H4",
+      "empirical_current_session": "NOT_RUN_RAW_OHLC_UNAVAILABLE",
+      "forward_independent_trades": 0,
+      "edge_status": "UNPROVEN"
+    },
+    "EURCHF_D1": {
+      "source_kind": "NATIVE_D1",
+      "empirical_current_session": "NOT_RUN_RAW_OHLC_UNAVAILABLE",
+      "forward_independent_trades": 0,
+      "edge_status": "UNPROVEN"
+    },
+    "EURCHF_H4": {
+      "source_kind": "NATIVE_H4",
+      "empirical_current_session": "NOT_RUN_RAW_OHLC_UNAVAILABLE",
+      "forward_independent_trades": 0,
+      "edge_status": "UNPROVEN"
+    },
+    "EURGBP_D1": {
+      "source_kind": "NATIVE_D1",
+      "empirical_current_session": "NOT_RUN_RAW_OHLC_UNAVAILABLE",
+      "forward_independent_trades": 0,
+      "edge_status": "UNPROVEN"
+    },
+    "EURGBP_H4": {
+      "source_kind": "NATIVE_H4",
+      "empirical_current_session": "NOT_RUN_RAW_OHLC_UNAVAILABLE",
+      "forward_independent_trades": 0,
+      "edge_status": "UNPROVEN"
+    },
+    "EURJPY_D1": {
+      "source_kind": "NATIVE_D1",
+      "empirical_current_session": "NOT_RUN_RAW_OHLC_UNAVAILABLE",
+      "forward_independent_trades": 0,
+      "edge_status": "UNPROVEN"
+    },
+    "EURJPY_H4": {
+      "source_kind": "NATIVE_H4",
+      "empirical_current_session": "NOT_RUN_RAW_OHLC_UNAVAILABLE",
+      "forward_independent_trades": 0,
+      "edge_status": "UNPROVEN"
+    },
+    "EURUSD_D1": {
+      "source_kind": "NATIVE_D1",
+      "empirical_current_session": "NOT_RUN_RAW_OHLC_UNAVAILABLE",
+      "forward_independent_trades": 0,
+      "edge_status": "UNPROVEN"
+    },
+    "EURUSD_H4": {
+      "source_kind": "NATIVE_H4",
+      "empirical_current_session": "NOT_RUN_RAW_OHLC_UNAVAILABLE",
+      "forward_independent_trades": 0,
+      "edge_status": "UNPROVEN"
+    },
+    "GBPJPY_D1": {
+      "source_kind": "NATIVE_D1",
+      "empirical_current_session": "NOT_RUN_RAW_OHLC_UNAVAILABLE",
+      "forward_independent_trades": 0,
+      "edge_status": "UNPROVEN"
+    },
+    "GBPJPY_H4": {
+      "source_kind": "NATIVE_H4",
+      "empirical_current_session": "NOT_RUN_RAW_OHLC_UNAVAILABLE",
+      "forward_independent_trades": 0,
+      "edge_status": "UNPROVEN"
+    },
+    "GBPUSD_D1": {
+      "source_kind": "NATIVE_D1",
+      "empirical_current_session": "NOT_RUN_RAW_OHLC_UNAVAILABLE",
+      "forward_independent_trades": 0,
+      "edge_status": "UNPROVEN"
+    },
+    "GBPUSD_H4": {
+      "source_kind": "NATIVE_H4",
+      "empirical_current_session": "NOT_RUN_RAW_OHLC_UNAVAILABLE",
+      "forward_independent_trades": 0,
+      "edge_status": "UNPROVEN"
+    },
+    "GOOGL_D1": {
+      "source_kind": "NATIVE_D1",
+      "empirical_current_session": "NOT_RUN_RAW_OHLC_UNAVAILABLE",
+      "forward_independent_trades": 0,
+      "edge_status": "UNPROVEN"
+    },
+    "GOOGL_H4": {
+      "source_kind": "NATIVE_H4",
+      "empirical_current_session": "NOT_RUN_RAW_OHLC_UNAVAILABLE",
+      "forward_independent_trades": 0,
+      "edge_status": "UNPROVEN"
+    },
+    "META_D1": {
+      "source_kind": "NATIVE_D1",
+      "empirical_current_session": "NOT_RUN_RAW_OHLC_UNAVAILABLE",
+      "forward_independent_trades": 0,
+      "edge_status": "UNPROVEN"
+    },
+    "META_H4": {
+      "source_kind": "NATIVE_H4",
+      "empirical_current_session": "NOT_RUN_RAW_OHLC_UNAVAILABLE",
+      "forward_independent_trades": 0,
+      "edge_status": "UNPROVEN"
+    },
+    "MSFT_D1": {
+      "source_kind": "NATIVE_D1",
+      "empirical_current_session": "NOT_RUN_RAW_OHLC_UNAVAILABLE",
+      "forward_independent_trades": 0,
+      "edge_status": "UNPROVEN"
+    },
+    "MSFT_H4": {
+      "source_kind": "NATIVE_H4",
+      "empirical_current_session": "NOT_RUN_RAW_OHLC_UNAVAILABLE",
+      "forward_independent_trades": 0,
+      "edge_status": "UNPROVEN"
+    },
+    "NVDA_D1": {
+      "source_kind": "NATIVE_D1",
+      "empirical_current_session": "NOT_RUN_RAW_OHLC_UNAVAILABLE",
+      "forward_independent_trades": 0,
+      "edge_status": "UNPROVEN"
+    },
+    "NVDA_H4": {
+      "source_kind": "NATIVE_H4",
+      "empirical_current_session": "NOT_RUN_RAW_OHLC_UNAVAILABLE",
+      "forward_independent_trades": 0,
+      "edge_status": "UNPROVEN"
+    },
+    "NZDJPY_D1": {
+      "source_kind": "NATIVE_D1",
+      "empirical_current_session": "NOT_RUN_RAW_OHLC_UNAVAILABLE",
+      "forward_independent_trades": 0,
+      "edge_status": "UNPROVEN"
+    },
+    "NZDJPY_H4": {
+      "source_kind": "NATIVE_H4",
+      "empirical_current_session": "NOT_RUN_RAW_OHLC_UNAVAILABLE",
+      "forward_independent_trades": 0,
+      "edge_status": "UNPROVEN"
+    },
+    "NZDUSD_D1": {
+      "source_kind": "NATIVE_D1",
+      "empirical_current_session": "NOT_RUN_RAW_OHLC_UNAVAILABLE",
+      "forward_independent_trades": 0,
+      "edge_status": "UNPROVEN"
+    },
+    "NZDUSD_H4": {
+      "source_kind": "NATIVE_H4",
+      "empirical_current_session": "NOT_RUN_RAW_OHLC_UNAVAILABLE",
+      "forward_independent_trades": 0,
+      "edge_status": "UNPROVEN"
+    },
+    "Nasdaq 100_D1": {
+      "source_kind": "NATIVE_D1",
+      "empirical_current_session": "NOT_RUN_RAW_OHLC_UNAVAILABLE",
+      "forward_independent_trades": 0,
+      "edge_status": "UNPROVEN"
+    },
+    "Nasdaq 100_H4": {
+      "source_kind": "NATIVE_H4",
+      "empirical_current_session": "NOT_RUN_RAW_OHLC_UNAVAILABLE",
+      "forward_independent_trades": 0,
+      "edge_status": "UNPROVEN"
+    },
+    "S&P 500_D1": {
+      "source_kind": "RETROSPECTIVE_YAHOO_CASH_INDEX_D1_OHLC_1983_2019",
+      "empirical_current_session": "HISTORICAL_REUSED_GROSS_ONLY_NOT_TRADEABLE",
+      "data_quality_rows": 9197,
+      "folds": 34,
+      "isolated_completed_trades": 85,
+      "isolated_episode_end_open_positions": 11,
+      "mean_completed_trade_r_gross_only": 0.1311917354686225,
+      "source_manifest_commit": "2567c7cdb0ea745696e5c05dab2703e5a40a100b",
+      "result_blob_sha": "3c59574a233a099fdf5876295be2e13d34c26d19",
+      "forward_independent_trades": 0,
+      "edge_status": "UNPROVEN"
+    },
+    "S&P 500_H4": {
+      "source_kind": "NATIVE_H4",
+      "empirical_current_session": "NOT_RUN_RAW_OHLC_UNAVAILABLE",
+      "forward_independent_trades": 0,
+      "edge_status": "UNPROVEN"
+    },
+    "USDCAD_D1": {
+      "source_kind": "NATIVE_D1",
+      "empirical_current_session": "NOT_RUN_RAW_OHLC_UNAVAILABLE",
+      "forward_independent_trades": 0,
+      "edge_status": "UNPROVEN"
+    },
+    "USDCAD_H4": {
+      "source_kind": "NATIVE_H4",
+      "empirical_current_session": "NOT_RUN_RAW_OHLC_UNAVAILABLE",
+      "forward_independent_trades": 0,
+      "edge_status": "UNPROVEN"
+    },
+    "USDCHF_D1": {
+      "source_kind": "NATIVE_D1",
+      "empirical_current_session": "NOT_RUN_RAW_OHLC_UNAVAILABLE",
+      "forward_independent_trades": 0,
+      "edge_status": "UNPROVEN"
+    },
+    "USDCHF_H4": {
+      "source_kind": "NATIVE_H4",
+      "empirical_current_session": "NOT_RUN_RAW_OHLC_UNAVAILABLE",
+      "forward_independent_trades": 0,
+      "edge_status": "UNPROVEN"
+    },
+    "USDJPY_D1": {
+      "source_kind": "NATIVE_D1",
+      "empirical_current_session": "NOT_RUN_RAW_OHLC_UNAVAILABLE",
+      "forward_independent_trades": 0,
+      "edge_status": "UNPROVEN"
+    },
+    "USDJPY_H4": {
+      "source_kind": "NATIVE_H4",
+      "empirical_current_session": "NOT_RUN_RAW_OHLC_UNAVAILABLE",
+      "forward_independent_trades": 0,
+      "edge_status": "UNPROVEN"
+    },
+    "WTI_D1": {
+      "source_kind": "NATIVE_D1",
+      "empirical_current_session": "NOT_RUN_RAW_OHLC_UNAVAILABLE",
+      "forward_independent_trades": 0,
+      "edge_status": "UNPROVEN"
+    },
+    "WTI_H4": {
+      "source_kind": "NATIVE_H4",
+      "empirical_current_session": "NOT_RUN_RAW_OHLC_UNAVAILABLE",
+      "forward_independent_trades": 0,
+      "edge_status": "UNPROVEN"
+    },
+    "XAGUSD_D1": {
+      "source_kind": "NATIVE_D1",
+      "empirical_current_session": "NOT_RUN_RAW_OHLC_UNAVAILABLE",
+      "forward_independent_trades": 0,
+      "edge_status": "UNPROVEN"
+    },
+    "XAGUSD_H4": {
+      "source_kind": "NATIVE_H4",
+      "empirical_current_session": "NOT_RUN_RAW_OHLC_UNAVAILABLE",
+      "forward_independent_trades": 0,
+      "edge_status": "UNPROVEN"
+    },
+    "XAUUSD_D1": {
+      "source_kind": "NATIVE_D1",
+      "empirical_current_session": "NOT_RUN_RAW_OHLC_UNAVAILABLE",
+      "forward_independent_trades": 0,
+      "edge_status": "UNPROVEN"
+    },
+    "XAUUSD_H4": {
+      "source_kind": "NATIVE_H4",
+      "empirical_current_session": "NOT_RUN_RAW_OHLC_UNAVAILABLE",
+      "forward_independent_trades": 0,
+      "edge_status": "UNPROVEN"
+    }
+  }
+}

@@ -1,0 +1,6 @@
+import{badge,empty,fmtDate,fmtUsd,sideBadge}from"../utils.js";
+export function renderRecentTrades(trades=[]){
+ if(!trades.length)return `<section class="section"><div class="section-head"><h2>Danh sách lệnh gần đây</h2></div><div class="card card-pad">${empty("Chưa có lệnh forward đã đóng. Lịch sử sẽ xuất hiện ở đây sau lệnh đầu tiên.")}</div></section>`;
+ const rows=trades.map(t=>{const side=t.side?t.side:(t.direction==="UP"?"BUY":"SELL");const pnl=Number(t.pnlUsd??t.r10bps??0);const result=t.status==="OPEN"?"OPEN":pnl>=0?"WIN":"LOSS";return `<div class="trade-row"><div class="pair-cell">${t.symbol}</div><div class="time">${fmtDate(t.exitTs??t.entryTs)}</div><div>${badge(side,sideBadge(side))}</div><div class="status">${t.status??"Closed"}</div><div class="pnl ${pnl>=0?"pos":"neg"}">${t.pnlUsd!=null?fmtUsd(pnl):((pnl>0?"+":"")+pnl.toFixed(2)+"R")}</div><div>${badge(result,result==="WIN"||result==="OPEN"?"green":"red")}</div></div>`}).join("");
+ return `<section class="section"><div class="section-head"><h2>Danh sách lệnh gần đây</h2><span class="action">Forward only</span></div><div class="card table"><div class="trade-row head"><div>Cặp</div><div>Thời gian</div><div>Loại</div><div>Trạng thái</div><div>P/L</div><div>Kết quả</div></div>${rows}</div></section>`;
+}

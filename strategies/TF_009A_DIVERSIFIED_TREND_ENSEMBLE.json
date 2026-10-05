@@ -1,0 +1,18 @@
+{
+  "strategy_id": "TF-009A-DIVERSIFIED-TREND-ENSEMBLE",
+  "version": "0.1.0",
+  "status": "PREREGISTERED",
+  "timeframe": "1D",
+  "signals": [
+    "RETURN_21",
+    "RETURN_252",
+    "SMA_10_200"
+  ],
+  "vote": "MAJORITY_2_OF_3",
+  "review_every_bars": 21,
+  "entry_timing": "NEXT_OPEN",
+  "atr_bars": 20,
+  "emergency_stop_atr": 4,
+  "gap_stop_policy": "WORSE_OF_STOP_OR_BAR_OPEN",
+  "pyramiding": false
+}

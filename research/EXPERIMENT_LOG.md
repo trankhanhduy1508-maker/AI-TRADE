@@ -11,12 +11,59 @@ so với lần trước (nếu có), link kết quả trong `backtests/`, nhận
 
 ---
 
-## Chưa có thử nghiệm nào được chạy thật
+## 2026-08-22 - TF-003/TF-004 fixed expanding walk-forward comparison
 
-Tính đến thời điểm tạo tài liệu này, hệ thống mới ở giai đoạn xây dựng nền tảng
-tài liệu và giả thuyết — **chưa kết nối dữ liệu giá thật, chưa chạy backtest
-nào**. Mục này sẽ được cập nhật ngay khi thử nghiệm đầu tiên hoàn tất (xem
-`CURRENT_STATUS.md` mục Next Task).
+- Data: the same six Yahoo FX symbol/interval samples used by the IS/OOS
+  reports; exact method and summary are in
+  `backtests/TF003_TF004_WALK_FORWARD_2026-08-22.md`.
+- Change from prior run: added a fixed 50% expanding-history / 10% test-window
+  runner with no fold-level parameter selection.
+- Result: only two of twelve strategy/symbol/interval cases had positive sums
+  of closed-trade fold nets; EURUSD 1H had zero positive folds for TF-003 and
+  TF-004.
+- Interpretation: robustness gate remains unpassed; cost/feed evidence is
+  still preliminary and no execution activation followed.
+
+## 2026-08-22 - TF-004 fixed channel-trailing IS/OOS with research costs
+
+- Data: Yahoo chart downloads, EURUSD/GBPUSD/USDJPY at 1D and 1H; exact rows
+  and split timestamps are recorded in `backtests/TF004_FX_IS_OOS_2026-08-22.md`.
+- Change from prior run: added the explicit `CHANNEL_TRAILING` exit model;
+  fixed TF-003 signal and declared 20-bar exit window were used. No retuning
+  followed the run.
+- Result: two of six OOS partitions were positive and four negative after the
+  fixed `UNVERIFIED` research cost proxy; all runs ended with an open position.
+- Interpretation: preliminary comparison evidence only; hourly trade count
+  increased materially and no MT5/demo/live evidence exists.
+
+## 2026-08-22 - TF-003 fixed 70/30 IS/OOS with research costs
+
+- Data: Yahoo chart downloads, EURUSD/GBPUSD/USDJPY at 1D and 1H; exact rows
+  and split timestamps are recorded in `backtests/TF003_FX_IS_OOS_2026-08-22.md`.
+- Change from prior run: added an independent price-only time-series momentum
+  evaluator with fixed lookback/stop settings and explicit strategy-model
+  dispatch. No retuning followed the run.
+- Result: three of six OOS partitions were positive and three negative after
+  the fixed `UNVERIFIED` research cost proxy; every run ended with an open
+  position at the data boundary.
+- Interpretation: preliminary comparison evidence only; not broker, MT5, or
+  live evidence.
+
+## 2026-08-22 - TF-001 fixed 70/30 IS/OOS with research costs
+
+- Data: Yahoo chart downloads, EURUSD/GBPUSD/USDJPY at 1D and 1H; exact rows
+  and split timestamps are recorded in `backtests/TF001_FX_IS_OOS_2026-08-22.md`.
+- Change from prior run: added point-in-time swing cache, chronological IS/OOS
+  gating, and explicit fixed price-unit cost profile.
+- Result: 1D produced no trades; all three 1H OOS samples had negative net
+  price-unit PnL after costs.
+- Interpretation: preliminary and not live/broker evidence; no parameter was
+  tuned after observing the result.
+
+## Historical note
+
+Trước các mục thử nghiệm ngày 2026-08-22, hệ thống chưa có backtest thực tế;
+các mục bên trên là evidence log hiện hành.
 
 ### Template cho mỗi lần thử nghiệm (copy khi có thử nghiệm thật)
 

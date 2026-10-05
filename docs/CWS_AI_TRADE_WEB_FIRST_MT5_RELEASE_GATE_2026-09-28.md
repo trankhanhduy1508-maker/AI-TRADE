@@ -1,0 +1,24 @@
+# CWS AI Trade — Web App first: static hosting, MT5 DEMO API và update contract (2026-09-28)
+
+**Repo/nhánh:** `trankhanhduy1508-maker/AI-TRADE` / `codex/p0-covel-knowledge-audit`. Đọc quy tắc khóa release tại `docs/CWS_AI_TRADE_RELEASE_AND_AUTOUPDATE_POLICY_2026-09-28.md`. KHÔNG triển khai APK ở giai đoạn này.
+
+## Web/App triển khai được bằng source và connector
+- Source canonical: `google-sites/cws-ai-trade/`. `scripts/build_cws_trade_static.py --base /AI-TRADE/ --output site-dist` xuất static bundle whitelist gồm HTML, CSS, JS, SW, manifest, icons và **trang đăng nhập MT5 riêng `mt5-login.html`**. Không đóng gói EPUB private, broker credentials, model artifacts, auth tokens. Login HTML có CSP first-party; không nạp JSZip/TradingView vào trang nhập password.
+- Login page chỉ cho phép origin chính thức `https://trankhanhduy1508-maker.github.io` và route dưới `/AI-TRADE/`. Đường callback sẽ là `https://trankhanhduy1508-maker.github.io/AI-TRADE/mt5-login.html`; Supabase Auth phải allowlist redirect này **sau khi GitHub Pages đã xuất bản**, nếu không login vẫn BLOCKED. Token OAuth sống trong bộ nhớ phiên trang, callback fragment được xóa ngay trước khi fetch.
+- Supabase API **`ai-trade-founder-mt5` v1 ACTIVE** phục vụ `GET /status` và `POST /verify-demo`. Bắt buộc Supabase Google bearer session + Founder active entitlement; không lấy AppDeploy làm nguồn xác thực dự phòng. Chỉ xác minh tài khoản `MetaQuotes-Demo` đã liên kết và có secret trong Vault. Trước khi xác nhận, server so khớp secret trong Vault, gọi verifier backend DEMO read-only, kiểm tra tài khoản/server đúng; không trả password, không thay config giao dịch, không đặt lệnh. Stored `CONNECTED` cũ không bị diễn giải thành phiên online: trạng thái fresh chỉ tối đa 90 giây sau broker readback. Một account khác yêu cầu adapter/onboarding bảo mật mới và phê duyệt riêng, không cho tự ghi đè Vault qua Web App.
+- HTTP smoke **đã thực hiện thật** qua `extensions.http_get`/ `extensions.http_post` từ Supabase SQL tới public Edge v1: GET /status và POST /verify-demo không có bearer đều **HTTP 401**, JSON `GOOGLE_FOUNDER_REQUIRED`. Bằng chứng này chứng minh cổng chặn unauth, không phải Google OAuth thực hoặc kết nối MT5 có credentials đã PASS.
+- PWA static builder tạo cache service worker từ **hash nội dung mã first-party** và hash builder: thay nội dung Web App sẽ đổi cache key, trigger SW cập nhật; navigation chỉ lưu dashboard HTML ở key root, không thay dashboard bằng trang MT5 khi offline. Mã cập nhật Web không tự promote model, cấp quyền demo/live hay thay Risk Engine.
+
+## Web hosting: trạng thái và unblock chính xác
+- Supabase Edge trên domain dùng chung trả HTML `text/plain`: **không làm frontend browser**. Legacy Edge v11 giữ nguyên bundle read-only, chỉ dùng health/API; quy tắc kiểm thử phân biệt frozen Edge và static canonical. Không cố ép `Content-Type` bằng một header HTML trong Edge.
+- Render hiện không tạo static site được qua connector (server 500; workspace có service bị suspended do billing), không tự trả tiền/chạy sang nhà cung cấp khác chỉ để né quota. Vercel account hiện chưa có project AI-TRADE; không sửa nhầm CWS Portal production.
+- GitHub Pages là host static được chuẩn bị **trong cùng repo/nhánh**; `.github/workflows/cws-ai-trade-web-pages.yml` chỉ chạy bằng `workflow_dispatch`, test trước, whitelist output, upload static artifact, deploy và **curl kiểm chứng HTTP `text/html`**. Chưa bật GitHub Pages: cần tài khoản quản trị của repo chọn GitHub Settings → Pages → Source = GitHub Actions một lần (connector GitHub hiện không có action Pages admin/write). Không khai URL Pages là LIVE trước khi workflow và HTTP PASS.
+- Khi host đã chạy, thêm chính xác OAuth callback nêu trên vào Supabase Auth Redirect URLs qua tài khoản quản trị project (connector Supabase hiện không có action cập nhật Auth Redirect URLs); sau đó chạy Google Founder/MT5 demo E2E Android Chrome mới đủ quyền gọi PASS.
+- Google Sites (nếu dùng) chỉ là cổng đặt liên kết tới Web App; không nhúng trang nhập password trong iframe Google Sites. Google Sites chưa publish.
+
+## Quy trình nghiệm thu
+1. Build web/static + Node regression, kiểm cache hash, negative-path tài khoản REAL / invalid password, CI cloud smoke (không có Gradle hoặc APK).
+2. GitHub Pages web GET HTML đúng MIME, các asset, mobile Chrome, OAuth Google Founder, kiểm tra MT5 DEMO thật, ngắt mạng/refresh SW, không leak password/token trong log/HTML/artifact.
+3. Thử nghiệm model đã cấp quyền, OOS/WF, phí/slippage, paper-forward và demo-forward mới xét quyền tự giao dịch. Trước khi đủ evidence, hiển thị `ABSTAIN / MODEL_NOT_APPROVED / LOCKED`. Phát hành APK có stable signing và update-in-place **sau tất cả**.
+
+**Blocker không được giả hoàn thành:** Pages admin activation, Supabase OAuth redirect allowlist, Founder authenticated E2E, MT5 broker validation từ trang web, model production hợp pháp và phê duyệt, auto-trade DEMO forward, release keystore và Android upgrade E2E.

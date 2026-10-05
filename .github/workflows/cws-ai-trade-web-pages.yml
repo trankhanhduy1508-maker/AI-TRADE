@@ -1,0 +1,69 @@
+name: CWS AI Trade Web-only manual GitHub Pages publish
+
+# Manual deploy only: code pushes run web smoke, NEVER publish or build APK.
+# One-time GitHub Settings > Pages > Source: GitHub Actions is required.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: cws-ai-trade-web-pages
+  cancel-in-progress: false
+
+jobs:
+  build-web:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout canonical source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      - name: First-party source and contract tests
+        run: |
+          node --test google-sites/cws-ai-trade/tests/*.test.cjs
+          python3 -m py_compile scripts/build_cws_trade_static.py
+      - name: Generate safe GitHub Pages artifact
+        run: |
+          python3 scripts/build_cws_trade_static.py --base /AI-TRADE/ --output site-dist
+          test -s site-dist/index.html
+          test -s site-dist/mt5-login.html
+          test -s site-dist/founder-mt5.js
+          test -s site-dist/sw.js
+          test -s site-dist/manifest.webmanifest
+          ! grep -R -E 'SUPABASE_SERVICE_ROLE_KEY|SUPABASE_DB_URL|BEGIN PRIVATE KEY|MT5_DEMO_PASSWORD' site-dist
+          ! grep -q 'cdnjs.cloudflare.com' site-dist/mt5-login.html
+          ! grep -q 's3.tradingview.com' site-dist/mt5-login.html
+      - name: Configure existing GitHub Pages (no implicit enablement)
+        uses: actions/configure-pages@v5
+      - name: Upload public static artifact only
+        uses: actions/upload-pages-artifact@v4
+        with:
+          path: site-dist
+  deploy-web:
+    needs: build-web
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Publish Web App only
+        id: deployment
+        uses: actions/deploy-pages@v4
+      - name: Verify real HTML MIME on public URL
+        env:
+          PAGE_URL: ${{ steps.deployment.outputs.page_url }}
+        run: |
+          for n in 1 2 3 4 5 6 7 8; do
+            headers="$(curl --max-time 15 -fsSI "${PAGE_URL}" || true)"
+            if printf '%s\\n' "$headers" | grep -Eqi '^content-type: *text/html'; then
+              echo "WEB_HTML_MIME_PASS"
+              exit 0
+            fi
+            sleep 5
+          done
+          echo "BLOCKED: Pages not serving text/html; do not advertise Web App."
+          exit 1

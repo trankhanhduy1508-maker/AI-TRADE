@@ -1,0 +1,105 @@
+{
+  "schema_version": 1,
+  "version": "CWS-KNOWLEDGE-RULES-0.1.0",
+  "broker_send_enabled": false,
+  "sources": [
+    {
+      "id": "CWS_MASTERBOOK_V3",
+      "path": "knowledge/CWS_TRADING_MASTERBOOK_V3_DISTILLED_2026-09-28.md",
+      "sha256_normalized": "f29de2eac25b359ffe89156ccfcd0c1f816bfb4bf518c096fe51f542bf00e6a6",
+      "provenance": "SECONDARY_SYNTHESIS"
+    },
+    {
+      "id": "INGESTION_POLICY",
+      "path": "knowledge/KNOWLEDGE_INGESTION_POLICY.md",
+      "sha256_normalized": "acfb938270103dfe029ba32d8290e5ee1288670a731ccf2fd692c07ac8d86019",
+      "provenance": "IMPLEMENTATION_DERIVATION"
+    }
+  ],
+  "principles": [
+    {
+      "id": "CWS-K01",
+      "source_id": "CWS_MASTERBOOK_V3",
+      "source_heading": "### 1. Edge không có nghĩa là đoán đúng nhiều nhất",
+      "status": "HYPOTHESIS",
+      "research_mapping": "EXPECTANCY_AND_MARKED_DRAWDOWN"
+    },
+    {
+      "id": "CWS-K02",
+      "source_id": "CWS_MASTERBOOK_V3",
+      "source_heading": "### 2. Nghĩ về rủi ro trước lợi nhuận",
+      "status": "HYPOTHESIS",
+      "research_mapping": "REQUIRES_SEPARATE_VALIDATION"
+    },
+    {
+      "id": "CWS-K03",
+      "source_id": "CWS_MASTERBOOK_V3",
+      "source_heading": "### 3. Entry phải có setup + trigger",
+      "status": "HYPOTHESIS",
+      "research_mapping": "CLOSED_BAR_SIGNAL_NEXT_OPEN"
+    },
+    {
+      "id": "CWS-K04",
+      "source_id": "CWS_MASTERBOOK_V3",
+      "source_heading": "### 4. Sai nhanh phải thoát nhanh",
+      "status": "HYPOTHESIS",
+      "research_mapping": "GAP_AWARE_STOP"
+    },
+    {
+      "id": "CWS-K05",
+      "source_id": "CWS_MASTERBOOK_V3",
+      "source_heading": "### 5. Winner cần không gian chạy",
+      "status": "HYPOTHESIS",
+      "research_mapping": "TRAILING_EXIT_NO_FIXED_TARGET"
+    },
+    {
+      "id": "CWS-K06",
+      "source_id": "CWS_MASTERBOOK_V3",
+      "source_heading": "### 6. Không trung bình giá loser để chữa cảm xúc",
+      "status": "HYPOTHESIS",
+      "research_mapping": "REQUIRES_SEPARATE_VALIDATION"
+    },
+    {
+      "id": "CWS-K07",
+      "source_id": "CWS_MASTERBOOK_V3",
+      "source_heading": "### 7. Có thể thêm vào winner, nhưng tổng risk phải bị khóa",
+      "status": "HYPOTHESIS",
+      "research_mapping": "REQUIRES_SEPARATE_VALIDATION"
+    },
+    {
+      "id": "CWS-K08",
+      "source_id": "CWS_MASTERBOOK_V3",
+      "source_heading": "### 8. Regime thay đổi",
+      "status": "HYPOTHESIS",
+      "research_mapping": "REQUIRES_SEPARATE_VALIDATION"
+    },
+    {
+      "id": "CWS-K09",
+      "source_id": "CWS_MASTERBOOK_V3",
+      "source_heading": "### 9. Backtest đẹp chưa phải tiền thật",
+      "status": "HYPOTHESIS",
+      "research_mapping": "CHRONOLOGICAL_WALKFORWARD_COST_STRESS"
+    },
+    {
+      "id": "CWS-K10",
+      "source_id": "CWS_MASTERBOOK_V3",
+      "source_heading": "### 10. Kỷ luật là lợi thế thực sự",
+      "status": "HYPOTHESIS",
+      "research_mapping": "REQUIRES_SEPARATE_VALIDATION"
+    },
+    {
+      "id": "CWS-K11",
+      "source_id": "CWS_MASTERBOOK_V3",
+      "source_heading": "### 11. Nhật ký cần có nguyên nhân, không chỉ P/L",
+      "status": "HYPOTHESIS",
+      "research_mapping": "REQUIRES_SEPARATE_VALIDATION"
+    },
+    {
+      "id": "CWS-K12",
+      "source_id": "CWS_MASTERBOOK_V3",
+      "source_heading": "### 12. Sống sót quan trọng hơn thắng lớn một giai đoạn",
+      "status": "HYPOTHESIS",
+      "research_mapping": "REQUIRES_SEPARATE_VALIDATION"
+    }
+  ]
+}

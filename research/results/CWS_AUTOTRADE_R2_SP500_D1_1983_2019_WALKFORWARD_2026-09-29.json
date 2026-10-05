@@ -1,0 +1,1139 @@
+{
+  "schema": "CWS_R2_SP500_D1_HISTORICAL_REUSED_EXPLORATORY_V1",
+  "registered_source_manifest_commit": "2567c7cdb0ea745696e5c05dab2703e5a40a100b",
+  "python_engine_blob_sha": "ae4c07e7915840ea6d76b8c4b747fcbcec439585",
+  "source_repo": "fja05680/dow-sp500-100-years",
+  "source_commit": "52a1ddd481fc947e511f709896d4f2b3fb49fb0e",
+  "raw_blob_sha": "9f52b84ad69c7f4b19b30f9db4efd10635d342a7",
+  "raw_sha256": "6836bc88f522e1e204c1c703baff5667ea2b3586c8711052deb689c52e2c6d17",
+  "normalized_sha256": "bfe505bb20133a29ecab00262f8d635a393c37c82836585ebfcdcc3e95bf96ce",
+  "replay_method": "pure JavaScript reference port invoked through authorized GitHub connector; parity verified against 5 Python synthetic folds BEFORE actual historical replay",
+  "python_parity_reference": [
+    [
+      "FLAT",
+      0,
+      0,
+      0,
+      false
+    ],
+    [
+      "FLAT",
+      0,
+      0,
+      0,
+      false
+    ],
+    [
+      "R2_FAST",
+      1,
+      0.33897519,
+      0.59170365,
+      false
+    ],
+    [
+      "R2_FAST",
+      1,
+      0.3174312,
+      0.45077366,
+      false
+    ],
+    [
+      "R2_FAST",
+      2,
+      0.47915984,
+      0.5933846,
+      false
+    ]
+  ],
+  "market": "S&P 500 CASH INDEX / NONTRADEABLE PRICE PROXY",
+  "source_timezone": "DATE_LABEL_AS_UTC_MIDNIGHT_NOT_ACTUAL_SESSION_OPEN",
+  "source_revision_vintage": "RETROSPECTIVE_UNVERIFIED",
+  "start_date": "1983-07-01",
+  "end_date": "2019-12-23",
+  "valid_input_rows": 9197,
+  "invalid_ohlc_rows": 0,
+  "post_filter_flat_ohlc_rows": 0,
+  "min_bars": 500,
+  "fold_bars": 250,
+  "rolling_train_max": 1000,
+  "min_training_closed_trades": 5,
+  "short_enabled": false,
+  "costs": "GROSS_ONLY_ZERO_NOT_VERIFIED",
+  "benchmark": "FLAT_ONLY",
+  "market_data_rights": "COMMERCIAL_AND_RAW_RETENTION_NOT_AUDITED",
+  "all_historical_exposure": "HISTORICAL_REUSED",
+  "edge_status": "UNPROVEN",
+  "independent_forward_trades": 0,
+  "account_currency_pnl": null,
+  "orders_sent": 0,
+  "folds": 34,
+  "totals": {
+    "closed_trades_in_isolated_episodes": 85,
+    "sum_isolated_realized_r_not_portfolio_return": 11.151297514832914,
+    "gap_stops": 1,
+    "open_positions_at_episode_end": 11,
+    "selection_counts": {
+      "FLAT": 1,
+      "R0_REFERENCE": 11,
+      "R2_FAST": 7,
+      "R2_SLOW": 15
+    },
+    "mean_closed_trade_r": 0.1311917354686225
+  },
+  "episodes": [
+    {
+      "boundary_index": 500,
+      "begin_date": "1985-06-24",
+      "end_date": "1986-06-19",
+      "training_bar_count": 300,
+      "selected": "FLAT",
+      "candidate_train_snapshot": [
+        {
+          "candidate": "R0_REFERENCE",
+          "closed_trades": 3,
+          "score": null
+        },
+        {
+          "candidate": "R2_FAST",
+          "closed_trades": 4,
+          "score": null
+        },
+        {
+          "candidate": "R2_SLOW",
+          "closed_trades": 3,
+          "score": null
+        }
+      ],
+      "closed_trades": 0,
+      "expectancy_r": null,
+      "realized_r": 0,
+      "max_dd_r_marked": 0,
+      "unrealized_r": 0,
+      "open_position_at_boundary": false,
+      "gap_stops": 0
+    },
+    {
+      "boundary_index": 750,
+      "begin_date": "1986-06-20",
+      "end_date": "1987-06-16",
+      "training_bar_count": 550,
+      "selected": "R0_REFERENCE",
+      "candidate_train_snapshot": [
+        {
+          "candidate": "R0_REFERENCE",
+          "closed_trades": 7,
+          "score": 1.2974418781311339
+        },
+        {
+          "candidate": "R2_FAST",
+          "closed_trades": 9,
+          "score": 1.0396612411198933
+        },
+        {
+          "candidate": "R2_SLOW",
+          "closed_trades": 5,
+          "score": 0.5658267229317501
+        }
+      ],
+      "closed_trades": 4,
+      "expectancy_r": 0.5031706652708925,
+      "realized_r": 2.01268266108357,
+      "max_dd_r_marked": 2.9161433255814555,
+      "unrealized_r": 0,
+      "open_position_at_boundary": false,
+      "gap_stops": 0
+    },
+    {
+      "boundary_index": 1000,
+      "begin_date": "1987-06-17",
+      "end_date": "1988-06-10",
+      "training_bar_count": 800,
+      "selected": "R2_SLOW",
+      "candidate_train_snapshot": [
+        {
+          "candidate": "R0_REFERENCE",
+          "closed_trades": 11,
+          "score": 0.9720953174457386
+        },
+        {
+          "candidate": "R2_FAST",
+          "closed_trades": 14,
+          "score": 0.7731947228721496
+        },
+        {
+          "candidate": "R2_SLOW",
+          "closed_trades": 8,
+          "score": 1.0412293131779955
+        }
+      ],
+      "closed_trades": 1,
+      "expectancy_r": 0.14800657952577595,
+      "realized_r": 0.14800657952577595,
+      "max_dd_r_marked": 2.5570131103643665,
+      "unrealized_r": 0,
+      "open_position_at_boundary": false,
+      "gap_stops": 0
+    },
+    {
+      "boundary_index": 1250,
+      "begin_date": "1988-06-13",
+      "end_date": "1989-06-07",
+      "training_bar_count": 1000,
+      "selected": "R0_REFERENCE",
+      "candidate_train_snapshot": [
+        {
+          "candidate": "R0_REFERENCE",
+          "closed_trades": 12,
+          "score": 0.9937512567643155
+        },
+        {
+          "candidate": "R2_FAST",
+          "closed_trades": 15,
+          "score": 0.917342117568576
+        },
+        {
+          "candidate": "R2_SLOW",
+          "closed_trades": 9,
+          "score": 0.958004584049288
+        }
+      ],
+      "closed_trades": 3,
+      "expectancy_r": -0.43054510778470423,
+      "realized_r": -1.2916353233541127,
+      "max_dd_r_marked": 2.114901224863142,
+      "unrealized_r": 4.086602900990336,
+      "open_position_at_boundary": true,
+      "gap_stops": 0
+    },
+    {
+      "boundary_index": 1500,
+      "begin_date": "1989-06-08",
+      "end_date": "1990-06-04",
+      "training_bar_count": 1000,
+      "selected": "R2_FAST",
+      "candidate_train_snapshot": [
+        {
+          "candidate": "R0_REFERENCE",
+          "closed_trades": 12,
+          "score": 0.607365110246
+        },
+        {
+          "candidate": "R2_FAST",
+          "closed_trades": 14,
+          "score": 0.7808747397622543
+        },
+        {
+          "candidate": "R2_SLOW",
+          "closed_trades": 8,
+          "score": 0.5287427701922583
+        }
+      ],
+      "closed_trades": 7,
+      "expectancy_r": -0.6148116581227365,
+      "realized_r": -4.303681606859156,
+      "max_dd_r_marked": 6.241414717908043,
+      "unrealized_r": 2.26156815957492,
+      "open_position_at_boundary": true,
+      "gap_stops": 0
+    },
+    {
+      "boundary_index": 1750,
+      "begin_date": "1990-06-05",
+      "end_date": "1991-05-30",
+      "training_bar_count": 1000,
+      "selected": "R2_SLOW",
+      "candidate_train_snapshot": [
+        {
+          "candidate": "R0_REFERENCE",
+          "closed_trades": 11,
+          "score": 0.4204160395645025
+        },
+        {
+          "candidate": "R2_FAST",
+          "closed_trades": 16,
+          "score": 0.26839848727414983
+        },
+        {
+          "candidate": "R2_SLOW",
+          "closed_trades": 8,
+          "score": 0.6256625336197761
+        }
+      ],
+      "closed_trades": 1,
+      "expectancy_r": 2.876418030880339,
+      "realized_r": 2.876418030880339,
+      "max_dd_r_marked": 1.5191422929442857,
+      "unrealized_r": 0,
+      "open_position_at_boundary": false,
+      "gap_stops": 0
+    },
+    {
+      "boundary_index": 2000,
+      "begin_date": "1991-05-31",
+      "end_date": "1992-05-26",
+      "training_bar_count": 1000,
+      "selected": "R2_SLOW",
+      "candidate_train_snapshot": [
+        {
+          "candidate": "R0_REFERENCE",
+          "closed_trades": 9,
+          "score": 0.7144237475753739
+        },
+        {
+          "candidate": "R2_FAST",
+          "closed_trades": 13,
+          "score": 0.5465394925162632
+        },
+        {
+          "candidate": "R2_SLOW",
+          "closed_trades": 7,
+          "score": 0.9062228782923368
+        }
+      ],
+      "closed_trades": 2,
+      "expectancy_r": -0.14232373635075896,
+      "realized_r": -0.2846474727015179,
+      "max_dd_r_marked": 1.1074316664433568,
+      "unrealized_r": 0,
+      "open_position_at_boundary": false,
+      "gap_stops": 0
+    },
+    {
+      "boundary_index": 2250,
+      "begin_date": "1992-05-27",
+      "end_date": "1993-05-20",
+      "training_bar_count": 1000,
+      "selected": "R2_SLOW",
+      "candidate_train_snapshot": [
+        {
+          "candidate": "R0_REFERENCE",
+          "closed_trades": 11,
+          "score": 0.3933965013131715
+        },
+        {
+          "candidate": "R2_FAST",
+          "closed_trades": 17,
+          "score": 0.093703537829455
+        },
+        {
+          "candidate": "R2_SLOW",
+          "closed_trades": 8,
+          "score": 0.7554694648479658
+        }
+      ],
+      "closed_trades": 3,
+      "expectancy_r": -0.2068860278539905,
+      "realized_r": -0.6206580835619715,
+      "max_dd_r_marked": 2.443979614150025,
+      "unrealized_r": 0,
+      "open_position_at_boundary": false,
+      "gap_stops": 0
+    },
+    {
+      "boundary_index": 2500,
+      "begin_date": "1993-05-21",
+      "end_date": "1994-05-17",
+      "training_bar_count": 1000,
+      "selected": "R2_SLOW",
+      "candidate_train_snapshot": [
+        {
+          "candidate": "R0_REFERENCE",
+          "closed_trades": 13,
+          "score": -0.1470493941571261
+        },
+        {
+          "candidate": "R2_FAST",
+          "closed_trades": 20,
+          "score": -0.3466922342236833
+        },
+        {
+          "candidate": "R2_SLOW",
+          "closed_trades": 9,
+          "score": 0.18521724457863856
+        }
+      ],
+      "closed_trades": 2,
+      "expectancy_r": -0.47620107429571323,
+      "realized_r": -0.9524021485914265,
+      "max_dd_r_marked": 2.598865427145763,
+      "unrealized_r": 0,
+      "open_position_at_boundary": false,
+      "gap_stops": 0
+    },
+    {
+      "boundary_index": 2750,
+      "begin_date": "1994-05-18",
+      "end_date": "1995-05-12",
+      "training_bar_count": 1000,
+      "selected": "R2_SLOW",
+      "candidate_train_snapshot": [
+        {
+          "candidate": "R0_REFERENCE",
+          "closed_trades": 12,
+          "score": -0.32238036020238847
+        },
+        {
+          "candidate": "R2_FAST",
+          "closed_trades": 16,
+          "score": -0.3750731181809298
+        },
+        {
+          "candidate": "R2_SLOW",
+          "closed_trades": 8,
+          "score": 0.08765600717520866
+        }
+      ],
+      "closed_trades": 1,
+      "expectancy_r": -0.7086448085670992,
+      "realized_r": -0.7086448085670992,
+      "max_dd_r_marked": 1.8783407776595706,
+      "unrealized_r": 4.559016789719416,
+      "open_position_at_boundary": true,
+      "gap_stops": 0
+    },
+    {
+      "boundary_index": 3000,
+      "begin_date": "1995-05-15",
+      "end_date": "1996-05-08",
+      "training_bar_count": 1000,
+      "selected": "R2_SLOW",
+      "candidate_train_snapshot": [
+        {
+          "candidate": "R0_REFERENCE",
+          "closed_trades": 12,
+          "score": -0.6402426773154495
+        },
+        {
+          "candidate": "R2_FAST",
+          "closed_trades": 19,
+          "score": -0.5995343133727978
+        },
+        {
+          "candidate": "R2_SLOW",
+          "closed_trades": 8,
+          "score": -0.355519768868579
+        }
+      ],
+      "closed_trades": 3,
+      "expectancy_r": 1.2773170346701144,
+      "realized_r": 3.831951104010343,
+      "max_dd_r_marked": 2.158130086559187,
+      "unrealized_r": 0,
+      "open_position_at_boundary": false,
+      "gap_stops": 0
+    },
+    {
+      "boundary_index": 3250,
+      "begin_date": "1996-05-09",
+      "end_date": "1997-05-05",
+      "training_bar_count": 1000,
+      "selected": "R2_SLOW",
+      "candidate_train_snapshot": [
+        {
+          "candidate": "R0_REFERENCE",
+          "closed_trades": 13,
+          "score": 0.4828801784022121
+        },
+        {
+          "candidate": "R2_FAST",
+          "closed_trades": 17,
+          "score": 0.3960992432835626
+        },
+        {
+          "candidate": "R2_SLOW",
+          "closed_trades": 8,
+          "score": 1.1223742946766966
+        }
+      ],
+      "closed_trades": 2,
+      "expectancy_r": 2.271465775218734,
+      "realized_r": 4.542931550437468,
+      "max_dd_r_marked": 1.9833775382546195,
+      "unrealized_r": 0,
+      "open_position_at_boundary": false,
+      "gap_stops": 0
+    },
+    {
+      "boundary_index": 3500,
+      "begin_date": "1997-05-06",
+      "end_date": "1998-05-01",
+      "training_bar_count": 1000,
+      "selected": "R2_SLOW",
+      "candidate_train_snapshot": [
+        {
+          "candidate": "R0_REFERENCE",
+          "closed_trades": 11,
+          "score": 1.2289835671366105
+        },
+        {
+          "candidate": "R2_FAST",
+          "closed_trades": 15,
+          "score": 1.0317100858619568
+        },
+        {
+          "candidate": "R2_SLOW",
+          "closed_trades": 7,
+          "score": 2.0269805589199614
+        }
+      ],
+      "closed_trades": 3,
+      "expectancy_r": -0.04944371549919838,
+      "realized_r": -0.14833114649759516,
+      "max_dd_r_marked": 3.652276521326434,
+      "unrealized_r": 2.7715225601644597,
+      "open_position_at_boundary": true,
+      "gap_stops": 0
+    },
+    {
+      "boundary_index": 3750,
+      "begin_date": "1998-05-04",
+      "end_date": "1999-04-29",
+      "training_bar_count": 1000,
+      "selected": "R2_SLOW",
+      "candidate_train_snapshot": [
+        {
+          "candidate": "R0_REFERENCE",
+          "closed_trades": 12,
+          "score": 1.5832809447964207
+        },
+        {
+          "candidate": "R2_FAST",
+          "closed_trades": 15,
+          "score": 1.6105928263990272
+        },
+        {
+          "candidate": "R2_SLOW",
+          "closed_trades": 8,
+          "score": 1.9006227567954304
+        }
+      ],
+      "closed_trades": 1,
+      "expectancy_r": -1,
+      "realized_r": -1,
+      "max_dd_r_marked": 2.1315193381880877,
+      "unrealized_r": 3.3331604318184596,
+      "open_position_at_boundary": true,
+      "gap_stops": 0
+    },
+    {
+      "boundary_index": 4000,
+      "begin_date": "1999-04-30",
+      "end_date": "2000-04-25",
+      "training_bar_count": 1000,
+      "selected": "R2_FAST",
+      "candidate_train_snapshot": [
+        {
+          "candidate": "R0_REFERENCE",
+          "closed_trades": 13,
+          "score": 0.6891288850457739
+        },
+        {
+          "candidate": "R2_FAST",
+          "closed_trades": 15,
+          "score": 1.1688859382259784
+        },
+        {
+          "candidate": "R2_SLOW",
+          "closed_trades": 10,
+          "score": 0.8879048384759952
+        }
+      ],
+      "closed_trades": 3,
+      "expectancy_r": -0.3156633397281919,
+      "realized_r": -0.9469900191845756,
+      "max_dd_r_marked": 2.5518002787724154,
+      "unrealized_r": 0,
+      "open_position_at_boundary": false,
+      "gap_stops": 0
+    },
+    {
+      "boundary_index": 4250,
+      "begin_date": "2000-04-26",
+      "end_date": "2001-04-23",
+      "training_bar_count": 1000,
+      "selected": "R2_FAST",
+      "candidate_train_snapshot": [
+        {
+          "candidate": "R0_REFERENCE",
+          "closed_trades": 12,
+          "score": 0.6068847472456512
+        },
+        {
+          "candidate": "R2_FAST",
+          "closed_trades": 14,
+          "score": 0.8558419360740216
+        },
+        {
+          "candidate": "R2_SLOW",
+          "closed_trades": 11,
+          "score": 0.4704273928526745
+        }
+      ],
+      "closed_trades": 2,
+      "expectancy_r": -0.9112533846616822,
+      "realized_r": -1.8225067693233643,
+      "max_dd_r_marked": 1.8225067693233643,
+      "unrealized_r": 0,
+      "open_position_at_boundary": false,
+      "gap_stops": 0
+    },
+    {
+      "boundary_index": 4500,
+      "begin_date": "2001-04-24",
+      "end_date": "2002-04-25",
+      "training_bar_count": 1000,
+      "selected": "R2_FAST",
+      "candidate_train_snapshot": [
+        {
+          "candidate": "R0_REFERENCE",
+          "closed_trades": 10,
+          "score": 0.25760997322096824
+        },
+        {
+          "candidate": "R2_FAST",
+          "closed_trades": 13,
+          "score": 0.305375004771275
+        },
+        {
+          "candidate": "R2_SLOW",
+          "closed_trades": 9,
+          "score": 0.04818562507829525
+        }
+      ],
+      "closed_trades": 0,
+      "expectancy_r": null,
+      "realized_r": 0,
+      "max_dd_r_marked": 0,
+      "unrealized_r": 0,
+      "open_position_at_boundary": false,
+      "gap_stops": 0
+    },
+    {
+      "boundary_index": 4750,
+      "begin_date": "2002-04-26",
+      "end_date": "2003-04-23",
+      "training_bar_count": 1000,
+      "selected": "R0_REFERENCE",
+      "candidate_train_snapshot": [
+        {
+          "candidate": "R0_REFERENCE",
+          "closed_trades": 6,
+          "score": -0.04275166865249598
+        },
+        {
+          "candidate": "R2_FAST",
+          "closed_trades": 9,
+          "score": -0.10892258579399006
+        },
+        {
+          "candidate": "R2_SLOW",
+          "closed_trades": 5,
+          "score": -0.20308922674866603
+        }
+      ],
+      "closed_trades": 0,
+      "expectancy_r": null,
+      "realized_r": 0,
+      "max_dd_r_marked": 0,
+      "unrealized_r": 0.1867938721963122,
+      "open_position_at_boundary": true,
+      "gap_stops": 0
+    },
+    {
+      "boundary_index": 5000,
+      "begin_date": "2003-04-24",
+      "end_date": "2004-04-20",
+      "training_bar_count": 1000,
+      "selected": "R2_FAST",
+      "candidate_train_snapshot": [
+        {
+          "candidate": "R0_REFERENCE",
+          "closed_trades": 4,
+          "score": null
+        },
+        {
+          "candidate": "R2_FAST",
+          "closed_trades": 6,
+          "score": -0.6819925352322812
+        },
+        {
+          "candidate": "R2_SLOW",
+          "closed_trades": 3,
+          "score": null
+        }
+      ],
+      "closed_trades": 5,
+      "expectancy_r": 0.3596256330683901,
+      "realized_r": 1.7981281653419507,
+      "max_dd_r_marked": 4.3196463590866205,
+      "unrealized_r": 0,
+      "open_position_at_boundary": false,
+      "gap_stops": 0
+    },
+    {
+      "boundary_index": 5250,
+      "begin_date": "2004-04-21",
+      "end_date": "2005-04-18",
+      "training_bar_count": 1000,
+      "selected": "R0_REFERENCE",
+      "candidate_train_snapshot": [
+        {
+          "candidate": "R0_REFERENCE",
+          "closed_trades": 6,
+          "score": -0.0705051719351599
+        },
+        {
+          "candidate": "R2_FAST",
+          "closed_trades": 8,
+          "score": -0.10625601620450463
+        },
+        {
+          "candidate": "R2_SLOW",
+          "closed_trades": 2,
+          "score": null
+        }
+      ],
+      "closed_trades": 3,
+      "expectancy_r": -0.18288739536405316,
+      "realized_r": -0.5486621860921594,
+      "max_dd_r_marked": 2.1693382488241344,
+      "unrealized_r": 0,
+      "open_position_at_boundary": false,
+      "gap_stops": 0
+    },
+    {
+      "boundary_index": 5500,
+      "begin_date": "2005-04-19",
+      "end_date": "2006-04-13",
+      "training_bar_count": 1000,
+      "selected": "R2_FAST",
+      "candidate_train_snapshot": [
+        {
+          "candidate": "R0_REFERENCE",
+          "closed_trades": 8,
+          "score": -0.007526762950087772
+        },
+        {
+          "candidate": "R2_FAST",
+          "closed_trades": 10,
+          "score": 0.03317722724427466
+        },
+        {
+          "candidate": "R2_SLOW",
+          "closed_trades": 4,
+          "score": null
+        }
+      ],
+      "closed_trades": 5,
+      "expectancy_r": -0.25231808886947155,
+      "realized_r": -1.2615904443473578,
+      "max_dd_r_marked": 2.5215489889294807,
+      "unrealized_r": 0,
+      "open_position_at_boundary": false,
+      "gap_stops": 0
+    },
+    {
+      "boundary_index": 5750,
+      "begin_date": "2006-04-17",
+      "end_date": "2007-04-13",
+      "training_bar_count": 1000,
+      "selected": "R2_SLOW",
+      "candidate_train_snapshot": [
+        {
+          "candidate": "R0_REFERENCE",
+          "closed_trades": 12,
+          "score": -0.1695535147320915
+        },
+        {
+          "candidate": "R2_FAST",
+          "closed_trades": 15,
+          "score": -0.07622633881065878
+        },
+        {
+          "candidate": "R2_SLOW",
+          "closed_trades": 5,
+          "score": 0.5559844554508656
+        }
+      ],
+      "closed_trades": 2,
+      "expectancy_r": 1.0512864384641991,
+      "realized_r": 2.1025728769283982,
+      "max_dd_r_marked": 1.3393517932211139,
+      "unrealized_r": 0,
+      "open_position_at_boundary": false,
+      "gap_stops": 0
+    },
+    {
+      "boundary_index": 6000,
+      "begin_date": "2007-04-16",
+      "end_date": "2008-04-10",
+      "training_bar_count": 1000,
+      "selected": "R2_SLOW",
+      "candidate_train_snapshot": [
+        {
+          "candidate": "R0_REFERENCE",
+          "closed_trades": 15,
+          "score": -0.06296200965172152
+        },
+        {
+          "candidate": "R2_FAST",
+          "closed_trades": 17,
+          "score": 0.13156338269213264
+        },
+        {
+          "candidate": "R2_SLOW",
+          "closed_trades": 7,
+          "score": 0.9743904374799236
+        }
+      ],
+      "closed_trades": 3,
+      "expectancy_r": -0.5032035776965312,
+      "realized_r": -1.5096107330895938,
+      "max_dd_r_marked": 3.340410604076537,
+      "unrealized_r": 0,
+      "open_position_at_boundary": false,
+      "gap_stops": 0
+    },
+    {
+      "boundary_index": 6250,
+      "begin_date": "2008-04-11",
+      "end_date": "2009-04-07",
+      "training_bar_count": 1000,
+      "selected": "R2_SLOW",
+      "candidate_train_snapshot": [
+        {
+          "candidate": "R0_REFERENCE",
+          "closed_trades": 13,
+          "score": -0.19473798446493867
+        },
+        {
+          "candidate": "R2_FAST",
+          "closed_trades": 15,
+          "score": 0.009485651847192113
+        },
+        {
+          "candidate": "R2_SLOW",
+          "closed_trades": 8,
+          "score": 0.2573092919623605
+        }
+      ],
+      "closed_trades": 0,
+      "expectancy_r": null,
+      "realized_r": 0,
+      "max_dd_r_marked": 0,
+      "unrealized_r": 0,
+      "open_position_at_boundary": false,
+      "gap_stops": 0
+    },
+    {
+      "boundary_index": 6500,
+      "begin_date": "2009-04-08",
+      "end_date": "2010-04-06",
+      "training_bar_count": 1000,
+      "selected": "R2_SLOW",
+      "candidate_train_snapshot": [
+        {
+          "candidate": "R0_REFERENCE",
+          "closed_trades": 10,
+          "score": -0.16160373231379846
+        },
+        {
+          "candidate": "R2_FAST",
+          "closed_trades": 11,
+          "score": 0.08921418544830266
+        },
+        {
+          "candidate": "R2_SLOW",
+          "closed_trades": 6,
+          "score": 0.3626110575593126
+        }
+      ],
+      "closed_trades": 2,
+      "expectancy_r": 0.7936564408905682,
+      "realized_r": 1.5873128817811364,
+      "max_dd_r_marked": 1.3161976335021244,
+      "unrealized_r": 0.7906395919806495,
+      "open_position_at_boundary": true,
+      "gap_stops": 0
+    },
+    {
+      "boundary_index": 6750,
+      "begin_date": "2010-04-07",
+      "end_date": "2011-03-31",
+      "training_bar_count": 1000,
+      "selected": "R0_REFERENCE",
+      "candidate_train_snapshot": [
+        {
+          "candidate": "R0_REFERENCE",
+          "closed_trades": 7,
+          "score": 0.5332305608749407
+        },
+        {
+          "candidate": "R2_FAST",
+          "closed_trades": 10,
+          "score": 0.24365081168977662
+        },
+        {
+          "candidate": "R2_SLOW",
+          "closed_trades": 7,
+          "score": 0.2687687829230391
+        }
+      ],
+      "closed_trades": 2,
+      "expectancy_r": 1.6250264532586747,
+      "realized_r": 3.2500529065173493,
+      "max_dd_r_marked": 1.9199897992953843,
+      "unrealized_r": 0,
+      "open_position_at_boundary": false,
+      "gap_stops": 0
+    },
+    {
+      "boundary_index": 7000,
+      "begin_date": "2011-04-01",
+      "end_date": "2012-03-28",
+      "training_bar_count": 1000,
+      "selected": "R0_REFERENCE",
+      "candidate_train_snapshot": [
+        {
+          "candidate": "R0_REFERENCE",
+          "closed_trades": 7,
+          "score": 0.7924524212440617
+        },
+        {
+          "candidate": "R2_FAST",
+          "closed_trades": 9,
+          "score": 0.5830101575486045
+        },
+        {
+          "candidate": "R2_SLOW",
+          "closed_trades": 7,
+          "score": 0.38780149924060725
+        }
+      ],
+      "closed_trades": 2,
+      "expectancy_r": -0.9267451257638821,
+      "realized_r": -1.8534902515277643,
+      "max_dd_r_marked": 2.2865084549038013,
+      "unrealized_r": 2.1895749768673847,
+      "open_position_at_boundary": true,
+      "gap_stops": 0
+    },
+    {
+      "boundary_index": 7250,
+      "begin_date": "2012-03-29",
+      "end_date": "2013-03-28",
+      "training_bar_count": 1000,
+      "selected": "R0_REFERENCE",
+      "candidate_train_snapshot": [
+        {
+          "candidate": "R0_REFERENCE",
+          "closed_trades": 6,
+          "score": 0.8510714170656424
+        },
+        {
+          "candidate": "R2_FAST",
+          "closed_trades": 9,
+          "score": 0.5894988621242909
+        },
+        {
+          "candidate": "R2_SLOW",
+          "closed_trades": 5,
+          "score": 0.6802217781292244
+        }
+      ],
+      "closed_trades": 2,
+      "expectancy_r": 0.8576806778968464,
+      "realized_r": 1.7153613557936929,
+      "max_dd_r_marked": 1.0162342386375207,
+      "unrealized_r": 0.834085022779028,
+      "open_position_at_boundary": true,
+      "gap_stops": 0
+    },
+    {
+      "boundary_index": 7500,
+      "begin_date": "2013-04-01",
+      "end_date": "2014-03-26",
+      "training_bar_count": 1000,
+      "selected": "R0_REFERENCE",
+      "candidate_train_snapshot": [
+        {
+          "candidate": "R0_REFERENCE",
+          "closed_trades": 9,
+          "score": 0.8938940574078236
+        },
+        {
+          "candidate": "R2_FAST",
+          "closed_trades": 15,
+          "score": 0.2528301058067014
+        },
+        {
+          "candidate": "R2_SLOW",
+          "closed_trades": 7,
+          "score": 0.6419401233998907
+        }
+      ],
+      "closed_trades": 6,
+      "expectancy_r": -0.1920723909898742,
+      "realized_r": -1.1524343459392452,
+      "max_dd_r_marked": 2.663459271279862,
+      "unrealized_r": -0.12680125441478118,
+      "open_position_at_boundary": true,
+      "gap_stops": 0
+    },
+    {
+      "boundary_index": 7750,
+      "begin_date": "2014-03-27",
+      "end_date": "2015-03-24",
+      "training_bar_count": 1000,
+      "selected": "R0_REFERENCE",
+      "candidate_train_snapshot": [
+        {
+          "candidate": "R0_REFERENCE",
+          "closed_trades": 13,
+          "score": 0.2971200862561449
+        },
+        {
+          "candidate": "R2_FAST",
+          "closed_trades": 17,
+          "score": 0.14467222440880145
+        },
+        {
+          "candidate": "R2_SLOW",
+          "closed_trades": 10,
+          "score": 0.19360699607807302
+        }
+      ],
+      "closed_trades": 6,
+      "expectancy_r": -0.31735191186625794,
+      "realized_r": -1.9041114711975475,
+      "max_dd_r_marked": 3.118811665438886,
+      "unrealized_r": 0,
+      "open_position_at_boundary": false,
+      "gap_stops": 0
+    },
+    {
+      "boundary_index": 8000,
+      "begin_date": "2015-03-25",
+      "end_date": "2016-03-21",
+      "training_bar_count": 1000,
+      "selected": "R0_REFERENCE",
+      "candidate_train_snapshot": [
+        {
+          "candidate": "R0_REFERENCE",
+          "closed_trades": 17,
+          "score": -0.053828355874368225
+        },
+        {
+          "candidate": "R2_FAST",
+          "closed_trades": 23,
+          "score": -0.22582650940045867
+        },
+        {
+          "candidate": "R2_SLOW",
+          "closed_trades": 13,
+          "score": -0.1567993836957997
+        }
+      ],
+      "closed_trades": 2,
+      "expectancy_r": -0.9611693990368735,
+      "realized_r": -1.922338798073747,
+      "max_dd_r_marked": 1.951138151192779,
+      "unrealized_r": 0,
+      "open_position_at_boundary": false,
+      "gap_stops": 0
+    },
+    {
+      "boundary_index": 8250,
+      "begin_date": "2016-03-22",
+      "end_date": "2017-03-17",
+      "training_bar_count": 1000,
+      "selected": "R0_REFERENCE",
+      "candidate_train_snapshot": [
+        {
+          "candidate": "R0_REFERENCE",
+          "closed_trades": 16,
+          "score": -0.1608875533589425
+        },
+        {
+          "candidate": "R2_FAST",
+          "closed_trades": 21,
+          "score": -0.2912720300688564
+        },
+        {
+          "candidate": "R2_SLOW",
+          "closed_trades": 12,
+          "score": -0.1867454612799188
+        }
+      ],
+      "closed_trades": 2,
+      "expectancy_r": 0.015966216996736032,
+      "realized_r": 0.031932433993472065,
+      "max_dd_r_marked": 1.0621035200559203,
+      "unrealized_r": 3.5450378808210052,
+      "open_position_at_boundary": true,
+      "gap_stops": 0
+    },
+    {
+      "boundary_index": 8500,
+      "begin_date": "2017-03-20",
+      "end_date": "2018-03-15",
+      "training_bar_count": 1000,
+      "selected": "R2_FAST",
+      "candidate_train_snapshot": [
+        {
+          "candidate": "R0_REFERENCE",
+          "closed_trades": 16,
+          "score": -0.33216073845367566
+        },
+        {
+          "candidate": "R2_FAST",
+          "closed_trades": 20,
+          "score": -0.2326319169392176
+        },
+        {
+          "candidate": "R2_SLOW",
+          "closed_trades": 13,
+          "score": -0.4235799220167009
+        }
+      ],
+      "closed_trades": 4,
+      "expectancy_r": 2.045415776264007,
+      "realized_r": 8.181663105056028,
+      "max_dd_r_marked": 4.692517374078758,
+      "unrealized_r": 0,
+      "open_position_at_boundary": false,
+      "gap_stops": 1
+    },
+    {
+      "boundary_index": 8750,
+      "begin_date": "2018-03-16",
+      "end_date": "2019-03-14",
+      "training_bar_count": 1000,
+      "selected": "R2_SLOW",
+      "candidate_train_snapshot": [
+        {
+          "candidate": "R0_REFERENCE",
+          "closed_trades": 14,
+          "score": 0.32443687371823926
+        },
+        {
+          "candidate": "R2_FAST",
+          "closed_trades": 19,
+          "score": 0.2709578377824848
+        },
+        {
+          "candidate": "R2_SLOW",
+          "closed_trades": 9,
+          "score": 0.5115417032854117
+        }
+      ],
+      "closed_trades": 1,
+      "expectancy_r": 1.3040194723916232,
+      "realized_r": 1.3040194723916232,
+      "max_dd_r_marked": 1.0807557603679754,
+      "unrealized_r": 0,
+      "open_position_at_boundary": false,
+      "gap_stops": 0
+    }
+  ]
+}

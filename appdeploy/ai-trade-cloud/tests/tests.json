@@ -1,0 +1,44 @@
+[
+  {
+    "name": "Dashboard fail-closed",
+    "sanity": true,
+    "viewport": "desktop",
+    "covers": [
+      "cloud status dashboard",
+      "missing-secret guardrail",
+      "live-money lock",
+      "GET /api/status"
+    ],
+    "description": "Xác minh dashboard hiển thị chế độ DEMO-only và tự khóa khi chưa đủ secret.",
+    "steps": [
+      "Mở dashboard AI-TRADE",
+      "Quan sát thẻ Chế độ và Engine",
+      "Xem mục Cấu hình an toàn"
+    ],
+    "expected": "Dashboard hiển thị DEMO_ONLY, Live money locked và các secret chưa cấu hình khiến engine ở trạng thái khóa."
+  },
+  {
+    "name": "Refresh preserves runtime status",
+    "viewport": "desktop",
+    "covers": [
+      "runtime state persistence",
+      "status refresh",
+      "GET /api/status"
+    ],
+    "description": "Xác minh trạng thái runtime vẫn đọc được ổn định sau khi làm mới.",
+    "steps": ["Mở dashboard", "Bấm Làm mới", "Tải lại trang"],
+    "expected": "Thông tin strategy EURUSD 15m, scheduler và trạng thái engine vẫn được hiển thị sau refresh."
+  },
+  {
+    "name": "Mobile safety view",
+    "viewport": "mobile",
+    "covers": ["responsive dashboard", "DEMO safety visibility"],
+    "description": "Xác minh trên mobile vẫn thấy rõ bot chỉ chạy DEMO và thiếu secret thì không gửi lệnh.",
+    "steps": [
+      "Mở dashboard trên mobile",
+      "Cuộn tới Cấu hình an toàn",
+      "Quan sát cảnh báo bên dưới danh sách secret"
+    ],
+    "expected": "Giao diện đọc được trên mobile và nêu rõ thiếu secret thì engine tự khóa, Live money locked vẫn hiển thị."
+  }
+]

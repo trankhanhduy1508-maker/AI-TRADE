@@ -1,0 +1,168 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#0b1422">
+  <meta name="referrer" content="no-referrer">
+  <link rel="manifest" href="/functions/v1/cws-ai-trade-site/app/?asset=manifest.webmanifest">
+  <link rel="icon" type="image/png" sizes="192x192" href="/functions/v1/cws-ai-trade-site/app/?asset=icon-192.png">
+  <link rel="apple-touch-icon" href="/functions/v1/cws-ai-trade-site/app/?asset=icon-192.png">
+  <title>CWS AI Trade · Founder</title>
+  <link rel="stylesheet" href="?asset=styles.css">
+</head>
+<body>
+<div class="app">
+  <header class="topbar">
+    <div class="brand"><span class="brand-icon">◆</span><div><strong>CWS <em>AI TRADE</em></strong><small>Duy Trần · Founder CWS</small></div></div>
+    <nav class="main-nav" aria-label="Điều hướng">
+      <button class="nav active" data-view="dashboard">▥ <span>Giao dịch</span></button>
+      <button class="nav" data-view="portfolio">▤ <span>Danh mục</span></button>
+      <button class="nav" data-view="book">▧ <span>Sách &amp; kiến thức</span></button>
+      <button class="nav" data-view="chat">▣ <span>AI Chat</span></button>
+    </nav>
+    <div class="top-right"><button id="pwaInstallBtn" class="install-button" type="button" hidden>⬇ Cài ứng dụng</button><span class="status" id="overallStatus">● Chế độ đọc</span><button class="menu-btn" id="menuBtn" type="button" aria-label="Bật tắt bảng điều khiển">☰</button></div>
+  </header>
+
+  <div class="workspace">
+    <aside class="sidebar" id="sidebar">
+      <div class="side-inner">
+        <div class="side-caption">BẢNG ĐIỀU KHIỂN</div>
+        <label for="symbolSelect">Cặp giao dịch</label>
+        <select id="symbolSelect" aria-label="Chọn cặp giao dịch">
+          <option>EURUSD</option><option>GBPUSD</option><option>USDJPY</option>
+          <option>AUDUSD</option><option>NZDUSD</option><option>USDCAD</option>
+          <option>USDCHF</option><option>XAUUSD</option><option>BTCUSD</option>
+          <option>ETHUSD</option><option>USOIL</option><option>US30</option>
+          <option>NAS100</option><option>US500</option><option>EURJPY</option><option>XAGUSD</option>
+        </select>
+        <div class="price-number" id="sidePrice">—</div>
+        <div class="muted micro" id="sideMarketStatus">Đang kiểm tra dữ liệu công khai…</div>
+        <hr>
+        <span class="side-label">Khung thời gian</span>
+        <div class="timeframes" id="timeframes">
+          <button data-tf="15m">M15</button><button data-tf="30m">M30</button>
+          <button data-tf="1h" class="active">H1</button><button data-tf="4h">H4</button>
+          <button data-tf="1d">D1</button>
+        </div>
+        <hr>
+        <span class="side-label">Tình trạng hệ thống</span>
+        <div class="safety-item"><span>● Giao diện</span><b>Hoạt động</b></div>
+        <div class="safety-item"><span>● Sách Masterbook</span><b id="bookBadge">Đang tải</b></div>
+        <div class="safety-item"><span>● CWS Trading Engine</span><b class="warning">TF-013A · PAPER</b></div>
+        <div class="safety-item"><span>● Broker</span><b>Chưa kết nối</b></div>
+        <div class="safety-item"><span>● Live money</span><b class="warning">KHÓA</b></div>
+        <div class="safety-info">Bot tự tạo và theo dõi lệnh mô phỏng trên máy chủ. Mở trang để xem vị thế và lịch sử.</div>
+        
+      </div>
+    </aside>
+
+    <main class="main-area">
+      <div class="page-heading">
+        <div><h1>CWS AI Trade</h1><p id="sourceDescription">Theo dõi lệnh mô phỏng tự động · TF-013A</p></div>
+        <span class="chip" id="dataChip">ĐỌC / PHÂN TÍCH</span>
+      </div>
+
+      <div id="pwaInstallHint" class="pwa-install-hint" hidden>Trên Android, mở trực tiếp Web App bằng Chrome, chọn menu ⋮ → Cài đặt ứng dụng hoặc Thêm vào màn hình chính.</div>
+
+
+      <section class="panel paper-panel" id="paperOrders" aria-label="Lệnh mô phỏng tự động">
+        <div class="panel-heading"><div><h2>Lệnh mô phỏng tự động</h2><span class="muted micro">TF-013A · Forex, crypto, vàng, dầu, chỉ số</span></div><div class="heading-right"><span class="pill" id="paperStatus">ĐANG TẢI</span><button class="secondary" id="paperRefresh" type="button">↻ Làm mới</button></div></div>
+        <p class="paper-note">Bot chạy mỗi ngày trên máy chủ, kể cả khi bạn đóng web. Đây là lệnh trong phòng mô phỏng; giá vàng/dầu dùng dữ liệu futures đại diện. Kết quả theo R, chưa trừ phí; không phải lot hoặc số tiền MT5.</p>
+        <div class="paper-metrics"><div><span>Đang mở</span><strong id="paperOpenCount">—</strong></div><div><span>Kết quả đang mở</span><strong id="paperOpenR">—</strong></div><div><span>Đã đóng · 100 lệnh gần nhất</span><strong id="paperClosedCount">—</strong></div><div><span>Kết quả đã đóng</span><strong id="paperClosedR">—</strong></div></div>
+        <p class="muted micro" id="paperUpdated" aria-live="polite">Đang tải dữ liệu bot…</p>
+        <p class="paper-error" id="paperError" role="status" hidden></p>
+        <h3>Vị thế đang mở</h3>
+        <div class="table-wrap"><table><thead><tr><th>Thị trường</th><th>Hướng</th><th>Giá vào</th><th>Stop</th><th>Giá đánh dấu</th><th>Kết quả</th><th>Thời điểm giá</th></tr></thead><tbody id="paperOpenRows"><tr><td colspan="7">Đang tải…</td></tr></tbody></table></div>
+        <details class="paper-history"><summary>Lịch sử lệnh đã đóng</summary><div class="table-wrap"><table><thead><tr><th>Thị trường</th><th>Hướng</th><th>Giá vào</th><th>Giá thoát</th><th>Kết quả</th><th>Thời điểm đóng</th><th>Lý do</th></tr></thead><tbody id="paperClosedRows"><tr><td colspan="7">Đang tải…</td></tr></tbody></table></div></details>
+        <p class="muted micro">1 R = khoảng rủi ro ban đầu của một lệnh. Tổng R chỉ cộng kết quả chuẩn hóa của các lệnh, không phải lợi nhuận của tài khoản. Giá đánh dấu có thể cũ khi thị trường nghỉ hoặc nguồn dữ liệu chưa cập nhật. Arena chưa chứng minh hiệu quả ngoài mẫu.</p>
+      </section>
+
+      <details class="manual-summary"><summary>Danh mục nhập thủ công · P/L bằng tiền</summary>
+      <section class="summary" aria-label="Tổng hợp P/L">
+        <article class="metric gain"><span>Tổng lãi</span><strong id="totalGain">—</strong><small>Vị thế đang mở</small></article>
+        <article class="metric loss"><span>Tổng lỗ</span><strong id="totalLoss">—</strong><small>Vị thế đang mở</small></article>
+        <article class="metric net"><span>Lãi/lỗ ròng</span><strong id="netPL">—</strong><small>Không cộng vị thế thiếu P/L</small></article>
+        <article class="metric count"><span>Số cặp có vị thế</span><strong id="pairCount">—</strong><small>Chỉ tính các vị thế được xác minh hoặc nhập</small></article>
+      </section>
+
+      </details>
+
+      <div id="view-dashboard" class="view active">
+        <div class="dashboard-grid">
+          <section class="panel chart-panel">
+            <div class="panel-heading"><h2>Biểu đồ <span id="chartSymbol">EURUSD</span></h2><div class="heading-right"><span class="pill" id="chartTf">H1</span><span class="pill source-pill">TradingView</span></div></div>
+            <div id="chartMessage" class="chart-message">Đang kết nối TradingView…</div>
+            <canvas id="priceChart" role="img" aria-label="Biểu đồ dự phòng" style="display:none"></canvas>
+            <div id="hostedChart" class="hosted-chart" aria-label="Biểu đồ TradingView, dữ liệu của bên thứ ba">Biểu đồ tương tác cần kết nối mạng.</div>
+            <div class="chart-footer"><span id="chartUpdated">Chưa có dữ liệu</span><span>Widget bên thứ ba · Không phải tín hiệu giao dịch</span></div>
+          </section>
+          <section class="panel portfolio-panel">
+            <div class="panel-heading"><h2>Danh mục nhập thủ công (16 cặp)</h2><span class="pill" id="portfolioSource">Chưa kết nối</span></div>
+            <div class="table-wrap"><table><thead><tr><th>Cặp</th><th>Hướng</th><th>Lot</th><th>P/L</th></tr></thead><tbody id="portfolioRows"></tbody></table></div>
+            <div class="portfolio-total"><span>TỔNG LÃI/LỖ RÒNG</span><strong id="portfolioNet">—</strong></div>
+          </section>
+        </div>
+        <div class="below-grid">
+          <section class="panel compact-panel" id="modelResearchPanel" aria-label="Trạng thái mô hình CWS Trading Engine">
+            <div class="panel-heading"><h2>Bot tự động · TF-013A</h2><span class="pill" id="modelResearchStatus">PAPER ONLY</span></div>
+            <p>Bộ quy tắc đọc dữ liệu đã đóng → tìm tín hiệu → mô phỏng vào/thoát lệnh → ghi nhật ký → đánh giá chiến lược. Chạy phía máy chủ khi bạn đóng trang; không gọi AI cho từng lệnh.</p>
+            <p class="muted">Tự nghiên cứu bằng replay, kiểm thử ngoài mẫu và theo dõi forward. Chiến lược mới phải vượt kiểm chứng trước khi được dùng; không tự nới giới hạn rủi ro.</p>
+            <p class="muted">MT5 DEMO chưa mở đặt lệnh. Dữ liệu paper cần kiểm tra tính toàn vẹn; không tính thành kết quả khớp lệnh broker.</p>
+            <a class="founder-link" href="https://oziktadfeenydvgobudr.supabase.co/functions/v1/ai-trade-dashboard?admin=1" rel="noreferrer">Mở bảng theo dõi bot bằng Google Founder ↗</a>
+            <p class="muted micro">Bảng theo dõi yêu cầu đăng nhập. Trang này không lưu mật khẩu MT5; không có nút bật tiền thật.</p>
+          </section>
+          <section class="panel compact-panel">
+            <div class="panel-heading"><h2>Nguồn dữ liệu vị thế</h2></div>
+            <p class="muted">Web App không truy cập dữ liệu broker khi chưa có phiên xác thực hợp lệ. Có thể nạp tệp JSON để xem tổng hợp ngay trong trình duyệt; dữ liệu không được tải lên máy chủ.</p>
+            <a class="founder-link" href="./mt5-login.html">🔐 Kết nối MT5 DEMO bằng Login / Password / Server</a>
+            <label class="file-trigger" for="positionInput">▤ Nạp JSON vị thế <input type="file" id="positionInput" accept=".json,application/json"></label>
+            <button class="secondary" id="sampleToggle" type="button">Xem thử bằng dữ liệu MINH HỌA</button>
+            <details class="schema"><summary>Định dạng JSON được hỗ trợ</summary><code>[{"symbol":"EURUSD","side":"BUY","lot":0.1,"floatingPL":12.5}]</code></details>
+          </section>
+          <section class="panel compact-panel">
+            <div class="panel-heading"><h2>Kiến thức đã tích hợp</h2><span class="pill">Không cần API key</span></div>
+            <p>Masterbook của Duy Trần: setup, trigger, invalidation, sizing, giữ winner, OOS, walk-forward, spread, slippage và những lần CWS kiểm thử thất bại.</p>
+            <button class="primary" data-view="chat" type="button">Hỏi AI về kiến thức giao dịch ↗</button>
+          </section>
+        </div>
+      </div>
+
+      <section id="view-portfolio" class="view panel">
+        <div class="panel-heading"><h2>Danh mục tổng hợp theo cặp</h2><span class="pill" id="portfolioModeTag">Chưa kết nối</span></div>
+        <p class="muted">Mỗi cặp chỉ có một dòng. Nhiều vị thế cùng cặp được cộng tổng Lot và P/L. Hướng trái chiều sẽ hiện HỖN HỢP. Thiếu một Lot hoặc P/L thì tổng tương ứng là —.</p>
+        <div class="portfolio-detail" id="portfolioDetails"></div>
+      </section>
+
+      <section id="view-book" class="view panel">
+        <div class="panel-heading"><h2>CWS Trading Masterbook</h2><span class="pill">Duy Trần · Founder CWS</span></div>
+        <p>Tra cứu kiến thức gốc trong trình duyệt. Bản đúc kết công khai được nạp tự động; nạp thêm EPUB của bạn để tra cứu toàn bộ các chương. Không gửi EPUB lên máy chủ.</p>
+        <label class="file-trigger" for="bookInput">▧ Nạp sách EPUB vào AI <input type="file" id="bookInput" accept=".epub,application/epub+zip"></label>
+        <div class="book-storage"><label><input id="saveBookOnDevice" type="checkbox"> Lưu kiến thức sách trên thiết bị để tra cứu ngoại tuyến</label><button class="secondary book-clear" id="clearSavedBook" type="button" hidden>Xóa sách đã lưu</button></div>
+        <span class="muted micro" id="bookUploadStatus">Chưa nạp EPUB đầy đủ</span>
+        <div class="searchline"><input id="bookQuery" placeholder="Tìm breakout, quản lý rủi ro, slippage…" aria-label="Tìm kiến thức"><button id="bookSearch" class="primary" type="button">Tìm trong sách</button></div>
+        <div id="bookResults" class="results"></div>
+      </section>
+
+      <section id="view-chat" class="view panel chat-panel">
+        <div class="panel-heading"><h2>AI Chat · CWS Trading Masterbook</h2><span class="pill">TRA CỨU CỤC BỘ</span></div>
+        <div class="chat-note">Chế độ này tìm và trích đúng nội dung sách, không phải mô hình ChatGPT và không tự phán đoán lệnh. Nút “Hỏi ChatGPT” chuyển câu hỏi kèm nguồn sang tài khoản ChatGPT của bạn.</div>
+        <div class="conversation" id="conversation" role="log" aria-live="polite">
+          <div class="message bot">Bạn có thể hỏi về breakout, stop loss, sizing, backtest, bài học của Larry Hite, Mark Minervini hoặc những thử nghiệm CWS. Nguồn tài liệu sẽ hiện ngay dưới câu trả lời.</div>
+        </div>
+        <form id="chatForm" class="chat-form"><input id="chatInput" autocomplete="off" aria-label="Câu hỏi của bạn" placeholder="Hỏi về bài học, một chiến lược, quản lý lệnh…" required><button class="primary" type="submit">Tra cứu</button></form>
+        <div class="chat-actions"><button class="secondary" type="button" id="copyForChatGPT">Sao chép câu hỏi + nguồn</button><a href="https://chatgpt.com/plugins/plugins_6aba1b6ee1fc8191a5c446b1558538d3" id="cwsKnowledgePlugin" target="_blank" rel="noopener noreferrer">Kết nối CWS AI Trade Knowledge ↗</a><a href="https://chatgpt.com/" id="openChatGPT" target="_blank" rel="noopener noreferrer">Mở ChatGPT ↗</a></div>
+      </section>
+
+      <footer>© CWS AI TRADE · Web App/PWA độc lập · Google Sites chưa xuất bản · Chỉ nghiên cứu · Không giao dịch thật.</footer>
+    </main>
+  </div>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js" defer></script>
+<script src="?asset=portfolio.js" defer></script>
+<script src="?asset=tradingview.js" defer></script>
+<script src="?asset=app.js" defer></script>
+<script src="?asset=pwa.js" defer></script>
+<script src="?asset=paper-orders.js" defer></script>
+</body>
+</html>

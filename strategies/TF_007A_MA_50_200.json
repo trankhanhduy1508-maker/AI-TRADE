@@ -1,0 +1,17 @@
+{
+  "strategy_id": "TF-007A-MA-50-200",
+  "version": "0.1.0",
+  "status": "PREREGISTERED",
+  "timeframe": "1D",
+  "signal_model": "SMA_REGIME",
+  "fast_sma_bars": 50,
+  "slow_sma_bars": 200,
+  "entry_timing": "NEXT_OPEN",
+  "atr_bars": 20,
+  "emergency_stop_atr": 3,
+  "exit_model": "OPPOSITE_REGIME_OR_EMERGENCY_STOP",
+  "position_policy": "ONE_OPEN",
+  "pyramiding": false,
+  "gap_stop_policy": "WORSE_OF_STOP_OR_BAR_OPEN",
+  "capital_risk": "UNCOMMITTED"
+}

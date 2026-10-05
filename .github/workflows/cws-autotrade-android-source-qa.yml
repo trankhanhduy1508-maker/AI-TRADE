@@ -1,0 +1,152 @@
+name: CWS AutoTrade Android source-only QA
+
+# Internal compile and unit tests only. NO assemble, signing, APK upload,
+# workflow_dispatch to production, broker connection or deployment.
+# No live/funded trading and no secret values used by this workflow.
+on:
+  push:
+    branches:
+      - codex/p0-covel-knowledge-audit
+    paths:
+      - '.github/workflows/cws-autotrade-android-source-qa.yml'
+      - 'android/**'
+      - 'google-sites/cws-ai-trade/**'
+      - 'scripts/build_cws_trade_static.py'
+      - 'scripts/check_native_autotrade_contract.py'
+      - 'tests/android/**'
+      - 'supabase/functions/ai-trade-founder-mt5/**'
+      - 'supabase/functions/ai-trade-mt5-demo-validate/**'
+      - 'src/execution/coordinator.py'
+      - 'src/execution/cloud_auto_engine.py'
+      - 'src/execution/metaapi_cloud.py'
+      - 'src/execution/mt5_cloud_metaapi.py'
+      - 'src/execution/mt5_session_bridge.py'
+      - 'src/execution/mt5_session_http.py'
+      - 'src/execution/mt5_bridge_factory.py'
+      - 'tests/execution/test_mt5_cloud_metaapi.py'
+      - 'tests/execution/test_mt5_session_bridge.py'
+      - 'tests/execution/test_mt5_session_http.py'
+      - 'tests/execution/test_mt5_bridge_factory.py'
+      - 'src/execution/paper_adapter.py'
+      - 'src/execution/mt5_adapter.py'
+      - 'src/execution/risk.py'
+      - 'src/execution/mt5_runtime.py'
+      - 'src/execution/demo_candidate.py'
+      - 'src/strategies/time_series_momentum.py'
+      - 'src/execution/demo_readback.py'
+      - 'tests/execution/test_demo_readback.py'
+      - 'tests/execution/test_cloud_auto_engine.py'
+      - 'tests/execution/test_metaapi_cloud.py'
+      - 'tests/execution/test_coordinator.py'
+      - 'tests/execution/test_paper_adapter.py'
+      - 'tests/execution/test_mt5_adapter.py'
+      - 'tests/execution/test_risk.py'
+      - 'tests/execution/test_mt5_runtime.py'
+      - 'tests/execution/test_demo_candidate.py'
+      - 'tests/execution/test_auto_engine.py'
+      - 'tests/execution/test_position_lifecycle.py'
+      - 'tests/execution/test_position_state_controller.py'
+      - 'tests/execution/test_coordinator.py'
+      - 'tests/execution/test_paper_adapter.py'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: autotrade-source-qa-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  source-only:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout committed source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Set up Gradle 8.13 (AGP 8.13.2)
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.13'
+
+      - name: Reuse Android SDK on hosted runner (no obsolete SDK tools package)
+        run: |
+          test -d "${ANDROID_HOME:?Android SDK unavailable}"
+          SDKMANAGER="$(find "$ANDROID_HOME/cmdline-tools" -type f -name sdkmanager -print -quit)"
+          test -n "$SDKMANAGER"
+          "$SDKMANAGER" --version
+          "$SDKMANAGER" --sdk_root="$ANDROID_HOME" --install "platforms;android-36" "build-tools;35.0.0"
+
+      - name: Check standalone native security contracts
+        run: python3 scripts/check_native_autotrade_contract.py
+
+      - name: Run all isolated execution and Android contract tests
+        run: |
+          python3 -m venv "$RUNNER_TEMP/cws-py"
+          "$RUNNER_TEMP/cws-py/bin/python" -m pip install --disable-pip-version-check --quiet "pytest>=8,<9" "cryptography>=44,<47"
+          PYTHONPATH=. "$RUNNER_TEMP/cws-py/bin/python" -m pytest -q tests/execution tests/android --maxfail=1
+
+      - name: Test broker-only equity and positions decoder (no broker access)
+        run: node --test tests/android/*.test.mjs
+
+      - name: Build exact offline Android assets and merge (no APK)
+        run: gradle --no-daemon -p android :app:prepareCwsAndroidAssets :app:mergeDebugAssets --stacktrace
+
+      - name: Verify packaged first-party assets and WebView whitelist
+        run: |
+          python3 - <<'PY'
+          import hashlib
+          import json
+          from pathlib import Path
+          base = Path("android/app/src/main/assets/www")
+          required = {"index.html", "styles.css", "portfolio.js", "tradingview.js",
+                      "app.js", "pwa.js", "sw.js", "manifest.webmanifest",
+                      "icon-192.png", "icon-512.png", "mt5-login.html", "founder-mt5.js",
+                      ".nojekyll"}
+          assert {p.name for p in base.iterdir()} == required, "Asset whitelist mismatch"
+          assert all((base/name).is_file() for name in required), "Missing asset"
+          index = (base/"index.html").read_text(encoding="utf-8")
+          assert "<title>CWS AutoTrade · DEMO LOCKED</title>" in index
+          assert '<script src="./pwa.js" defer></script>' not in index
+          assert "/functions/v1/cws-ai-trade-site/app/" not in index
+          manifest = json.loads((base/"manifest.webmanifest").read_text(encoding="utf-8"))
+          assert manifest["name"] == "CWS AutoTrade"
+          java = Path("android/app/src/main/java/vn/cws/aitrade/MainActivity.java").read_text()
+          import re
+          allowed = java.split("private static final Set<String> ALLOWED",1)[1]
+          allowed = allowed.split("Arrays.asList(",1)[1].split("));",1)[0]
+          exposed = set(re.findall(r'"([^"]+)"', allowed))
+          assert exposed == required - {"mt5-login.html", "founder-mt5.js", ".nojekyll"}
+          digests = {p.name:hashlib.sha256(p.read_bytes()).hexdigest()
+                     for p in base.iterdir() if p.is_file()}
+          assert len(digests) == len(required)
+          print("PASS: Android offline assets and WebView whitelist:",len(digests),"files")
+          PY
+
+      - name: Compile debug and release Java and lint without packaging an APK
+        run: |
+          gradle --no-daemon -p android :app:compileDebugJavaWithJavac :app:compileReleaseJavaWithJavac :app:lintDebug --stacktrace
+
+      - name: Verify production packaging is blocked without Founder approval
+        run: |
+          if gradle --no-daemon -p android :app:verifyCwsReleasePrerequisites > "$RUNNER_TEMP/cws-release-denial.txt" 2>&1; then
+            echo "FAIL: production release gate unexpectedly accepted missing credentials"
+            exit 1
+          fi
+          grep -q "Founder release authorization and external signing are required" "$RUNNER_TEMP/cws-release-denial.txt"
+          rm "$RUNNER_TEMP/cws-release-denial.txt"
+          echo "PASS: release signing and approval gate fails closed."
+
+      - name: Verify no APK was created
+        run: |
+          if find android/app/build/outputs -name '*.apk' -print -quit 2>/dev/null | grep -q .; then
+            echo "FAIL: source-only workflow must not create an APK"
+            exit 1
+          fi
+          echo "PASS: Java source compiled; no APK assembled or delivered."

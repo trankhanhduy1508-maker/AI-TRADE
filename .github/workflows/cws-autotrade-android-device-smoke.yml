@@ -1,0 +1,140 @@
+name: CWS AutoTrade Android device smoke
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - codex/p0-covel-knowledge-audit
+    paths:
+      - '.github/workflows/cws-autotrade-android-device-smoke.yml'
+      - 'android/**'
+      - 'tests/android/**'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: autotrade-device-smoke-${{ github.sha }}
+  cancel-in-progress: false
+
+jobs:
+  emulator-smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Set up Gradle 8.13
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.13'
+
+      - name: Install Android SDK components
+        run: |
+          SDKMANAGER="$(find "$ANDROID_HOME/cmdline-tools" -type f -name sdkmanager -print -quit)"
+          test -n "$SDKMANAGER"
+          yes | "$SDKMANAGER" --licenses >/dev/null || true
+          "$SDKMANAGER" --install "platform-tools" "platforms;android-35" "build-tools;35.0.0" "emulator" "system-images;android-35;google_apis;x86_64"
+
+      - name: Build debug APK
+        run: |
+          gradle --no-daemon -p android :app:assembleDebug
+          APK="$(find android/app/build/outputs/apk/debug -name '*.apk' -print -quit)"
+          test -n "$APK"
+          cp "$APK" "$RUNNER_TEMP/app-debug.apk"
+
+      - name: Create and boot emulator
+        env:
+          ANDROID_AVD_HOME: ${{ runner.temp }}/android-avd
+        run: |
+          mkdir -p "$ANDROID_AVD_HOME"
+          echo no | "$ANDROID_HOME/cmdline-tools/latest/bin/avdmanager" create avd \
+            -n cws-smoke -k "system-images;android-35;google_apis;x86_64" --force
+          test -f "$ANDROID_AVD_HOME/cws-smoke.ini"
+          "$ANDROID_HOME/emulator/emulator" -list-avds
+
+          ACCEL="-accel off"
+          if [ -e /dev/kvm ]; then
+            sudo chmod 666 /dev/kvm || true
+            if "$ANDROID_HOME/emulator/emulator" -accel-check 2>&1 | grep -qi "accel"; then
+              ACCEL="-accel on"
+            fi
+          fi
+          echo "Emulator acceleration: $ACCEL"
+
+          nohup "$ANDROID_HOME/emulator/emulator" \
+            -avd cws-smoke -no-window -no-audio -no-boot-anim \
+            -gpu swiftshader_indirect $ACCEL \
+            >/tmp/emulator.log 2>&1 &
+
+          if ! timeout 180 "$ANDROID_HOME/platform-tools/adb" wait-for-device; then
+            echo "ADB device wait failed"
+            cat /tmp/emulator.log || true
+            exit 1
+          fi
+
+          if ! timeout 420 bash -c 'until [ "$("$ANDROID_HOME/platform-tools/adb" shell getprop sys.boot_completed 2>/dev/null | tr -d "\r")" = "1" ]; do sleep 3; done'; then
+            echo "Emulator boot timeout"
+            "$ANDROID_HOME/platform-tools/adb" devices -l || true
+            cat /tmp/emulator.log || true
+            exit 1
+          fi
+
+          "$ANDROID_HOME/platform-tools/adb" shell settings put global window_animation_scale 0
+          "$ANDROID_HOME/platform-tools/adb" shell settings put global transition_animation_scale 0
+          "$ANDROID_HOME/platform-tools/adb" shell settings put global animator_duration_scale 0
+
+      - name: Install and launch MT5 connect screen
+        run: |
+          "$ANDROID_HOME/platform-tools/adb" install -r "$RUNNER_TEMP/app-debug.apk"
+          "$ANDROID_HOME/platform-tools/adb" shell am force-stop vn.cws.aitrade
+          "$ANDROID_HOME/platform-tools/adb" shell am start -n vn.cws.aitrade/.Mt5ConnectActivity
+          sleep 3
+          "$ANDROID_HOME/platform-tools/adb" shell uiautomator dump /sdcard/window.xml
+          "$ANDROID_HOME/platform-tools/adb" pull /sdcard/window.xml "$RUNNER_TEMP/window.xml"
+          cat "$RUNNER_TEMP/window.xml"
+          grep -q "Broker / MT5 Server" "$RUNNER_TEMP/window.xml"
+          grep -q "MetaQuotes Ltd. · MetaQuotes-Demo" "$RUNNER_TEMP/window.xml"
+          grep -q "Login / Account Number" "$RUNNER_TEMP/window.xml"
+          grep -q "Password" "$RUNNER_TEMP/window.xml"
+          grep -q "DÁN TỪ MT5" "$RUNNER_TEMP/window.xml"
+          grep -q "KẾT NỐI MT5" "$RUNNER_TEMP/window.xml"
+
+      - name: Relaunch smoke
+        run: |
+          "$ANDROID_HOME/platform-tools/adb" shell am force-stop vn.cws.aitrade
+          "$ANDROID_HOME/platform-tools/adb" shell am start -n vn.cws.aitrade/.Mt5ConnectActivity
+          sleep 2
+          "$ANDROID_HOME/platform-tools/adb" shell uiautomator dump /sdcard/window2.xml
+          "$ANDROID_HOME/platform-tools/adb" pull /sdcard/window2.xml "$RUNNER_TEMP/window2.xml"
+          grep -q "Broker / MT5 Server" "$RUNNER_TEMP/window2.xml"
+          grep -q "DÁN TỪ MT5" "$RUNNER_TEMP/window2.xml"
+          grep -q "KẾT NỐI MT5" "$RUNNER_TEMP/window2.xml"
+
+      - name: Capture logcat
+        if: always()
+        run: |
+          timeout 20 "$ANDROID_HOME/platform-tools/adb" logcat -d -t 500 > "$RUNNER_TEMP/logcat.txt" 2>&1 || true
+          if grep -E "FATAL EXCEPTION|AndroidRuntime.*Process: vn.cws.aitrade" "$RUNNER_TEMP/logcat.txt"; then
+            cat "$RUNNER_TEMP/logcat.txt"
+            exit 1
+          fi
+
+      - name: Upload smoke evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: CWS-AutoTrade-device-smoke
+          path: |
+            ${{ runner.temp }}/window.xml
+            ${{ runner.temp }}/window2.xml
+            ${{ runner.temp }}/logcat.txt
+          if-no-files-found: warn
+          retention-days: 7

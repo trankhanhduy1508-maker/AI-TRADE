@@ -1,0 +1,51 @@
+{
+  "schema_version": 1,
+  "status": "QUARANTINED_NOT_APPROVED",
+  "repository": "trankhanhduy1508-maker/AI-TRADE",
+  "snapshot_commit": "66082864f85ecfd5e75c16741ae6fec0796d2592",
+  "note": "Git blob SHA pins source file; stage_knowledge re-hashes actual UTF-8 bytes. These are CWS-authored DISTILLED notes and report, not full third-party books or full 49-page EPUB. Date-only source metadata is normalized to 00:00 +07 for parser compatibility, not claimed as the precise creation time.",
+  "sources": [
+    {
+      "source_id": "cws_masterbook_v3_distilled",
+      "source_path": "knowledge/CWS_TRADING_MASTERBOOK_V3_DISTILLED_2026-09-28.md",
+      "git_blob_sha1": "116368dcf74e70fe502d993aa8acae92612f2c47",
+      "rights_ref": "Duy Tran / CWS authored distilled notes only; external book text not included",
+      "license": "CWS_OWNED",
+      "claim_type": "BOOK_LESSON",
+      "created_at": "2026-09-28T00:00:00+07:00",
+      "source_date_precision": "DAY",
+      "market": "MULTI_ASSET",
+      "timeframe": "N_A",
+      "evidence_level": "HYPOTHESIS_UNPROMOTED",
+      "status": "QUARANTINED"
+    },
+    {
+      "source_id": "cws_practitioner_corpus_v1",
+      "source_path": "knowledge/PRACTITIONER_BOOK_CORPUS.md",
+      "git_blob_sha1": "9a931c97493a76d192228425fe02995f1478ff35",
+      "rights_ref": "CWS-authored registry/summaries; cited authors' copyrighted books excluded",
+      "license": "CWS_OWNED",
+      "claim_type": "PRACTITIONER_CLAIM",
+      "created_at": "2026-09-26T00:00:00+07:00",
+      "source_date_precision": "DAY",
+      "market": "MULTI_ASSET",
+      "timeframe": "N_A",
+      "evidence_level": "SOURCE_REVIEW_NEEDED",
+      "status": "QUARANTINED"
+    },
+    {
+      "source_id": "cws_multiasset_10y_report",
+      "source_path": "reports/MULTIASSET_10Y_BACKTEST_2026-09-27.md",
+      "git_blob_sha1": "13963c3e00f73cc6dd1d6140724a2a11a5f324cb",
+      "rights_ref": "CWS-authored historical research report; third-party price feed reuse rights must be checked separately",
+      "license": "CWS_OWNED",
+      "claim_type": "CWS_BACKTEST_EVIDENCE",
+      "created_at": "2026-09-27T00:00:00+07:00",
+      "source_date_precision": "DAY",
+      "market": "MULTI_ASSET",
+      "timeframe": "DAILY",
+      "evidence_level": "GROSS_OR_RESEARCH_COST_ONLY_NO_BROKER_NET",
+      "status": "QUARANTINED"
+    }
+  ]
+}

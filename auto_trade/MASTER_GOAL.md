@@ -14,45 +14,49 @@ Android là control plane. Trading engine không được phụ thuộc vào vi�
 
 ## 2. Knowledge First — bắt buộc
 
-Trước khi tối ưu chiến lược hoặc tích hợp MT5, ưu tiên số 1 là xây **Trend Following canonical knowledge base**, lấy **Michael W. Covel — Trend Following, ưu tiên Fifth Edition** làm nguồn triết lý chính.
+Trước khi tối ưu chiến lược hoặc mở rộng MT5, ưu tiên số 1 là xây **canonical knowledge base theo Practitioner First**.
 
-Không được giả vờ đã học toàn bộ sách nếu chưa có full lawful source.
+Nguồn ưu tiên:
+1. Sách/tài liệu do trader hoặc investor trực tiếp thành công viết, với track record có thể kiểm tra.
+2. Bản sách hợp pháp do Founder cung cấp, nếu có.
+3. Tài liệu chính thức của practitioner/quỹ/tổ chức và publisher metadata.
+4. Primary research/papers để kiểm chứng giả thuyết.
+5. Secondary interview/synthesis chỉ dùng để dẫn tới primary source và cross-check.
 
-Thứ tự nguồn:
-1. Bản sách hợp pháp do Founder cung cấp, nếu có.
-2. Publisher/author material.
-3. Michael Covel official material.
-4. Primary sources/papers/trader material được sách dẫn tới.
-5. Nguồn học thuật hoặc nguồn gốc đáng tin cậy để kiểm chứng.
+Peter Lynch — *One Up on Wall Street* / *Beating the Street* là core corpus về tư duy nghiên cứu và kỷ luật đầu tư. Larry Hite, William J. O'Neil, Mark Minervini và các practitioner khác được ingest theo mức bằng chứng track record. Michael Covel và các sách tổng hợp/phỏng vấn vẫn hữu ích, nhưng thuộc lớp **secondary synthesis**, không còn là nguồn practitioner duy nhất hoặc tối cao.
 
-Không dùng bản sách lậu. Không chép dài nguyên văn nội dung có bản quyền. Tổng hợp bằng ngôn ngữ riêng.
+Không được giả vờ đã học toàn bộ sách nếu chưa có full lawful source. Không dùng bản sách lậu. Không chép dài nguyên văn nội dung có bản quyền; chỉ tổng hợp bằng ngôn ngữ riêng.
 
-Mọi kiến thức quan trọng phải gắn provenance:
-- `VERIFIED_FROM_BOOK`
-- `VERIFIED_FROM_AUTHOR`
+Mọi kiến thức quan trọng phải có cả **source provenance** và **track-record provenance**:
+- `VERIFIED_PRACTITIONER_RECORD`
+- `VERIFIED_FROM_PRACTITIONER_BOOK`
+- `PRACTITIONER_RECORD_PARTIAL`
+- `SECONDARY_SYNTHESIS`
 - `VERIFIED_FROM_PRIMARY_RESEARCH`
 - `IMPLEMENTATION_DERIVATION`
 - `UNVERIFIED`
 
-Phải phân biệt rõ **Covel/book knowledge** với **tham số do engineering/backtest lựa chọn**. Không được bịa một con số rồi gắn tên Covel vào đó.
+Canonical rules nằm tại:
+- `knowledge/KNOWLEDGE_INGESTION_POLICY.md`
+- `knowledge/PRACTITIONER_BOOK_CORPUS.md`
+
+Phải phân biệt rõ **kiến thức nguồn** với **tham số do engineering/backtest lựa chọn**. Không được bê nguyên rule từ cổ phiếu sang FX/MT5 nếu chưa có backtest riêng.
 
 Knowledge cần bao phủ tối thiểu:
-- systematic vs discretionary
-- reaction, không dự đoán
-- trend/price driven decision making
+- reaction vs prediction
+- trend/price-driven decision making
 - entry/exit philosophy
-- cut losses / let profits run
+- stop loss / take profit / trailing exit
+- let winners run
+- pyramiding winners vs martingale/averaging down
 - position sizing
-- volatility
-- leverage
+- volatility/leverage
 - drawdown
 - correlation/diversification
 - portfolio construction
 - long/short
 - behavioral bias/discipline
 - statistical/scientific thinking
-- compounding
-- crisis/black-swan behavior
 - performance evaluation
 
 Canonical output chính đặt trong `knowledge/` và phải có khả năng truy nguồn.
@@ -152,18 +156,17 @@ Nhưng không được tự thay đổi các hard risk limits hoặc tự unlock
 
 ## 10. Execution order
 
-Ngay lúc này ưu tiên:
+Ưu tiên hiện tại:
+1. Practitioner-first knowledge ingestion + provenance audit.
+2. Map claim thành hypothesis có thể test.
+3. Strategy spec.
+4. Backtesting + OOS/walk-forward.
+5. Paper/demo execution.
+6. MT5 full position lifecycle: entry + SL/TP + trailing + partial + winner pyramiding + reconciliation.
+7. VPS 24/7 + Android control.
+8. Live-ready validation.
 
-**P0 — Audit và nâng cấp Trend Following knowledge theo Michael Covel.**
-
-Sau đó mới lần lượt:
-- strategy spec
-- backtesting
-- paper/demo execution
-- MT5 integration
-- VPS 24/7
-- Android control
-- live-ready validation
+Live-money không được tự mở khóa.
 
 ## 11. Definition of Done
 

@@ -1,0 +1,60 @@
+{
+  "id": "/functions/v1/cws-ai-trade-site/app/",
+  "name": "CWS AI Trade",
+  "short_name": "CWS AI Trade",
+  "description": "CWS AI Trade: biểu đồ nghiên cứu, danh mục, tổng Lot/P&L và thư viện Trading Masterbook.",
+  "lang": "vi",
+  "dir": "ltr",
+  "start_url": "/functions/v1/cws-ai-trade-site/app/",
+  "scope": "/functions/v1/cws-ai-trade-site/app/",
+  "display": "standalone",
+  "background_color": "#08111e",
+  "theme_color": "#0b1422",
+  "orientation": "any",
+  "categories": [
+    "finance",
+    "education",
+    "productivity"
+  ],
+  "prefer_related_applications": false,
+  "icons": [
+    {
+      "src": "/functions/v1/cws-ai-trade-site/app/?asset=icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/functions/v1/cws-ai-trade-site/app/?asset=icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Danh mục",
+      "short_name": "Danh mục",
+      "url": "/functions/v1/cws-ai-trade-site/app/?view=portfolio",
+      "icons": [
+        {
+          "src": "/functions/v1/cws-ai-trade-site/app/?asset=icon-192.png",
+          "sizes": "192x192",
+          "type": "image/png"
+        }
+      ]
+    },
+    {
+      "name": "Masterbook",
+      "short_name": "Sách",
+      "url": "/functions/v1/cws-ai-trade-site/app/?view=book",
+      "icons": [
+        {
+          "src": "/functions/v1/cws-ai-trade-site/app/?asset=icon-192.png",
+          "sizes": "192x192",
+          "type": "image/png"
+        }
+      ]
+    }
+  ]
+}

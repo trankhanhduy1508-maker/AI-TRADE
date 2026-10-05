@@ -1,0 +1,844 @@
+{
+  "schema": "CWS_R2B_MODEL_COST_COVERAGE_SUMMARY_V1",
+  "date": "2026-09-29",
+  "prereg_commits": [
+    "3970996837365b562abdef0380fb58b1f6cc100f",
+    "02409bb2eb1565ed11af0053af67c7e56d7ae187"
+  ],
+  "d1_input_report_git_blob_sha": "d37fa7aae52ac494c6100b724dfa9bfb0c7fdf1f",
+  "h4_input_report_git_blob_sha": "d847bfb6e4746fa5e9aa6e25166c0cedc1924c67",
+  "status": "HISTORICAL_REUSED_DESCRIPTIVE_ONLY_UNPROVEN",
+  "study_count": 26,
+  "episode_count": 738,
+  "distinct_closed_trades_across_correlated_instruments": "NOT_INDEPENDENT_OR_PORTFOLIO_CONVERTIBLE",
+  "counts": {
+    "d1": {
+      "cells": 15,
+      "folds": 133,
+      "closed_trades": 266,
+      "standard_gross_positive": 8,
+      "standard_modeled10_positive": 7,
+      "gate_modeled10_positive": 7,
+      "fixed_modeled10_positive": 5
+    },
+    "h4": {
+      "cells": 11,
+      "folds": 605,
+      "closed_trades": 1168,
+      "standard_gross_positive": 3,
+      "standard_modeled10_positive": 0,
+      "gate_modeled10_positive": 1,
+      "fixed_modeled10_positive": 2
+    }
+  },
+  "spx_existing_study": "Separate 34-fold 1983-2019 cash-index proxy already exposed; not re-counted here",
+  "rejected_before_outcome": [
+    {
+      "symbol": "EURCHF",
+      "tf": "D1",
+      "reason": "19_DAY_GAP"
+    },
+    {
+      "symbol": "EURCHF",
+      "tf": "H4",
+      "reason": "440_HOUR_GAP"
+    }
+  ],
+  "not_a_portfolio": "Do not sum heterogeneous R from unrelated symbols; reset-per-fold, no liquidation of open positions, missing risk sizing & FX conversion",
+  "historical_source_rights": "NOT_VERIFIED_FOR_COMMERCIAL_RAW_STORAGE_OR_REDISTRIBUTION",
+  "fee_assumption": "0/10/20/30bps of mean entry/exit source price; no actual broker spreads/swap/commission/financing attestation",
+  "test_evidence": {
+    "gross_parity_d1_fields": 1463,
+    "gross_parity_h4_fields": 6050,
+    "gross_parity_mismatches": 0,
+    "cost_nonincreasing_checked_for_every_fold_and_model": true,
+    "feed_clock_and_etf_corporate_action_vintage_not_audited": true,
+    "python_native_full_market_replay_not_run": true
+  },
+  "passive_descriptive_separate_units": [
+    {
+      "symbol": "SPY",
+      "start": "2011-12-27",
+      "end": "2025-11-25",
+      "source_adjusted_close_return_pct": 581.2431299511295
+    },
+    {
+      "symbol": "QQQ",
+      "start": "2011-12-27",
+      "end": "2025-11-25",
+      "source_adjusted_close_return_pct": 1121.301051700215
+    },
+    {
+      "symbol": "GLD",
+      "start": "2011-12-27",
+      "end": "2025-11-25",
+      "source_adjusted_close_return_pct": 145.35536763281905
+    },
+    {
+      "symbol": "USO",
+      "start": "2011-12-27",
+      "end": "2025-11-25",
+      "source_adjusted_close_return_pct": -77.83858166922684
+    }
+  ],
+  "passive_comparability": "Retrospective adjusted-close % is NOT comparable directly to per-trade realized R and not a cash-account benchmark",
+  "series": [
+    {
+      "symbol": "AUDJPY",
+      "timeframe": "D1",
+      "source_class": "FX_OR_XAU_D1",
+      "folds": 7,
+      "closed_trades": 12,
+      "source_git_blob_sha": "435e0d2657ac0acd8cfa99626ba53c5e44ff3faf",
+      "open_folds": 1,
+      "standard_realized_r_bps": {
+        "0": -2.9082533885442654,
+        "10": -3.5930360216618644,
+        "20": -4.277818654779464,
+        "30": -4.962601287897066
+      },
+      "positive_train_gate_realized_r_bps": {
+        "0": 0,
+        "10": 0,
+        "20": 0,
+        "30": 0
+      },
+      "fixed_reference_realized_r_bps": {
+        "0": -2.1608561491214195,
+        "10": -2.6268640932086673,
+        "20": -3.092872037295915,
+        "30": -3.558879981383163
+      },
+      "fee_labels": "0=GROSS_ONLY,10/20/30=MODELED_ONLY",
+      "edge_status": "UNPROVEN"
+    },
+    {
+      "symbol": "AUDUSD",
+      "timeframe": "D1",
+      "source_class": "FX_OR_XAU_D1",
+      "folds": 7,
+      "closed_trades": 5,
+      "source_git_blob_sha": "9f6571efa2f9508e7c36005d9df2ce254dc4a504",
+      "open_folds": 1,
+      "standard_realized_r_bps": {
+        "0": 0.914305247856545,
+        "10": 0.5791924949108491,
+        "20": 0.24407974196515303,
+        "30": -0.09103301098054284
+      },
+      "positive_train_gate_realized_r_bps": {
+        "0": 0.914305247856545,
+        "10": 0.5791924949108491,
+        "20": 0.24407974196515303,
+        "30": -0.09103301098054284
+      },
+      "fixed_reference_realized_r_bps": {
+        "0": -2.229091595146132,
+        "10": -2.7094100843293987,
+        "20": -3.1897285735126664,
+        "30": -3.670047062695933
+      },
+      "fee_labels": "0=GROSS_ONLY,10/20/30=MODELED_ONLY",
+      "edge_status": "UNPROVEN"
+    },
+    {
+      "symbol": "EURGBP",
+      "timeframe": "D1",
+      "source_class": "FX_OR_XAU_D1",
+      "folds": 7,
+      "closed_trades": 11,
+      "source_git_blob_sha": "f96c0315e209cb725d8c7f6185996242d5327495",
+      "open_folds": 0,
+      "standard_realized_r_bps": {
+        "0": -1.526423049171361,
+        "10": -2.353722150498749,
+        "20": -3.181021251826137,
+        "30": -4.008320353153524
+      },
+      "positive_train_gate_realized_r_bps": {
+        "0": -1.526423049171361,
+        "10": -2.353722150498749,
+        "20": -3.181021251826137,
+        "30": -4.008320353153524
+      },
+      "fixed_reference_realized_r_bps": {
+        "0": -1.0674830333224157,
+        "10": -1.6678948069657809,
+        "20": -2.2683065806091474,
+        "30": -2.868718354252514
+      },
+      "fee_labels": "0=GROSS_ONLY,10/20/30=MODELED_ONLY",
+      "edge_status": "UNPROVEN"
+    },
+    {
+      "symbol": "EURJPY",
+      "timeframe": "D1",
+      "source_class": "FX_OR_XAU_D1",
+      "folds": 7,
+      "closed_trades": 12,
+      "source_git_blob_sha": "1408d2dddb9740479c77e133e2c66c8f72dc271b",
+      "open_folds": 2,
+      "standard_realized_r_bps": {
+        "0": -0.2019907086368109,
+        "10": -1.0279320004866639,
+        "20": -1.8538732923365175,
+        "30": -2.6798145841863708
+      },
+      "positive_train_gate_realized_r_bps": {
+        "0": -0.6619800332443491,
+        "10": -0.7186237684802772,
+        "20": -0.7752675037162052,
+        "30": -0.8319112389521334
+      },
+      "fixed_reference_realized_r_bps": {
+        "0": 0.4553619105708733,
+        "10": -0.09912259580251348,
+        "20": -0.6536071021758998,
+        "30": -1.208091608549286
+      },
+      "fee_labels": "0=GROSS_ONLY,10/20/30=MODELED_ONLY",
+      "edge_status": "UNPROVEN"
+    },
+    {
+      "symbol": "EURUSD",
+      "timeframe": "D1",
+      "source_class": "FX_OR_XAU_D1",
+      "folds": 7,
+      "closed_trades": 8,
+      "source_git_blob_sha": "790cd874846de3ec9d88c088ac02458d707ec09d",
+      "open_folds": 1,
+      "standard_realized_r_bps": {
+        "0": 4.352819318471974,
+        "10": 3.7175654126952713,
+        "20": 3.082311506918569,
+        "30": 2.4470576011418643
+      },
+      "positive_train_gate_realized_r_bps": {
+        "0": -1.8118630655900119,
+        "10": -2.3703209264003755,
+        "20": -2.9287787872107396,
+        "30": -3.487236648021103
+      },
+      "fixed_reference_realized_r_bps": {
+        "0": 1.485950655138958,
+        "10": 0.9717472188608506,
+        "20": 0.45754378258274364,
+        "30": -0.05665965369536463
+      },
+      "fee_labels": "0=GROSS_ONLY,10/20/30=MODELED_ONLY",
+      "edge_status": "UNPROVEN"
+    },
+    {
+      "symbol": "GBPJPY",
+      "timeframe": "D1",
+      "source_class": "FX_OR_XAU_D1",
+      "folds": 7,
+      "closed_trades": 15,
+      "source_git_blob_sha": "c59b15fb43ad9634fda8aa6ae42754d07f7f6a1f",
+      "open_folds": 2,
+      "standard_realized_r_bps": {
+        "0": -6.1552198147240045,
+        "10": -6.9626616796437375,
+        "20": -7.7701035445634705,
+        "30": -8.577545409483205
+      },
+      "positive_train_gate_realized_r_bps": {
+        "0": -5.094999850767129,
+        "10": -5.482358821047788,
+        "20": -5.869717791328444,
+        "30": -6.257076761609104
+      },
+      "fixed_reference_realized_r_bps": {
+        "0": -3.3344199268055856,
+        "10": -3.9131134285429168,
+        "20": -4.4918069302802515,
+        "30": -5.070500432017583
+      },
+      "fee_labels": "0=GROSS_ONLY,10/20/30=MODELED_ONLY",
+      "edge_status": "UNPROVEN"
+    },
+    {
+      "symbol": "GBPUSD",
+      "timeframe": "D1",
+      "source_class": "FX_OR_XAU_D1",
+      "folds": 7,
+      "closed_trades": 10,
+      "source_git_blob_sha": "47bcf0dbea4a7fda74757069f02edc595a30f923",
+      "open_folds": 2,
+      "standard_realized_r_bps": {
+        "0": -5.161418851284791,
+        "10": -5.57143767082316,
+        "20": -5.981456490361527,
+        "30": -6.391475309899894
+      },
+      "positive_train_gate_realized_r_bps": {
+        "0": -0.6110729875048757,
+        "10": -0.6834980523404683,
+        "20": -0.755923117176061,
+        "30": -0.8283481820116534
+      },
+      "fixed_reference_realized_r_bps": {
+        "0": -6.329284182091704,
+        "10": -6.985807113413953,
+        "20": -7.642330044736206,
+        "30": -8.298852976058459
+      },
+      "fee_labels": "0=GROSS_ONLY,10/20/30=MODELED_ONLY",
+      "edge_status": "UNPROVEN"
+    },
+    {
+      "symbol": "USDCAD",
+      "timeframe": "D1",
+      "source_class": "FX_OR_XAU_D1",
+      "folds": 7,
+      "closed_trades": 10,
+      "source_git_blob_sha": "83ad379db0bfcce7c149af2b400c7294b7a0b00b",
+      "open_folds": 1,
+      "standard_realized_r_bps": {
+        "0": 3.662299137955767,
+        "10": 2.9449011137242933,
+        "20": 2.22750308949282,
+        "30": 1.5101050652613457
+      },
+      "positive_train_gate_realized_r_bps": {
+        "0": 3.662299137955767,
+        "10": 2.9449011137242933,
+        "20": 2.22750308949282,
+        "30": 1.5101050652613457
+      },
+      "fixed_reference_realized_r_bps": {
+        "0": 7.795138801307086,
+        "10": 7.070520760430801,
+        "20": 6.3459027195545135,
+        "30": 5.621284678678228
+      },
+      "fee_labels": "0=GROSS_ONLY,10/20/30=MODELED_ONLY",
+      "edge_status": "UNPROVEN"
+    },
+    {
+      "symbol": "USDCHF",
+      "timeframe": "D1",
+      "source_class": "FX_OR_XAU_D1",
+      "folds": 7,
+      "closed_trades": 13,
+      "source_git_blob_sha": "b39e3948e8b871566bfeb6d5e5042cc5d1369e17",
+      "open_folds": 0,
+      "standard_realized_r_bps": {
+        "0": -1.7245785755541048,
+        "10": -2.6931449761937225,
+        "20": -3.661711376833341,
+        "30": -4.6302777774729575
+      },
+      "positive_train_gate_realized_r_bps": {
+        "0": -0.02389508840995913,
+        "10": -0.4327965695925189,
+        "20": -0.8416980507750786,
+        "30": -1.250599531957638
+      },
+      "fixed_reference_realized_r_bps": {
+        "0": -7.211983531974881,
+        "10": -8.114297177275926,
+        "20": -9.016610822576968,
+        "30": -9.918924467878012
+      },
+      "fee_labels": "0=GROSS_ONLY,10/20/30=MODELED_ONLY",
+      "edge_status": "UNPROVEN"
+    },
+    {
+      "symbol": "USDJPY",
+      "timeframe": "D1",
+      "source_class": "FX_OR_XAU_D1",
+      "folds": 7,
+      "closed_trades": 15,
+      "source_git_blob_sha": "825510ca2ec567b3f78817197b86477e55f614b6",
+      "open_folds": 1,
+      "standard_realized_r_bps": {
+        "0": -2.8935174687368885,
+        "10": -4.244964144955244,
+        "20": -5.596410821173599,
+        "30": -6.947857497391954
+      },
+      "positive_train_gate_realized_r_bps": {
+        "0": -3.579454770879271,
+        "10": -4.624836120963916,
+        "20": -5.670217471048561,
+        "30": -6.715598821133207
+      },
+      "fixed_reference_realized_r_bps": {
+        "0": -5.497732170038349,
+        "10": -6.532390534963236,
+        "20": -7.567048899888123,
+        "30": -8.60170726481301
+      },
+      "fee_labels": "0=GROSS_ONLY,10/20/30=MODELED_ONLY",
+      "edge_status": "UNPROVEN"
+    },
+    {
+      "symbol": "XAUUSD",
+      "timeframe": "D1",
+      "source_class": "FX_OR_XAU_D1",
+      "folds": 7,
+      "closed_trades": 6,
+      "source_git_blob_sha": "69cc13ed3ffbffab7e1a1caae90122c370e13c2b",
+      "open_folds": 3,
+      "standard_realized_r_bps": {
+        "0": 2.714201833395136,
+        "10": 2.44202193882116,
+        "20": 2.1698420442471833,
+        "30": 1.8976621496732065
+      },
+      "positive_train_gate_realized_r_bps": {
+        "0": 1.264210315246748,
+        "10": 1.1430155038288456,
+        "20": 1.0218206924109428,
+        "30": 0.9006258809930401
+      },
+      "fixed_reference_realized_r_bps": {
+        "0": 0.323964736259895,
+        "10": -0.03523711707015026,
+        "20": -0.3944389704001955,
+        "30": -0.7536408237302403
+      },
+      "fee_labels": "0=GROSS_ONLY,10/20/30=MODELED_ONLY",
+      "edge_status": "UNPROVEN"
+    },
+    {
+      "symbol": "SPY",
+      "timeframe": "D1",
+      "source_class": "ETF_PROXY_D1",
+      "folds": 14,
+      "closed_trades": 42,
+      "source_git_blob_sha": "81d478f4bb4a89804060a4957782bb9e054b2085",
+      "open_folds": 7,
+      "standard_realized_r_bps": {
+        "0": 5.548736023002498,
+        "10": 3.542771595248203,
+        "20": 1.536807167493908,
+        "30": -0.4691572602603873
+      },
+      "positive_train_gate_realized_r_bps": {
+        "0": 4.746727530199477,
+        "10": 3.277725122789888,
+        "20": 1.8087227153802985,
+        "30": 0.3397203079707094
+      },
+      "fixed_reference_realized_r_bps": {
+        "0": 11.5897547117303,
+        "10": 9.811787480562263,
+        "20": 8.033820249394225,
+        "30": 6.255853018226185
+      },
+      "fee_labels": "0=GROSS_ONLY,10/20/30=MODELED_ONLY",
+      "edge_status": "UNPROVEN"
+    },
+    {
+      "symbol": "QQQ",
+      "timeframe": "D1",
+      "source_class": "ETF_PROXY_D1",
+      "folds": 14,
+      "closed_trades": 46,
+      "source_git_blob_sha": "81d478f4bb4a89804060a4957782bb9e054b2085",
+      "open_folds": 6,
+      "standard_realized_r_bps": {
+        "0": 18.24805843856607,
+        "10": 16.634925608405297,
+        "20": 15.02179277824452,
+        "30": 13.408659948083749
+      },
+      "positive_train_gate_realized_r_bps": {
+        "0": 14.429087156609107,
+        "10": 12.913913427833382,
+        "20": 11.39873969905766,
+        "30": 9.883565970281936
+      },
+      "fixed_reference_realized_r_bps": {
+        "0": 17.631544216688752,
+        "10": 16.25864332243522,
+        "20": 14.885742428181686,
+        "30": 13.512841533928157
+      },
+      "fee_labels": "0=GROSS_ONLY,10/20/30=MODELED_ONLY",
+      "edge_status": "UNPROVEN"
+    },
+    {
+      "symbol": "GLD",
+      "timeframe": "D1",
+      "source_class": "ETF_PROXY_D1",
+      "folds": 14,
+      "closed_trades": 31,
+      "source_git_blob_sha": "81d478f4bb4a89804060a4957782bb9e054b2085",
+      "open_folds": 1,
+      "standard_realized_r_bps": {
+        "0": 25.224162271865328,
+        "10": 23.7277509871412,
+        "20": 22.231339702417067,
+        "30": 20.73492841769294
+      },
+      "positive_train_gate_realized_r_bps": {
+        "0": 13.033731705042559,
+        "10": 12.028624291170575,
+        "20": 11.023516877298585,
+        "30": 10.0184094634266
+      },
+      "fixed_reference_realized_r_bps": {
+        "0": 15.102060047158758,
+        "10": 13.9668671592765,
+        "20": 12.83167427139424,
+        "30": 11.696481383511983
+      },
+      "fee_labels": "0=GROSS_ONLY,10/20/30=MODELED_ONLY",
+      "edge_status": "UNPROVEN"
+    },
+    {
+      "symbol": "USO",
+      "timeframe": "D1",
+      "source_class": "ETF_PROXY_D1",
+      "folds": 14,
+      "closed_trades": 30,
+      "source_git_blob_sha": "81d478f4bb4a89804060a4957782bb9e054b2085",
+      "open_folds": 1,
+      "standard_realized_r_bps": {
+        "0": 0.5211243142584605,
+        "10": -0.1714410218785556,
+        "20": -0.864006358015569,
+        "30": -1.5565716941525838
+      },
+      "positive_train_gate_realized_r_bps": {
+        "0": 5.480673726745952,
+        "10": 5.172894372220561,
+        "20": 4.865115017695173,
+        "30": 4.5573356631697814
+      },
+      "fixed_reference_realized_r_bps": {
+        "0": -0.06863465127559576,
+        "10": -0.6310828326015092,
+        "20": -1.1935310139274211,
+        "30": -1.7559791952533348
+      },
+      "fee_labels": "0=GROSS_ONLY,10/20/30=MODELED_ONLY",
+      "edge_status": "UNPROVEN"
+    },
+    {
+      "symbol": "AUDJPY",
+      "timeframe": "H4",
+      "source_class": "UNVERIFIED_PROVIDER_NAMED_H4",
+      "folds": 55,
+      "closed_trades": 104,
+      "source_git_blob_sha": "3772ca6a9273a8ffe5b460bedb3d8612ed240137",
+      "open_folds": 10,
+      "standard_realized_r_bps": {
+        "0": -12.87199883310195,
+        "10": -25.515806755095905,
+        "20": -38.15961467708984,
+        "30": -50.803422599083774
+      },
+      "positive_train_gate_realized_r_bps": {
+        "0": -12.151066505407314,
+        "10": -18.60511310347785,
+        "20": -25.059159701548385,
+        "30": -31.51320629961893
+      },
+      "fixed_reference_realized_r_bps": {
+        "0": -5.063959002293121,
+        "10": -15.161812217013253,
+        "20": -25.259665431733364,
+        "30": -35.3575186464535
+      },
+      "fee_labels": "0=GROSS_ONLY,10/20/30=MODELED_ONLY",
+      "edge_status": "UNPROVEN"
+    },
+    {
+      "symbol": "AUDUSD",
+      "timeframe": "H4",
+      "source_class": "UNVERIFIED_PROVIDER_NAMED_H4",
+      "folds": 55,
+      "closed_trades": 104,
+      "source_git_blob_sha": "7aedac509228b27bb79b48aa70811eb267d44502",
+      "open_folds": 12,
+      "standard_realized_r_bps": {
+        "0": -13.980596590424335,
+        "10": -29.05361620859232,
+        "20": -44.126635826760314,
+        "30": -59.19965544492828
+      },
+      "positive_train_gate_realized_r_bps": {
+        "0": -7.575446034382855,
+        "10": -14.809240965227955,
+        "20": -22.043035896073054,
+        "30": -29.276830826918147
+      },
+      "fixed_reference_realized_r_bps": {
+        "0": -29.010438726971984,
+        "10": -40.3103650485278,
+        "20": -51.61029137008361,
+        "30": -62.91021769163942
+      },
+      "fee_labels": "0=GROSS_ONLY,10/20/30=MODELED_ONLY",
+      "edge_status": "UNPROVEN"
+    },
+    {
+      "symbol": "EURGBP",
+      "timeframe": "H4",
+      "source_class": "UNVERIFIED_PROVIDER_NAMED_H4",
+      "folds": 55,
+      "closed_trades": 89,
+      "source_git_blob_sha": "264637a0bca43e80bf2bbc282ac1fb98e62c68da",
+      "open_folds": 11,
+      "standard_realized_r_bps": {
+        "0": -15.719407132069126,
+        "10": -31.52626904610758,
+        "20": -47.33313096014601,
+        "30": -63.13999287418447
+      },
+      "positive_train_gate_realized_r_bps": {
+        "0": -8.326246451699504,
+        "10": -13.578017250674327,
+        "20": -18.82978804964914,
+        "30": -24.08155884862396
+      },
+      "fixed_reference_realized_r_bps": {
+        "0": -18.953840471430397,
+        "10": -32.65543542621641,
+        "20": -46.3570303810024,
+        "30": -60.058625335788406
+      },
+      "fee_labels": "0=GROSS_ONLY,10/20/30=MODELED_ONLY",
+      "edge_status": "UNPROVEN"
+    },
+    {
+      "symbol": "EURJPY",
+      "timeframe": "H4",
+      "source_class": "UNVERIFIED_PROVIDER_NAMED_H4",
+      "folds": 55,
+      "closed_trades": 105,
+      "source_git_blob_sha": "8aeb569f9fe34009c0f230fef178d1cb5aed4719",
+      "open_folds": 8,
+      "standard_realized_r_bps": {
+        "0": -15.264189895353919,
+        "10": -31.816539238882356,
+        "20": -48.36888858241077,
+        "30": -64.9212379259392
+      },
+      "positive_train_gate_realized_r_bps": {
+        "0": -20.33323550765551,
+        "10": -30.506963369898095,
+        "20": -40.68069123214066,
+        "30": -50.85441909438325
+      },
+      "fixed_reference_realized_r_bps": {
+        "0": -11.93909923610017,
+        "10": -27.121718508200257,
+        "20": -42.30433778030036,
+        "30": -57.486957052400456
+      },
+      "fee_labels": "0=GROSS_ONLY,10/20/30=MODELED_ONLY",
+      "edge_status": "UNPROVEN"
+    },
+    {
+      "symbol": "EURUSD",
+      "timeframe": "H4",
+      "source_class": "UNVERIFIED_PROVIDER_NAMED_H4",
+      "folds": 55,
+      "closed_trades": 105,
+      "source_git_blob_sha": "9a5cc928bc4e33fd3ac8d642d1a6b44836f50a85",
+      "open_folds": 6,
+      "standard_realized_r_bps": {
+        "0": -32.139065224664954,
+        "10": -51.38382771577309,
+        "20": -70.62859020688124,
+        "30": -89.87335269798938
+      },
+      "positive_train_gate_realized_r_bps": {
+        "0": -17.734670928452367,
+        "10": -27.649397060366915,
+        "20": -37.56412319228145,
+        "30": -47.47884932419598
+      },
+      "fixed_reference_realized_r_bps": {
+        "0": -26.512168048652253,
+        "10": -43.88269848036201,
+        "20": -61.25322891207177,
+        "30": -78.6237593437815
+      },
+      "fee_labels": "0=GROSS_ONLY,10/20/30=MODELED_ONLY",
+      "edge_status": "UNPROVEN"
+    },
+    {
+      "symbol": "GBPJPY",
+      "timeframe": "H4",
+      "source_class": "UNVERIFIED_PROVIDER_NAMED_H4",
+      "folds": 55,
+      "closed_trades": 110,
+      "source_git_blob_sha": "6a3ef2b2e07b6a7b6ce82e0eac2dfdde08c262e5",
+      "open_folds": 12,
+      "standard_realized_r_bps": {
+        "0": 16.22759499007131,
+        "10": -0.025363726447529045,
+        "20": -16.278322442966363,
+        "30": -32.53128115948521
+      },
+      "positive_train_gate_realized_r_bps": {
+        "0": 3.281108868431129,
+        "10": -9.542497088001218,
+        "20": -22.366103044433554,
+        "30": -35.1897090008659
+      },
+      "fixed_reference_realized_r_bps": {
+        "0": 18.351833559388837,
+        "10": 6.18745213018801,
+        "20": -5.976929299012818,
+        "30": -18.141310728213643
+      },
+      "fee_labels": "0=GROSS_ONLY,10/20/30=MODELED_ONLY",
+      "edge_status": "UNPROVEN"
+    },
+    {
+      "symbol": "GBPUSD",
+      "timeframe": "H4",
+      "source_class": "UNVERIFIED_PROVIDER_NAMED_H4",
+      "folds": 55,
+      "closed_trades": 111,
+      "source_git_blob_sha": "51b797a0791d45cf3ca721948ca6a00dd87bd3e4",
+      "open_folds": 7,
+      "standard_realized_r_bps": {
+        "0": -34.947401079269625,
+        "10": -52.87510774036993,
+        "20": -70.8028144014702,
+        "30": -88.73052106257047
+      },
+      "positive_train_gate_realized_r_bps": {
+        "0": -12.892325597315185,
+        "10": -19.87736361237839,
+        "20": -26.862401627441596,
+        "30": -33.8474396425048
+      },
+      "fixed_reference_realized_r_bps": {
+        "0": -20.928385813955426,
+        "10": -36.804337947127635,
+        "20": -52.68029008029986,
+        "30": -68.55624221347209
+      },
+      "fee_labels": "0=GROSS_ONLY,10/20/30=MODELED_ONLY",
+      "edge_status": "UNPROVEN"
+    },
+    {
+      "symbol": "USDCAD",
+      "timeframe": "H4",
+      "source_class": "UNVERIFIED_PROVIDER_NAMED_H4",
+      "folds": 55,
+      "closed_trades": 106,
+      "source_git_blob_sha": "345bc534825c77c4c197177420bf9d50e6f0e85c",
+      "open_folds": 11,
+      "standard_realized_r_bps": {
+        "0": 4.248117034589635,
+        "10": -14.621021908009345,
+        "20": -33.49016085060834,
+        "30": -52.35929979320731
+      },
+      "positive_train_gate_realized_r_bps": {
+        "0": 0.9498165737708826,
+        "10": -9.202118842050385,
+        "20": -19.35405425787165,
+        "30": -29.50598967369292
+      },
+      "fixed_reference_realized_r_bps": {
+        "0": 8.547217256275573,
+        "10": -7.638887013028624,
+        "20": -23.824991282332817,
+        "30": -40.01109555163701
+      },
+      "fee_labels": "0=GROSS_ONLY,10/20/30=MODELED_ONLY",
+      "edge_status": "UNPROVEN"
+    },
+    {
+      "symbol": "USDCHF",
+      "timeframe": "H4",
+      "source_class": "UNVERIFIED_PROVIDER_NAMED_H4",
+      "folds": 55,
+      "closed_trades": 107,
+      "source_git_blob_sha": "ea1c097eb5e9f06309ab61319474864aa7f217a4",
+      "open_folds": 12,
+      "standard_realized_r_bps": {
+        "0": -5.615857973116931,
+        "10": -24.40937258871334,
+        "20": -43.20288720430977,
+        "30": -61.99640181990619
+      },
+      "positive_train_gate_realized_r_bps": {
+        "0": 0.770053397152052,
+        "10": -10.63032646674326,
+        "20": -22.030706330638576,
+        "30": -33.43108619453389
+      },
+      "fixed_reference_realized_r_bps": {
+        "0": -6.02679254167259,
+        "10": -21.59335770748937,
+        "20": -37.15992287330615,
+        "30": -52.72648803912294
+      },
+      "fee_labels": "0=GROSS_ONLY,10/20/30=MODELED_ONLY",
+      "edge_status": "UNPROVEN"
+    },
+    {
+      "symbol": "USDJPY",
+      "timeframe": "H4",
+      "source_class": "UNVERIFIED_PROVIDER_NAMED_H4",
+      "folds": 55,
+      "closed_trades": 118,
+      "source_git_blob_sha": "53e1d1880c27fc6467ded559ba3fc2ffa2c51ed7",
+      "open_folds": 11,
+      "standard_realized_r_bps": {
+        "0": -2.372039909514943,
+        "10": -24.685399372402994,
+        "20": -46.998758835291056,
+        "30": -69.3121182981791
+      },
+      "positive_train_gate_realized_r_bps": {
+        "0": -10.077498206287926,
+        "10": -23.70611477964164,
+        "20": -37.334731352995355,
+        "30": -50.96334792634908
+      },
+      "fixed_reference_realized_r_bps": {
+        "0": -4.2382575908412115,
+        "10": -22.69501737163511,
+        "20": -41.15177715242899,
+        "30": -59.60853693322291
+      },
+      "fee_labels": "0=GROSS_ONLY,10/20/30=MODELED_ONLY",
+      "edge_status": "UNPROVEN"
+    },
+    {
+      "symbol": "XAUUSD",
+      "timeframe": "H4",
+      "source_class": "UNVERIFIED_PROVIDER_NAMED_H4",
+      "folds": 55,
+      "closed_trades": 109,
+      "source_git_blob_sha": "c18671cf823d0873cef4eb9f7a9f2bf7c96a63bf",
+      "open_folds": 10,
+      "standard_realized_r_bps": {
+        "0": 9.850339195995195,
+        "10": -1.1253265924428095,
+        "20": -12.100992380880818,
+        "30": -23.076658169318833
+      },
+      "positive_train_gate_realized_r_bps": {
+        "0": 7.656276237372158,
+        "10": 1.6768072183616476,
+        "20": -4.30266180064886,
+        "30": -10.282130819659372
+      },
+      "fixed_reference_realized_r_bps": {
+        "0": 9.931879437787416,
+        "10": 0.22056136316997144,
+        "20": -9.490756711447478,
+        "30": -19.20207478606492
+      },
+      "fee_labels": "0=GROSS_ONLY,10/20/30=MODELED_ONLY",
+      "edge_status": "UNPROVEN"
+    }
+  ],
+  "independent_forward_trades": 0,
+  "orders_sent": 0,
+  "edge_status": "UNPROVEN"
+}

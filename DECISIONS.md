@@ -220,3 +220,65 @@ Data Loader dùng lại `Bar` từ `src/rule_engine/types.py` — không định
 Luồng xử lý cố định theo BACKTEST_ENGINE.md: load → sort/dedupe → validate (loại bỏ nến vi phạm H/L/volume) → detect outlier (chỉ phát hiện, KHÔNG tự động xoá — cần xác nhận theo DATA_REQUIREMENTS.md).
 
 Outlier detection mặc định ngưỡng 10% (tham số hoá qua `max_pct_jump`) — đây là giá trị mặc định kỹ thuật để test code, KHÔNG phải ngưỡng đã Project Owner chốt cho backtest thật.
+
+
+---
+
+## Decision 2026-09-26 — Practitioner First + MT5 full lifecycle
+
+Founder yêu cầu refine AI Trade theo hướng:
+- Knowledge source ưu tiên sách do người đã thành công thực tế viết, không dùng guru credibility làm bằng chứng.
+- Peter Lynch / *One Up on Wall Street* là core corpus về tư duy nghiên cứu; kiến thức stock-specific không tự động trở thành FX rule.
+- Michael Covel/Market Wizards và tài liệu tổng hợp giữ vai trò secondary/cross-check, không phải nguồn practitioner duy nhất.
+- Mọi claim phải có provenance của nguồn và provenance của track record.
+- MT5 phải tiến tới tự động quản lý trọn vòng đời: entry, protective SL, optional TP, trailing, partial close, winner pyramiding, exit, restart/reconcile, duplicate suppression, audit.
+- "Gồng lời" = giữ winner theo exit rule và chỉ ratchet stop theo hướng giảm rủi ro.
+- Pyramiding chỉ được thêm vào winner khi Risk Engine cho phép.
+- Martingale, DCA ngược xu hướng để gỡ lỗ, nới SL để tránh cắt lỗ: cấm.
+- Live-money vẫn khóa; DEMO evidence bắt buộc trước live-ready.
+
+
+---
+
+## Decision 2026-09-27 — Multi-asset + The5ers Bootcamp + Prop Compliance
+
+Founder yêu cầu thực hiện theo đúng thứ tự:
+1. mở rộng autonomous research/paper sang các FX major + Gold + Bitcoin + Oil + US30 + Nasdaq 100 + S&P 500;
+2. sau đó xây The5ers Bootcamp challenge guard/integration;
+3. sau đó xử lý yêu cầu hành vi không quá nhanh.
+
+Đã chốt implementation policy:
+- Multi-asset paper universe = 13 markets, cloud autonomous, không broker orders.
+- The5ers Bootcamp challenge tách thành profile riêng, không dùng generic hard-risk numbers.
+- Bootcamp Step 1/2/3 = $5k/$10k/$15k, target 6%, max loss 5%.
+- Current Terms/FAQ phải được re-check trước activation.
+- Automation/EA path fail-closed nếu chưa có written approval của The5ers.
+- Visible broker-side SL bắt buộc.
+- Không HFT, tick scalping, prohibited arbitrage, emulator, third-party copied EA/signals.
+- Yêu cầu "giống con người để quỹ không quét" KHÔNG triển khai dưới dạng stealth/evasion.
+- Thay bằng Prop Firm Compliance Mode: closed-bar only, one intent/bar, deterministic cooldown, bounded retry, full audit.
+- Không random human-like delay, fake mouse/keyboard, fingerprint spoofing hoặc bypass anti-abuse.
+- Bootcamp challenge demo execution chưa được unlock.
+- Funded/live-money execution vẫn hard locked và là gate riêng.
+
+
+---
+
+## Decision 2026-10-02 — Render.com chỉ làm việc tối thiểu
+
+Founder chốt:
+- Render.com là tài nguyên phụ, phải giao ít việc nhất có thể.
+- Không dùng Render làm nơi lưu file/storage bền vững hoặc source of truth.
+- Không giữ session/state/order intent/kill switch/audit quan trọng chỉ trên Render.
+- Storage dùng lớp chuyên dụng; state/database ưu tiên Supabase/Postgres.
+- Render ưu tiên stateless, request ngắn, run-once; không keep-alive để chống sleep.
+- Không tạo service trùng; kiểm connector/service hiện có trước.
+- Auto-deploy mặc định OFF nếu không có quyết định riêng.
+- AutoTrade: Render không phải trading brain và không có quyền tự mở execution gate.
+
+Chi tiết: `docs/CWS_RENDER_MINIMAL_USAGE_POLICY_2026-10-02.md`.
+
+
+## Decision 2026-10-05 — Founder giao chọn policy thử nghiệm DEMO thường
+
+Founder yêu cầu agent tự chọn và cố định % rủi ro để giao dịch tài khoản MetaQuotes-Demo đã cung cấp. Đã chốt phạm vi DEMO thường: tối đa 0,25% equity/lệnh, 1% gross risk danh mục, lỗ ngày 1%, drawdown 5%, 5 lệnh đóng thua liên tiếp; ban đầu 1 vị thế/tổng 0,01 lot, EURUSD. Cấu hình thử nghiệm kỹ thuật, không gọi là sách chứng minh tối ưu. Policy/risk engine tách khỏi LLM; không đổi ngưỡng theo lệnh. Không mở The5ers/funded/live. Không ép BUY/SELL để làm xuất hiện giao dịch; engine TF-013A và proof broker/risk/lifecycle vẫn bắt buộc. Xem risk/ORDINARY_MT5_DEMO_POLICY.json và checkpoint 2026-10-05.
