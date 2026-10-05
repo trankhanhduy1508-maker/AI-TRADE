@@ -1,3 +1,4 @@
+import {gate} from "./watch-gate.mjs";
 import postgres from "npm:postgres@3.4.9";
 type Direction="UP"|"DOWN";
 type Bar={timestamp:number;open:number;high:number;low:number;close:number};
@@ -18,7 +19,7 @@ async function authorized(req:Request){
  const rows=await sql`select secret from ai_trade.cron_auth where id=1`;
  return Boolean(rows[0]?.secret)&&(req.headers.get("x-ai-trade-cron")??"")===String(rows[0].secret);
 }
-function n(v:unknown){const x=Number(v);return Number.isFinite(x)?x:null}
+function n(v:unknown){if(v===null||v===undefined||v==="")return null;const x=Number(v);return Number.isFinite(x)?x:null}
 function sma(b:Bar[],i:number,p:number){if(i+1<p)return null;let s=0;for(let k=i-p+1;k<=i;k++)s+=b[k].close;return s/p}
 function signal(b:Bar[],i:number):Direction|null{
  if(i<252)return null;
@@ -77,12 +78,27 @@ Deno.serve(async req=>{
   if(!(await authorized(req)))return json({ok:false,status:"UNAUTHORIZED"},401);
   let opened=0,closed=0,marked=0,errors:any[]=[];
   for(const inst of U){
+   const watch=async(status:string,sig:Direction|null=null,ts:number|null=null)=>{
+    await sql`insert into ai_trade.training_arena_watch(strategy_id,symbol,asset_class,status,last_signal,last_bar_ts)
+     values(${STRATEGY_ID},${inst.key},${inst.assetClass},${status},${sig},${ts===null?null:new Date(ts*1000)})
+     on conflict(strategy_id,symbol) do update set status=excluded.status,last_signal=excluded.last_signal,last_bar_ts=excluded.last_bar_ts,updated_at=now()`;
+   };
    try{
-    const b=await bars(inst.yahoo),i=b.length-1,bar=b[i],a=atr(b,20),sig=signal(b,i);
-    if(!sig)continue;
+    const raw=await bars(inst.yahoo),cutoff=Math.floor(Date.now()/86400000)*86400;
+    const b=raw.filter(x=>x.timestamp<cutoff),i=b.length-1,bar=b[i];
+    if(!bar){await watch("NO_DATA");continue;}
+    const a=atr(b,20),sig=signal(b,i);
+    if(!sig){await watch("NO_SIGNAL",null,bar.timestamp);continue;}
     const rows=await sql`select * from ai_trade.training_arena_positions where strategy_id=${STRATEGY_ID} and symbol=${inst.key} limit 1`;
     const existing=rows[0];
     if(!existing){
+      const previous=await sql`select direction,event_ts from ai_trade.training_arena_journal
+       where strategy_id=${STRATEGY_ID} and symbol=${inst.key} and event_type='CLOSE' and reason='USER_CLOSE'
+       order by event_ts desc limit 1`;
+      const state=await sql`select last_signal from ai_trade.training_arena_watch where strategy_id=${STRATEGY_ID} and symbol=${inst.key}`;
+      const status=gate({signal:sig,priorDirection:state[0]?.last_signal??previous[0]?.direction??null,barTs:bar.timestamp,manualCloseTs:previous[0]?new Date(previous[0].event_ts).getTime()/1000:0});
+      await watch(status,sig,bar.timestamp);
+      if(status!=="NEW_SIGNAL")continue;
       const risk=4*a[i];
       if(!(risk>0&&Number.isFinite(risk)))throw new Error("ATR_INVALID");
       const stop=sig==="UP"?bar.close-risk:bar.close+risk;
@@ -97,6 +113,9 @@ Deno.serve(async req=>{
       await journal(inst.key,"OPEN",bar.timestamp,sig,bar.close,stop,null,0,"ARENA_INITIAL_SIGNAL",lessonOpen(inst.key,sig),{assetClass:inst.assetClass});
       opened++;continue;
     }
+    await watch("POSITION_OPEN",sig,bar.timestamp);
+    if(bar.timestamp*1000<=new Date(existing.entry_ts).getTime())continue;
+    if(Date.now()/1000-bar.timestamp>96*3600){await watch("STALE_DATA",sig,bar.timestamp);continue;}
     const dir=String(existing.direction) as Direction;
     const entry=Number(existing.entry_price),stop=Number(existing.stop_price),risk=Number(existing.risk_price);
     let exitReason:string|null=null,exitPrice:number|null=null;
@@ -139,7 +158,7 @@ Deno.serve(async req=>{
         {assetClass:inst.assetClass});
       marked++;
     }
-   }catch(e){errors.push({symbol:inst.key,error:e instanceof Error?e.message:String(e)})}
+   }catch(e){await watch("DATA_ERROR");errors.push({symbol:inst.key,error:e instanceof Error?e.message:String(e)})}
   }
   const [counts]=await sql`
     select

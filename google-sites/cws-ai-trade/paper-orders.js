@@ -13,7 +13,7 @@
       return Boolean(date(closed?row.exit_ts:row.last_mark_ts));
     };
     function rows(input,closed){return input.filter(r=>{const ok=valid(r,closed);if(!ok)rejected++;return ok;}).map(r=>({...r,side:r.direction==="UP"?"BUY":"SELL"}));}
-    return {positions:rows(feed.positions,false),trades:rows(feed.trades,true),asOf:date(feed.asOf),rejected};
+    return {positions:rows(feed.positions,false),trades:rows(feed.trades,true),asOf:date(feed.asOf),watch:Array.isArray(feed.watch)?feed.watch:[],rejected};
   }
   const api={number,normalize};
   if(typeof module!=="undefined" && module.exports) module.exports=api;
@@ -47,6 +47,12 @@
       const response=await fetch("/api/paper-orders",{cache:"no-store",credentials:"same-origin",signal:AbortSignal.timeout(35000)});
       if(!response.ok) throw new Error("UNAVAILABLE");
       last=normalize(await response.json());
+      if($("paperWatchRows")){
+        const names={NAS100:"Nasdaq 100",US500:"S&P 500",US30:"Dow Jones 30",XAUUSD:"Vàng",USOIL:"Dầu"};
+        const labels={WAIT_NEW_BAR:"Chờ nến mới sau khi đóng",WAIT_NEW_SIGNAL:"Chờ tín hiệu mới",WAIT_CLOSED_BAR:"Chờ nến đóng",POSITION_OPEN:"Đang có lệnh",NEW_SIGNAL:"Có tín hiệu mới",NO_SIGNAL:"Chưa có tín hiệu",STALE_DATA:"Dữ liệu cũ — chưa vào",DATA_ERROR:"Chưa tải được dữ liệu",NO_DATA:"Chưa có dữ liệu"};
+        const body=$("paperWatchRows");body.replaceChildren();
+        Object.entries(names).forEach(([symbol,name])=>{const row=last.watch.find(w=>w?.symbol===symbol);const tr=document.createElement("tr");cell(tr,name+" · "+symbol);cell(tr,labels[row?.status]||"Chờ kiểm tra");cell(tr,time(date(row?.last_bar_ts)));body.append(tr);});
+      }
       table("paperOpenRows",last.positions,false);table("paperClosedRows",last.trades,true);
       $("paperOpenCount").textContent=last.positions.length;
       $("paperClosedCount").textContent=last.trades.length;
