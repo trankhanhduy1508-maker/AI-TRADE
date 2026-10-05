@@ -13,27 +13,39 @@
       return Boolean(date(closed?row.exit_ts:row.last_mark_ts));
     };
     function rows(input,closed){return input.filter(r=>{const ok=valid(r,closed);if(!ok)rejected++;return ok;}).map(r=>({...r,side:r.direction==="UP"?"BUY":"SELL"}));}
-    return {positions:rows(feed.positions,false),trades:rows(feed.trades,true),asOf:date(feed.asOf),watch:Array.isArray(feed.watch)?feed.watch:[],rejected};
+    return {positions:rows(feed.positions,false),trades:rows(feed.trades,true),asOf:date(feed.asOf),watch:Array.isArray(feed.watch)?feed.watch:[],summary:feed.summary??null,sizing:feed.sizing??null,rejected};
   }
-  const api={number,normalize};
+  function checkedSummary(data,rejected=0){
+    if(!data||data.valid!==true||rejected)return null;
+    const keys=['gain_usd','loss_usd','net_usd','open_usd','closed_usd','gain_r','loss_r','net_r','open_r','closed_r','open_count','closed_count'];
+    if(keys.some(k=>number(data[k])===null))return null;
+    const s=Object.fromEntries(keys.map(k=>[k,number(data[k])]));
+    if(s.gain_usd<0||s.loss_usd>0||s.gain_r<0||s.loss_r>0||!Number.isInteger(s.open_count)||!Number.isInteger(s.closed_count)||s.open_count<0||s.closed_count<0)return null;
+    if(Math.abs(s.gain_usd+s.loss_usd-s.net_usd)>1e-6||Math.abs(s.open_usd+s.closed_usd-s.net_usd)>1e-6)return null;
+    return s;
+  }
+  const api={number,normalize,checkedSummary};
   if(typeof module!=="undefined" && module.exports) module.exports=api;
   root.CWSPaperOrders=api;
   if(!root.document) return;
   const $=id=>document.getElementById(id);
   const host=$("paperOrders"); if(!host) return;
   const format=v=>number(v)===null?"—":number(v).toLocaleString("en-US",{maximumFractionDigits:5});
+  const usdformat=v=>number(v)===null?'—':(number(v)<0?'−':number(v)>0?'+':'')+'$'+Math.abs(number(v)).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
   const rformat=v=>number(v)===null?"—":(number(v)>=0?"+":"")+number(v).toFixed(3)+" R";
   const time=v=>v?new Date(v).toLocaleString("vi-VN"):"Chưa có thời điểm";
   function cell(tr,value,cls){const td=document.createElement("td");td.textContent=value;if(cls)td.className=cls;tr.append(td);return td;}
   function table(id,rows,closed){
     const body=$(id);body.replaceChildren();
-    if(!rows.length){const tr=document.createElement("tr");const td=cell(tr,closed?"Chưa có lệnh đóng.":"Chưa có vị thế mô phỏng đang mở.");td.colSpan=7;body.append(tr);return;}
+    if(!rows.length){const tr=document.createElement("tr");const td=cell(tr,closed?"Chưa có lệnh đóng.":"Chưa có vị thế mô phỏng đang mở.");td.colSpan=9;body.append(tr);return;}
     rows.forEach(row=>{
       const tr=document.createElement("tr");
       cell(tr,row.symbol);cell(tr,row.side,row.side==="BUY"?"positive":"negative");
-      cell(tr,format(row.entry_price));cell(tr,format(closed?row.exit_price:row.stop_price));
+      cell(tr,format(row.quantity));cell(tr,format(row.entry_price));cell(tr,format(closed?row.exit_price:row.stop_price));
       if(!closed) cell(tr,format(row.last_mark_price));
       const result=number(closed?row.gross_r:row.unrealized_r);
+      const dollar=number(row.pnl_usd);
+      cell(tr,usdformat(dollar),dollar===null?'':dollar>=0?'positive':'negative');
       cell(tr,rformat(result),result>=0?"positive":"negative");
       cell(tr,time(closed?row.exit_ts:row.last_mark_ts));
       if(closed) cell(tr,row.exit_reason==="USER_CLOSE"?"Theo yêu cầu":row.exit_reason==="REVERSAL"?"Đảo chiều":row.exit_reason==="STOP"?"Chạm stop":"Đóng theo quy tắc");
@@ -54,10 +66,19 @@
         Object.entries(names).forEach(([symbol,name])=>{const row=last.watch.find(w=>w?.symbol===symbol);const tr=document.createElement("tr");cell(tr,name+" · "+symbol);cell(tr,labels[row?.status]||"Chờ kiểm tra");cell(tr,time(date(row?.last_bar_ts)));body.append(tr);});
       }
       table("paperOpenRows",last.positions,false);table("paperClosedRows",last.trades,true);
+      const summary=checkedSummary(last.summary,last.rejected);
+      const usable=summary&&summary.open_count===last.positions.length&&summary.closed_count>=last.trades.length&&last.sizing?.id==='PAPER_NOTIONAL_1000_V1';
+      if($("paperGainUSD")){
+        for(const [id,key] of [['paperGainUSD','gain_usd'],['paperLossUSD','loss_usd'],['paperNetUSD','net_usd'],['paperOpenUSD','open_usd']]){
+          $(id).textContent=usdformat(usable?summary[key]:null);
+          $(id).className=usable?(summary[key]<0?'negative':'positive'):'';
+        }
+        for(const [id,key] of [['paperGainR','gain_r'],['paperLossR','loss_r'],['paperNetR','net_r']])$(id).textContent=rformat(usable?summary[key]:null);
+      }
       $("paperOpenCount").textContent=last.positions.length;
-      $("paperClosedCount").textContent=last.trades.length;
-      $("paperOpenR").textContent=last.rejected?"—":rformat(last.positions.reduce((s,p)=>s+number(p.unrealized_r),0));
-      $("paperClosedR").textContent=last.rejected?"—":rformat(last.trades.reduce((s,p)=>s+number(p.gross_r),0));
+      $("paperClosedCount").textContent=usable?summary.closed_count:'—';
+      $("paperOpenR").textContent=rformat(usable?summary.open_r:null);
+      $("paperClosedR").textContent=rformat(usable?summary.closed_r:null);
       const age=last.asOf?Date.now()-Date.parse(last.asOf):Infinity;
       $("paperStatus").textContent=age>36*3600000?"DỮ LIỆU CŨ":"MÔ PHỎNG · D1";
       $("paperUpdated").textContent="Bot cập nhật: "+time(last.asOf)+" · Tải bảng: "+time(new Date().toISOString())+(last.rejected?" · Có "+last.rejected+" dòng lỗi, đã ẩn.":"");
