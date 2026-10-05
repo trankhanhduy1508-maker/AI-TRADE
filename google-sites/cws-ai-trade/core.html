@@ -1,0 +1,16 @@
+<!doctype html>
+<html lang="vi"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#0b1422"><meta name="referrer" content="no-referrer"><title>CWS AI Trade</title><link rel="manifest" href="./manifest.webmanifest"><link rel="icon" href="./icon-192.png"><link rel="stylesheet" href="./styles.css"></head>
+<body class="core-app"><main class="core-shell"><header class="core-header"><div><h1>CWS AI Trade</h1><p>Lệnh mô phỏng · Tự động theo quy tắc</p></div><button id="pwaInstallBtn" class="secondary" type="button" hidden>Cài ứng dụng</button></header>
+      <section class="panel paper-panel" id="paperOrders" aria-label="Giao dịch tự động">
+        <div class="panel-heading"><div><h2>Giao dịch tự động</h2><span class="muted micro">Forex · BTC/ETH · Vàng · Dầu · Chỉ số</span></div><div class="heading-right"><span class="pill" id="paperStatus">ĐANG TẢI</span><button class="secondary" id="paperRefresh" type="button">↻ Làm mới</button></div></div>
+        <p class="paper-note">Bot tự theo dõi, mở và đóng lệnh mô phỏng theo quy tắc mỗi ngày, kể cả khi bạn đóng web.</p>
+        <div class="paper-metrics"><div><span>Đang mở</span><strong id="paperOpenCount">—</strong></div><div><span>Kết quả đang mở</span><strong id="paperOpenR">—</strong></div><div><span>Đã đóng</span><strong id="paperClosedCount">—</strong></div><div><span>Kết quả đã đóng</span><strong id="paperClosedR">—</strong></div></div>
+        <p class="muted micro" id="paperUpdated" aria-live="polite">Đang tải dữ liệu bot…</p>
+        <p class="paper-error" id="paperError" role="status" hidden></p>
+        <h3>Vị thế đang mở</h3>
+        <div class="table-wrap"><table><thead><tr><th>Thị trường</th><th>Hướng</th><th>Giá vào</th><th>Stop</th><th>Giá đánh dấu</th><th>Kết quả</th><th>Thời điểm giá</th></tr></thead><tbody id="paperOpenRows"><tr><td colspan="7">Đang tải…</td></tr></tbody></table></div>
+        <details class="paper-history"><summary>Lịch sử lệnh đã đóng</summary><div class="table-wrap"><table><thead><tr><th>Thị trường</th><th>Hướng</th><th>Giá vào</th><th>Giá thoát</th><th>Kết quả</th><th>Thời điểm đóng</th><th>Lý do</th></tr></thead><tbody id="paperClosedRows"><tr><td colspan="7">Đang tải…</td></tr></tbody></table></div></details>
+        <details class="core-help"><summary>Cách đọc kết quả</summary><p>1 R là rủi ro ban đầu của một lệnh. Kết quả chưa trừ phí, không phải số tiền tài khoản MT5. Giá có thời điểm riêng và có thể trễ; vàng/dầu dùng futures đại diện. Đây là phòng mô phỏng, chưa chứng minh hiệu quả ngoài mẫu.</p></details>
+      </section>
+<small id="pwaInstallHint" hidden></small>
+</main><script src="./pwa.js" defer></script><script src="./paper-orders.js" defer></script></body></html>
